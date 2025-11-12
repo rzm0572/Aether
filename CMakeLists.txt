@@ -93,7 +93,7 @@ function(add_opengl_executable EXECUTABLE_NAME CUSTOM_SOURCE)
 
     if (NOT MINGW)
         target_link_libraries(
-            ${EXECUTEABLE_NAME}
+            ${EXECUTABLE_NAME}
             PRIVATE GTest::gtest GTest::gtest_main
             PRIVATE glog::glog
         )
