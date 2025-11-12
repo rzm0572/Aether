@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.29)
 
 project(AETHER)
 
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -60,19 +60,21 @@ else()
     message(STATUS "GLM found: ${GLM_INCLUDE_DIRS}")
 endif()
 
-# glog 0.7.1
-find_package(GLOG QUIET)
-if (NOT GLOG_FOUND)
-    message(STATUS "GLOG not found. Building from submodule 'repo/glog' (#v0.7.1) ...")
-    add_subdirectory(repo/glog EXCLUDE_FROM_ALL)
-else()
-    message(STATUS "GLOG found: ${GLOG_LIBRARIES}")
-endif()
+if (NOT MINGW)
+    # glog 0.7.1
+    find_package(GLOG QUIET)
+    if (NOT GLOG_FOUND)
+        message(STATUS "GLOG not found. Building from submodule 'repo/glog' (#v0.7.1) ...")
+        add_subdirectory(repo/glog EXCLUDE_FROM_ALL)
+    else()
+        message(STATUS "GLOG found: ${GLOG_LIBRARIES}")
+    endif()
 
-# googletest 1.17.0
-set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")
-set(INSTALL_GTEST OFF CACHE INTERNAL "")
-add_subdirectory(repo/googletest EXCLUDE_FROM_ALL)
+    # # googletest 1.17.0
+    set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")
+    set(INSTALL_GTEST OFF CACHE INTERNAL "")
+    add_subdirectory(repo/googletest EXCLUDE_FROM_ALL)
+endif()
 
 
 # Function for adding OpenGL executable
@@ -89,14 +91,20 @@ function(add_opengl_executable EXECUTABLE_NAME CUSTOM_SOURCE)
         )
     endif()
 
+    if (NOT MINGW)
+        target_link_libraries(
+            ${EXECUTEABLE_NAME}
+            PRIVATE GTest::gtest GTest::gtest_main
+            PRIVATE glog::glog
+        )
+    endif()
+
     target_link_libraries(
         ${EXECUTABLE_NAME}
         PRIVATE OpenGL::GL
         PRIVATE glfw
         PRIVATE glad
         PRIVATE glm::glm-header-only
-        PRIVATE GTest::gtest GTest::gtest_main
-        PRIVATE glog::glog
         PRIVATE ${CMAKE_DL_LIBS}
     )
 
