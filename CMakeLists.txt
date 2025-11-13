@@ -4,7 +4,7 @@ project(AETHER)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_INSTALL_PREFIX "${CMAKE_SOURCE_DIR}/bin")
 
 # Check system
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
@@ -18,8 +18,8 @@ message(STATUS "System: ${CMAKE_SYSTEM_NAME}")
 # Directory where submodules are stored
 set(REPO_DIR "${CMAKE_SOURCE_DIR}/repo")
 
-# Directory where dependencies are stored
-set(DEPENDENCIES_DIR "${CMAKE_SOURCE_DIR}/dependencies")
+# Directory where resources are stored
+set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resources")
 
 # Find dependencies
 if (SYSTEM_IS_MACOS)
@@ -62,12 +62,12 @@ endif()
 
 if (NOT MINGW)
     # glog 0.7.1
-    find_package(GLOG QUIET)
-    if (NOT GLOG_FOUND)
-        message(STATUS "GLOG not found. Building from submodule 'repo/glog' (#v0.7.1) ...")
+    find_package(glog QUIET)
+    if (NOT glog_FOUND)
+        message(STATUS "glog not found. Building from submodule 'repo/glog' (#v0.7.1) ...")
         add_subdirectory(repo/glog EXCLUDE_FROM_ALL)
     else()
-        message(STATUS "GLOG found: ${GLOG_LIBRARIES}")
+        message(STATUS "glog found: ${GLOG_LIBRARIES}")
     endif()
 
     # # googletest 1.17.0
@@ -76,49 +76,12 @@ if (NOT MINGW)
     add_subdirectory(repo/googletest EXCLUDE_FROM_ALL)
 endif()
 
+message(STATUS "custom include: ${CMAKE_CURRENT_SOURCE_DIR}/include")
+message(STATUS "OpenGL_INCLUDE_DIRS: ${OPENGL_INCLUDE_DIRS}")
 
-# Function for adding OpenGL executable
-function(add_opengl_executable EXECUTABLE_NAME CUSTOM_SOURCE)
-    message("Adding OpenGL executable: ${EXECUTABLE_NAME} from ${CUSTOM_SOURCE}")
+add_subdirectory(src)
 
-    add_executable(${EXECUTABLE_NAME} ${CUSTOM_SOURCE})
-
-    if (SYSTEM_IS_MACOS)
-        target_link_libraries(
-            ${EXECUTABLE_NAME}
-            PRIVATE ${COCOA_LIBRARY}
-            PRIVATE ${IO_KIT_LIBRARY}
-        )
-    endif()
-
-    if (NOT MINGW)
-        target_link_libraries(
-            ${EXECUTABLE_NAME}
-            PRIVATE GTest::gtest GTest::gtest_main
-            PRIVATE glog::glog
-        )
-    endif()
-
-    target_link_libraries(
-        ${EXECUTABLE_NAME}
-        PRIVATE OpenGL::GL
-        PRIVATE glfw
-        PRIVATE glad
-        PRIVATE glm::glm-header-only
-        PRIVATE ${CMAKE_DL_LIBS}
-    )
-
-    target_include_directories(
-        ${EXECUTABLE_NAME}
-        PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-        PRIVATE ${OPENGL_INCLUDE_DIRS}
-        PRIVATE ${GLFW3_INCLUDE_DIRS}
-        PRIVATE ${GLAD_DIR}/include
-    )
-endfunction()
-
-# -------------------------------------------------------------------------------
-# Add executables here
-
-add_opengl_executable(test_opengl "src/test.cpp")
-
+install(
+    DIRECTORY ${RESOURCE_DIR}/assets ${RESOURCE_DIR}/shaders ${RESOURCE_DIR}/configs
+    DESTINATION .
+)
