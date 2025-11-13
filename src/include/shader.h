@@ -14,7 +14,7 @@ namespace GL {
     class Shader {
     public:
         Shader(): ID(0) {}
-        Shader(const char* vertexShaderPath, const char* fragmentShaderPath);
+        Shader(const char* vertex_shader_path, const char* fragment_shader_path);
 
         ~Shader() {
             if (ID != 0) {
@@ -51,15 +51,9 @@ namespace GL {
                 static_assert(sizeof(T) == 0, "Invalid number of arguments");
             }
 
-            // if constexpr (std::is_same<T, float>::value && count == 4) {
-            //     std::cout << ID << " " << name << std::endl;
-            // }
-
             int location = glGetUniformLocation(ID, name.c_str());
             if (location == -1) {
                 throw std::runtime_error("Cannot find uniform variable " + name);
-                // std::cout << "\033[31mCannot find uniform variable " << name << "\033[0m" << std::endl;
-                // return false;
             }
 
             if constexpr (std::is_same<T, float>::value) {
@@ -113,9 +107,9 @@ namespace GL {
         }
 
     private:
-        unsigned int setVertexShader(const char* vertexShaderSource);
-        unsigned int setFragmentShader(const char* fragmentShaderSource);
-        void linkShaderProgram(unsigned int vertexShaderID, unsigned int fragmentShaderID);
+        unsigned int setVertexShader(const char* vertex_shader_source);
+        unsigned int setFragmentShader(const char* fragment_shader_source);
+        void linkShaderProgram(unsigned int vertex_shader_ID, unsigned int fragment_shader_ID);
 
         ShaderProgramID ID;
 
@@ -128,26 +122,26 @@ namespace GL {
         ~ShaderManager() = default;
 
         const Shader& getShader(ShaderProgramID id) {
-            return shaders[id];
+            return shaders_[id];
         }
 
         const Shader& getShader(const std::string& name) {
-            return *shaderRegistry.at(name);
+            return *shader_registry_.at(name);
         }
 
-        void registerShader(std::string name, const char* vertexShaderPath, const char* fragmentShaderPath) {
-            Shader shader(vertexShaderPath, fragmentShaderPath);
+        void registerShader(std::string name, const char* vertex_shader_path, const char* fragment_shader_path) {
+            Shader shader(vertex_shader_path, fragment_shader_path);
             ShaderProgramID id = shader.ID;
-            shaders[id] = std::move(shader);
-            shaderRegistry[name] = &shaders[id];
+            shaders_[id] = std::move(shader);
+            shader_registry_[name] = &shaders_[id];
         }
 
-        void registerShader(std::string name, std::string vertexShaderPath, std::string fragmentShaderPath) {
-            registerShader(name.c_str(), vertexShaderPath.c_str(), fragmentShaderPath.c_str());
+        void registerShader(std::string name, std::string vertex_shader_path, std::string fragment_shader_path) {
+            registerShader(name.c_str(), vertex_shader_path.c_str(), fragment_shader_path.c_str());
         }
 
     private:
-        std::unordered_map<ShaderProgramID, Shader> shaders;
-        std::unordered_map<std::string, Shader*> shaderRegistry;
+        std::unordered_map<ShaderProgramID, Shader> shaders_;
+        std::unordered_map<std::string, Shader*> shader_registry_;
     };
 }

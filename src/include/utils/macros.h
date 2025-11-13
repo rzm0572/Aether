@@ -14,12 +14,12 @@
 #define OPENGL_VERSION_MINOR 1
 
 inline GLenum glCheckError_(const char* file, int line) {
-    GLenum errorCode;
-    bool hasError = false;
-    while ((errorCode = glGetError()) != GL_NO_ERROR) {
-        hasError = true;
+    GLenum error_code;
+    bool has_error = false;
+    while ((error_code = glGetError()) != GL_NO_ERROR) {
+        has_error = true;
         std::string error;
-        switch (errorCode) {
+        switch (error_code) {
             case GL_INVALID_ENUM:                  error = "INVALID_ENUM"; break;
             case GL_INVALID_VALUE:                 error = "INVALID_VALUE"; break;
             case GL_INVALID_OPERATION:             error = "INVALID_OPERATION"; break;
@@ -28,10 +28,10 @@ inline GLenum glCheckError_(const char* file, int line) {
         }
         std::cout << "\033[31m" << error << "\033[0m" << " | " << file << " (" << line << ")" << "\033[0m" << std::endl;
     }
-    if (!hasError) {
+    if (!has_error) {
         std::cout << "\033[32m" << "NO_ERROR" << "\033[0m" << " | " << file << " (" << line << ")" << std::endl;
     }
-    return errorCode;
+    return error_code;
 }
 
 #define glCheckError() glCheckError_(__FILE__, __LINE__)

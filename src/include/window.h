@@ -46,10 +46,10 @@ namespace {
 namespace GL {
     class Window {
     public:
-        Window() : m_window(nullptr) {}
+        Window() : m_window_(nullptr) {}
         ~Window() {
-            if (m_window) {
-                glfwDestroyWindow(m_window);
+            if (m_window_) {
+                glfwDestroyWindow(m_window_);
             }
         }
 
@@ -61,34 +61,34 @@ namespace GL {
         }
 
         void create(int width, int height, const char* title, GLFWframebuffersizefun framebuffer_size_callback) {
-            m_window = glfwCreateWindow(width, height, title, nullptr, nullptr);
-            if (!m_window) {
+            m_window_ = glfwCreateWindow(width, height, title, nullptr, nullptr);
+            if (!m_window_) {
                 throw std::runtime_error("Failed to create GLFW window");
             }
             setFramebufferSizeCallback(framebuffer_size_callback);
         }
 
         void makeCurrent() {
-            glfwMakeContextCurrent(m_window);
+            glfwMakeContextCurrent(m_window_);
         }
 
         void setFramebufferSizeCallback(GLFWframebuffersizefun callback) {
-            glfwSetFramebufferSizeCallback(m_window, callback);
+            glfwSetFramebufferSizeCallback(m_window_, callback);
         }
 
         void swapBuffers() {
-            glfwSwapBuffers(m_window);
+            glfwSwapBuffers(m_window_);
         }
 
         GLFWwindow* getWindow() {
-            return m_window;
+            return m_window_;
         }
 
         bool shouldClose() {
-            return glfwWindowShouldClose(m_window);
+            return glfwWindowShouldClose(m_window_);
         }
     
     private:
-        GLFWwindow* m_window;
+        GLFWwindow* m_window_;
     };
 }

@@ -13,7 +13,7 @@
     #include <glog/logging.h>
 #endif
 
-inline std::filesystem::path get_executable_path() {
+inline std::filesystem::path getExecutablePath() {
     #ifdef _WIN32
         char path[MAX_PATH];
         GetModuleFileNameW(NULL, path, MAX_PATH);
@@ -40,10 +40,10 @@ inline std::filesystem::path get_executable_path() {
 
 #define GENERATE_GET_RESOURCE_PATH_FUNC(func_name, resource_subdir) \
     inline std::string func_name(std::string resource) { \
-        std::filesystem::path executable_path = get_executable_path(); \
+        std::filesystem::path executable_path = getExecutablePath(); \
         return (executable_path / resource_subdir / resource).string(); \
     }
 
-GENERATE_GET_RESOURCE_PATH_FUNC(get_shader_path, "shaders");
-GENERATE_GET_RESOURCE_PATH_FUNC(get_asset_path, "assets");
-GENERATE_GET_RESOURCE_PATH_FUNC(get_config_path, "configs");
+GENERATE_GET_RESOURCE_PATH_FUNC(getShaderPath, "shaders");
+GENERATE_GET_RESOURCE_PATH_FUNC(getAssetPath, "assets");
+GENERATE_GET_RESOURCE_PATH_FUNC(getConfigPath, "configs");

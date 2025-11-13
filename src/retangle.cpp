@@ -50,11 +50,8 @@ int main() {
         return -1;
     }
 
-    std::cout << "Shader path: " << get_shader_path("trans.vert") << std::endl;
-    std::cout << "Shader path: " << get_shader_path("trans.frag") << std::endl;
-
     GL::ShaderManager shaderManager;
-    shaderManager.registerShader("trans", get_shader_path("trans.vert"), get_shader_path("trans.frag"));
+    shaderManager.registerShader("trans", getShaderPath("trans.vert"), getShaderPath("trans.frag"));
     const auto& shader = shaderManager.getShader("trans");
 
     unsigned int VAO, VBO, EBO;
