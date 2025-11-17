@@ -51,11 +51,12 @@ set(
 
 add_opengl_executable(test_opengl "test.cpp")
 add_opengl_executable(retangle "${AETHER_LIBS};retangle.cpp")
+add_opengl_executable(main "${AETHER_LIBS};main.cpp")
 
 # -------------------------------------------------------------------------------
 # Install executables here
 
 install(
-    TARGETS test_opengl retangle
+    TARGETS test_opengl retangle main
     RUNTIME DESTINATION .
 )
