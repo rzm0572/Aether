@@ -10,3 +10,6 @@
 [submodule "repo/glog"]
 	path = repo/glog
 	url = https://github.com/google/glog.git
+[submodule "repo/stb"]
+	path = repo/stb
+	url = https://github.com/nothings/stb.git

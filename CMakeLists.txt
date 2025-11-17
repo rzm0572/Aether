@@ -60,6 +60,14 @@ else()
     message(STATUS "GLM found: ${GLM_INCLUDE_DIRS}")
 endif()
 
+# STB (header-only)
+set(STB_INCLUDE_DIR "${REPO_DIR}/stb")
+if (NOT EXISTS "${STB_INCLUDE_DIR}/stb_image.h")
+    message(FATAL_ERROR "stb_image.h not found in ${STB_INCLUDE_DIR}. Please run: git submodule update --init")
+endif()
+message(STATUS "STB headers found at: ${STB_INCLUDE_DIR}")
+
+
 if (NOT MINGW)
     # glog 0.7.1
     find_package(glog QUIET)
