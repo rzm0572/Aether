@@ -38,11 +38,20 @@ inline std::filesystem::path getExecutablePath() {
     #endif
 }
 
-#define GENERATE_GET_RESOURCE_PATH_FUNC(func_name, resource_subdir) \
-    inline std::string func_name(std::string resource) { \
-        std::filesystem::path executable_path = getExecutablePath().parent_path(); \
-        return (executable_path / resource_subdir / resource).string(); \
-    }
+// 根据平台定义不同的宏
+#ifdef _WIN32
+    #define GENERATE_GET_RESOURCE_PATH_FUNC(func_name, resource_subdir) \
+        inline std::string func_name(std::string resource) { \
+            std::filesystem::path executable_path = getExecutablePath().parent_path(); \
+            return (executable_path / resource_subdir / resource).string(); \
+        }
+#else
+    #define GENERATE_GET_RESOURCE_PATH_FUNC(func_name, resource_subdir) \
+        inline std::string func_name(std::string resource) { \
+            std::filesystem::path executable_path = getExecutablePath(); \
+            return (executable_path / resource_subdir / resource).string(); \
+        }
+#endif
 
 GENERATE_GET_RESOURCE_PATH_FUNC(getShaderPath, "shaders");
 GENERATE_GET_RESOURCE_PATH_FUNC(getAssetPath, "assets");
