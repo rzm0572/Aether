@@ -6,26 +6,7 @@
 #include "shader.h"
 #include "utils/path_handler.h"
 
-/**
- * @brief CubemapTexture 天空盒纹理类
- * 通过文件路径导入六张图片形成一个盒子
- * 
- * 
- * @note 重要注意事项或使用限制
- * @warning 需要特别警惕的问题
- * 
 
- * @example 示例：首先以相对于 asset 目录的六张正方形特定天空盒图片相对路径为参数的 CubemapTexture 构造函数的使用示例：
- * CubemapTexture skyboxTexture("skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg");
- * cubemap->load()
- * cubemap->Bind(GL_TEXTURE0);
- * 
- * @see 目前当且仅当在 Skybox 中用于导入天空盒纹理时，才会使用到此类。
-
-来源：一步步学OpenGL(25) -《Skybox天空盒子》 - Kam92.J的文章 - 知乎 https://zhuanlan.zhihu.com/p/150570683
-
-将图像接口替换为 stb_image.h，参考 stb_image图像解码库 - 李钢蛋的文章 - 知乎 https://zhuanlan.zhihu.com/p/466294684
-*/
 class Skybox::CubemapTexture{
 
 public:
@@ -144,16 +125,7 @@ private:
 
 
 
-// 简单的立方体网格（用于天空盒）
-/**
- * @brief 天空盒网格类
- * 
- * 用于渲染天空盒的立方体网格，由8个顶点组成，每个顶点有3个坐标值(x,y,z)。
- * @note 构造函数会自动完成顶点的分配，
- * 
- * @see 目前当且仅当在 Skybox 中用于渲染天空盒网格时，才会使用到此类。
 
-*/
 class Skybox::SkyboxMesh
 {
 public:
@@ -289,16 +261,15 @@ void Skybox::Render(){
     glGetIntegerv(GL_CULL_FACE_MODE, &OldCullFaceMode);
     GLint OldDepthFuncMode;
     glGetIntegerv(GL_DEPTH_FUNC, &OldDepthFuncMode);
-    glCullFace(GL_FRONT);
-    glDepthFunc(GL_LEQUAL);
-
+    glCullFace(GL_FRONT);// 剔除正面（因为我们在盒子内部，要看到内表面）
+    glDepthFunc(GL_LEQUAL);// 允许 Z=1 的像素写入（否则会被丢弃）
     // 着色器
     auto& shader = shaderManager->getShader("skybox");
     shader.useShader();
 
 
     // 构建视图矩阵
-    glm::mat4 viewNoTrans = glm::mat4(glm::mat3(view)); // 移除平移分量
+    glm::mat4 viewNoTrans = glm::mat4(glm::mat3(view)); // 移除平移分量，因为天空盒应当无视相机位置
     glm::mat4 skyboxView = projection * viewNoTrans;
     // 输入投影矩阵给着色器
     shader.setUniform("gWVP", skyboxView);

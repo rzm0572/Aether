@@ -2,9 +2,20 @@
 #include "shader.h"
 #include <glm/glm.hpp>
 
+/**
+ * @see 天空盒代码主要来源于：一步步学OpenGL(25) -《Skybox天空盒子》 - Kam92.J的文章 - 知乎 https://zhuanlan.zhihu.com/p/150570683
+ * @see 将图像接口替换为 stb_image.h，参考 stb_image图像解码库 - 李钢蛋的文章 - 知乎 https://zhuanlan.zhihu.com/p/466294684
+*/
+
 
 /**
  * @brief 天空盒类，可以实现根据图片位置构造天空盒，调节视角、相机等，可以绘制天空盒
+ * 
+ * 具体的实现思路是：
+ *      1. 类 CubemapTexture 负责加载立方体贴图纹理，并绑定到某个纹理单元插槽，如GL_TEXTURE0，代码中的体现是 cubemap->Bind(GL_TEXTURE0);
+ *      2. 类 SkyboxMesh 负责绘制天空盒的立方体网格，由8个顶点组成，每个顶点有3个坐标值(x,y,z)，绑定到顶点缓冲区，并绑定到VAO。
+ *      3. 类 Skybox 绘制天空盒，shader.setUniform("gCubemapTexture", 0); 绑定立方体贴图纹理到uniform变量 gCubemapTexture，与 GL_TEXTURE0 插槽对应
+ * 
  * @warning 你需要构造天空盒，修改相机、视角等必要参数之后才能合理的绘制天空盒
  * @note 你可以在循环外面定义这个类，然后在渲染循环中实例化并调用它的Render方法，这个类仅暴露了天空盒图片和相机的接口
  * @warning 你需要在每一帧，即每次循环前清除深度  glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); 
@@ -55,8 +66,6 @@ public:
      * @note 该方法会修改OpenGL状态，调用后会自动恢复原始状态
      * @note 视图矩阵会移除平移分量，确保天空盒始终围绕相机
      *
-     * @param view 当前场景的视图矩阵
-     * @param projection 当前场景的投影矩阵
      */
     void Render();
 
@@ -88,7 +97,32 @@ public:
     }
 
 private: 
+    /**
+     * @brief CubemapTexture 天空盒纹理类
+     * 通过文件路径导入六张图片形成一个盒子
+     * 将盒子纹理绑定到某个纹理单元插槽，如GL_TEXTURE0
+     * 
+     * 
+
+    * @example 示例：首先以相对于 asset 目录的六张正方形特定天空盒图片相对路径为参数的 CubemapTexture 构造函数的使用示例：
+    * CubemapTexture skyboxTexture("skybox/right.jpg", "skybox/left.jpg", "skybox/top.jpg", "skybox/bottom.jpg", "skybox/front.jpg", "skybox/back.jpg");
+    * cubemap->load()
+    * cubemap->Bind(GL_TEXTURE0);
+    * 
+    * @see 目前当且仅当在 Skybox 中用于导入天空盒纹理时，才会使用到此类，用于将读取的天空盒图片绑定到插槽 GL_TEXTURE0。
+
+    */
     class CubemapTexture;   // 天空盒纹理类，用于加载天空盒纹理
+    /**
+     * @brief 天空盒网格类
+     * 简单的立方体网格（用于天空盒）
+     * 
+     * 用于渲染天空盒的立方体网格，由8个顶点组成，每个顶点有3个坐标值(x,y,z)。
+     * @note 构造函数会自动完成顶点的分配，
+     * 
+     * @see 目前当且仅当在 Skybox 中用于渲染天空盒网格时，才会使用到此类。
+
+    */
     class SkyboxMesh;       // 天空盒网格类，用于绘制天空盒
     CubemapTexture* cubemap;// 天空盒纹理
     SkyboxMesh* mesh;// 天空盒网格

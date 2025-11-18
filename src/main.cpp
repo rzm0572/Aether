@@ -92,6 +92,7 @@ int main() {
     view = glm::translate(view, glm::vec3(0.0f, 0.0f, -5.0f));
     
     // 创建天空盒
+    // TODO: 使用合适的图片作为天空盒
     Skybox skybox(
         getAssetPath("skybox/right.jpg"), 
         getAssetPath("skybox/left.jpg"),
