@@ -51,6 +51,7 @@ endfunction()
 set(
     AETHER_LIBS
     lib/shader.cpp
+    lib/skybox.cpp
 )
 
 # -------------------------------------------------------------------------------
