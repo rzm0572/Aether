@@ -10,6 +10,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "skybox.h"
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 const int vertexAttribLocation = 0;
 
@@ -93,6 +96,7 @@ int main() {
     
     // 创建天空盒
     // TODO: 使用合适的图片作为天空盒
+    Assimp::Importer importer;
     Skybox skybox(
         getAssetPath("skybox/right.jpg"), 
         getAssetPath("skybox/left.jpg"),

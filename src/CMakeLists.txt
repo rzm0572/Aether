@@ -29,6 +29,7 @@ function(add_opengl_executable EXECUTABLE_NAME CUSTOM_SOURCE)
         PRIVATE glad
         PRIVATE glm::glm-header-only
         PRIVATE ${CMAKE_DL_LIBS}
+        assimp::assimp
     )
 
     target_include_directories(

@@ -13,3 +13,6 @@
 [submodule "repo/stb"]
 	path = repo/stb
 	url = https://github.com/nothings/stb.git
+[submodule "repo/assimp"]
+	path = repo/assimp
+	url = https://github.com/assimp/assimp.git

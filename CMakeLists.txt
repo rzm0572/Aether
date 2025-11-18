@@ -60,13 +60,31 @@ else()
     message(STATUS "GLM found: ${GLM_INCLUDE_DIRS}")
 endif()
 
-# STB (header-only)
+# STB 
 set(STB_INCLUDE_DIR "${REPO_DIR}/stb")
 if (NOT EXISTS "${STB_INCLUDE_DIR}/stb_image.h")
     message(FATAL_ERROR "stb_image.h not found in ${STB_INCLUDE_DIR}. Please run: git submodule update --init")
 endif()
 message(STATUS "STB headers found at: ${STB_INCLUDE_DIR}")
 
+# Assimp
+find_package(assimp QUIET CONFIG)
+if (NOT assimp_FOUND)
+    message(STATUS "Assimp not found. Building from submodule 'repo/assimp' ...")
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+    set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
+    set(ASSIMP_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
+    set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
+    set(ASSIMP_INJECT_DEBUG_POSTFIX OFF CACHE BOOL "" FORCE)
+    add_subdirectory(repo/assimp EXCLUDE_FROM_ALL)
+
+    # 设置变量供后续使用
+    set(ASSIMP_LIBRARIES assimp::assimp)
+else()
+    message(STATUS "Assimp found: ${assimp_LIBRARIES} (version ${assimp_VERSION})")
+    set(ASSIMP_LIBRARIES assimp::assimp)
+endif()
 
 if (NOT MINGW)
     # glog 0.7.1
