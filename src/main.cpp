@@ -372,7 +372,7 @@ int main() {
     const unsigned int SCR_WIDTH = 800;
     const unsigned int SCR_HEIGHT = 600;
 
-    GL::Window window(SCR_WIDTH, SCR_HEIGHT, "Main", [](GLFWwindow* window, int width, int height) {
+    Window window(SCR_WIDTH, SCR_HEIGHT, "Main", [](GLFWwindow* window, int width, int height) {
         glViewport(0, 0, width, height);
     });
 

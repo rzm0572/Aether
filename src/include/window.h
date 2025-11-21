@@ -43,52 +43,67 @@ namespace {
     } GLFWContextLifeManager;
 }
 
-namespace GL {
-    class Window {
-    public:
-        Window() : m_window_(nullptr) {}
-        ~Window() {
-            if (m_window_) {
-                glfwDestroyWindow(m_window_);
-            }
+class Window {
+public:
+    Window() : m_window_(nullptr) {}
+    ~Window() {
+        if (m_window_) {
+            glfwDestroyWindow(m_window_);
         }
+    }
 
-        Window(const Window&) = delete;
-        Window& operator=(const Window&) = delete;
+    Window(const Window&) = delete;
+    Window& operator=(const Window&) = delete;
 
-        Window(int width, int height, const char* title, GLFWframebuffersizefun framebuffer_size_callback) {
-            create(width, height, title, framebuffer_size_callback);
+    Window(int width, int height, const char* title, GLFWframebuffersizefun framebuffer_size_callback) {
+        create(width, height, title, framebuffer_size_callback);
+    }
+
+    void create(int width, int height, const char* title, GLFWframebuffersizefun framebuffer_size_callback) {
+        m_window_ = glfwCreateWindow(width, height, title, nullptr, nullptr);
+        if (!m_window_) {
+            throw std::runtime_error("Failed to create GLFW window");
         }
+        setFramebufferSizeCallback(framebuffer_size_callback);
+    }
 
-        void create(int width, int height, const char* title, GLFWframebuffersizefun framebuffer_size_callback) {
-            m_window_ = glfwCreateWindow(width, height, title, nullptr, nullptr);
-            if (!m_window_) {
-                throw std::runtime_error("Failed to create GLFW window");
-            }
-            setFramebufferSizeCallback(framebuffer_size_callback);
-        }
+    void makeCurrent() {
+        glfwMakeContextCurrent(m_window_);
+    }
 
-        void makeCurrent() {
-            glfwMakeContextCurrent(m_window_);
-        }
+    void setWindowUserPointer(void* user_pointer) {
+        glfwSetWindowUserPointer(m_window_, user_pointer);
+    }
 
-        void setFramebufferSizeCallback(GLFWframebuffersizefun callback) {
-            glfwSetFramebufferSizeCallback(m_window_, callback);
-        }
+    void setKeyCallback(GLFWkeyfun callback) {
+        glfwSetKeyCallback(m_window_, callback);
+    }
 
-        void swapBuffers() {
-            glfwSwapBuffers(m_window_);
-        }
+    void setCursorPosCallback(GLFWcursorposfun callback) {
+        glfwSetInputMode(m_window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        glfwSetCursorPosCallback(m_window_, callback);
+    }
 
-        GLFWwindow* getWindow() {
-            return m_window_;
-        }
+    void setFramebufferSizeCallback(GLFWframebuffersizefun callback) {
+        glfwSetFramebufferSizeCallback(m_window_, callback);
+    }
 
-        bool shouldClose() {
-            return glfwWindowShouldClose(m_window_);
-        }
-    
-    private:
-        GLFWwindow* m_window_;
-    };
-}
+    void swapBuffers() {
+        glfwSwapBuffers(m_window_);
+    }
+
+    GLFWwindow* getWindow() {
+        return m_window_;
+    }
+
+    bool shouldClose() {
+        return glfwWindowShouldClose(m_window_);
+    }
+
+    void setWindowShouldClose() {
+        glfwSetWindowShouldClose(m_window_, GLFW_TRUE);
+    }
+
+private:
+    GLFWwindow* m_window_;
+};
