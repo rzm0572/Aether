@@ -50,7 +50,7 @@ int main() {
         return -1;
     }
 
-    GL::ShaderManager shaderManager;
+    ShaderManager shaderManager;
     shaderManager.registerShader("trans", getShaderPath("trans.vert"), getShaderPath("trans.frag"));
     const auto& shader = shaderManager.getShader("trans");
 

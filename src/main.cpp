@@ -134,7 +134,7 @@ Assimp框架和我们的OpenGL程序的接口，这个类的对象使用模型�
 */
 class Mesh_model{
 public:
-    Mesh_model(GL::ShaderManager* shadermanager){
+    Mesh_model(ShaderManager* shadermanager){
         shaderManager = shadermanager;
         shaderManager->registerShader("models", getShaderPath("models.vert"), getShaderPath("models.frag"));
     }
@@ -344,7 +344,7 @@ private:
     std::vector<Texture*> m_Textures;
     std::vector<glm::vec4> m_BaseColors;
     std::vector<bool> m_HasTexture;
-    GL::ShaderManager* shaderManager;// 着色器管理
+    ShaderManager* shaderManager;// 着色器管理
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 projection;
@@ -379,7 +379,7 @@ int main() {
         return -1;
     }
 
-    GL::ShaderManager shaderManager;
+    ShaderManager shaderManager;
     shaderManager.registerShader("trans", getShaderPath("trans.vert"), getShaderPath("trans.frag"));
     const auto& shader = shaderManager.getShader("trans");
 

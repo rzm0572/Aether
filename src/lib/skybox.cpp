@@ -239,7 +239,7 @@ private:
 Skybox::Skybox(const std::string &posX, const std::string &negX,
         const std::string &posY, const std::string &negY,
         const std::string &posZ, const std::string &negZ,
-        GL::ShaderManager *global_shaderManager){
+        ShaderManager *global_shaderManager){
     // 创建立方体贴图
     cubemap = new CubemapTexture(posX, negX, posY, negY, posZ, negZ);
     if (!cubemap->Load()) {

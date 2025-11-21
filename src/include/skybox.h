@@ -48,7 +48,7 @@ public:
     Skybox(const std::string &posX, const std::string &negX,
         const std::string &posY, const std::string &negY,
         const std::string &posZ, const std::string &negZ,
-        GL::ShaderManager *global_shaderManager);
+        ShaderManager *global_shaderManager);
 
     ~Skybox();
 
@@ -126,7 +126,7 @@ private:
     class SkyboxMesh;       // 天空盒网格类，用于绘制天空盒
     CubemapTexture* cubemap;// 天空盒纹理
     SkyboxMesh* mesh;// 天空盒网格
-    GL::ShaderManager* shaderManager;// 天空盒着色器管理器，构造函数中注册shader，需要shader时取出即可
+    ShaderManager* shaderManager;// 天空盒着色器管理器，构造函数中注册shader，需要shader时取出即可
     glm::vec3 cameraPos;// 相机位置
     glm::mat4 projection;// 投影矩阵
     glm::mat4 view;// 视角矩阵

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 
-GL::Shader::Shader(const char* vertexShader, const char* fragmentShader) {
+Shader::Shader(const char* vertexShader, const char* fragmentShader) {
     std::ifstream vertexShaderFile;
     std::ifstream fragmentShaderFile;
 
@@ -43,7 +43,7 @@ GL::Shader::Shader(const char* vertexShader, const char* fragmentShader) {
 }
 
 
-unsigned int GL::Shader::setVertexShader(const char* vertexShaderSource) {
+unsigned int Shader::setVertexShader(const char* vertexShaderSource) {
     int success;
     char infoLog[512];
 
@@ -60,7 +60,7 @@ unsigned int GL::Shader::setVertexShader(const char* vertexShaderSource) {
     return vertexShaderID;
 }
 
-unsigned int GL::Shader::setFragmentShader(const char* fragmentShaderSource) {
+unsigned int Shader::setFragmentShader(const char* fragmentShaderSource) {
     int success;
     char infoLog[512];
 
@@ -77,7 +77,7 @@ unsigned int GL::Shader::setFragmentShader(const char* fragmentShaderSource) {
     return fragmentShaderID;
 }
 
-void GL::Shader::linkShaderProgram(unsigned int vertexShaderID, unsigned int fragmentShaderID) {
+void Shader::linkShaderProgram(unsigned int vertexShaderID, unsigned int fragmentShaderID) {
     int success;
     char infoLog[512];
 
@@ -93,7 +93,7 @@ void GL::Shader::linkShaderProgram(unsigned int vertexShaderID, unsigned int fra
     }
 }
 
-void GL::Shader::useShader() const {
+void Shader::useShader() const {
     // std::cout << "Use shader program: " << ID << std::endl;
     glUseProgram(ID);
 }
