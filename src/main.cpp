@@ -10,6 +10,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "skybox.h"
+#include "interaction/input.h"
+#include "interaction/camera.h"
 
 const int vertexAttribLocation = 0;
 
@@ -28,12 +30,6 @@ unsigned int indices[] = {
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
-}
-
-void processInput(GLFWwindow *window) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
 }
 
 
@@ -387,38 +383,32 @@ int main() {
     shaderManager.registerShader("trans", getShaderPath("trans.vert"), getShaderPath("trans.frag"));
     const auto& shader = shaderManager.getShader("trans");
 
-    unsigned int VAO, VBO, EBO;
+    Input input;
+
+    window.setWindowUserPointer(&input);
+    window.setKeyCallback(input.keyCallback);
+    window.setCursorPosCallback(input.mouseCallback);
+
+    FreeCamera camera(
+        glm::vec3(0.0f, 0.0f, 3.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f),
+        glm::quat(1.0f, 0.0f, 0.0f, 0.0f),
+        5.0f,
+        0.06f
+    );
+    FreeCameraInputTranslator translator(input);
+
+    unsigned int VAO;
     // Generate vertex array object and vertex buffer object
     glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
 
     // Bind the vertex array object first
     glBindVertexArray(VAO);
 
-    // Bind and set the vertex buffer
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // Configure vertex attribute
-    glVertexAttribPointer(vertexAttribLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(vertexAttribLocation);
-
-    // Unbind the VBO
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // unbind the VAO
-    glBindVertexArray(0);
-
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
     glm::mat4 view = glm::mat4(1.0f);
-    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -5.0f));
     
     // 创建天空盒
     // TODO: 使用合适的图片作为天空盒
@@ -438,41 +428,34 @@ int main() {
         std::cerr << "Failed to load model!" << std::endl;
         return -1;
     }
-    
-
 
     // 开启深度测试
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
+
+    float last_frame = 0.0f;
+    float curr_frame = 0.0f;
+
+    float delta_time_sum = 0.0f;
+    int frame_count = 0;
+
     while (!window.shouldClose()) {
-        processInput(window.getWindow());
+        input.pollEvents();
+        if (input.getKeyPressed(InputKey::ESC)) {
+            window.setWindowShouldClose();
+        }
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); 
 
-        shader.useShader();
+        camera.update(translator, curr_frame - last_frame);
+        delta_time_sum += curr_frame - last_frame;
+        frame_count++;
 
-        float timeValue = glfwGetTime()/10.f;
-        float greenValue = (std::sin(timeValue) / 2.0f) + 0.5f;
-
-        // glm::mat4 trans = glm::mat4(1.0f);
-        // trans = glm::rotate(trans, (float)timeValue, glm::vec3(0.0f, 0.0f, 1.0f));
-
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -0.0005f));
-
-        shader.setUniform("ourColor", 0.0f, greenValue, 0.0f, 1.0f);
-
-        // shader.setUniform("transform", trans);
-
-        shader.setUniform("model", model);
-        shader.setUniform("view", view);
-        shader.setUniform("projection", projection);
+        view = camera.getViewMatrix();
+        input.endUpdate();
 
         glBindVertexArray(VAO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-
-        // glDrawArrays(GL_TRIANGLES, 0, 3);   // glDrawArrays will read data from the currently bound VAO
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
 
         // 绘制模型
         model_test.setModel(model);
@@ -487,11 +470,14 @@ int main() {
         // 天空盒渲染完成
         
         window.swapBuffers();
-        glfwPollEvents();
+        last_frame = curr_frame;
+        curr_frame = glfwGetTime();
     }
 
+    std::cout << "Average frame time: " << delta_time_sum / frame_count << " s" << std::endl;
+    std::cout << "Average FPS: " << 1.0f / (delta_time_sum / frame_count) << std::endl;
+
     glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
 
     return 0;
 }
