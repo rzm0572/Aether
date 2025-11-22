@@ -1,6 +1,6 @@
 #include "utils/macros.h"
 #include "utils/path_handler.h"
-#include "shader.h"
+#include "resource/shader.h"
 #include "window.h"
 #include <iostream>
 #include <cmath>
@@ -39,7 +39,9 @@ int main() {
     const unsigned int SCR_WIDTH = 800;
     const unsigned int SCR_HEIGHT = 600;
 
-    Window window(SCR_WIDTH, SCR_HEIGHT, "Triangle", [](GLFWwindow* window, int width, int height) {
+    Window window(SCR_WIDTH, SCR_HEIGHT, "Triangle");
+    
+    window.setFramebufferSizeCallback([](GLFWwindow* window, int width, int height) {
         glViewport(0, 0, width, height);
     });
 
@@ -52,7 +54,7 @@ int main() {
 
     ShaderManager shaderManager;
     shaderManager.registerShader("trans", getShaderPath("trans.vert"), getShaderPath("trans.frag"));
-    const auto& shader = shaderManager.getShader("trans");
+    auto shader = shaderManager.getShader("trans");
 
     unsigned int VAO, VBO, EBO;
     // Generate vertex array object and vertex buffer object
@@ -93,7 +95,7 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        shader.useShader();
+        shader->useShader();
 
         float timeValue = glfwGetTime();
         float greenValue = (std::sin(timeValue) / 2.0f) + 0.5f;
@@ -103,13 +105,13 @@ int main() {
 
         view = glm::translate(view, glm::vec3(0.0f, 0.0f, -0.05f));
 
-        shader.setUniform("ourColor", 0.0f, greenValue, 0.0f, 1.0f);
+        shader->setUniform("ourColor", 0.0f, greenValue, 0.0f, 1.0f);
 
         // shader.setUniform("transform", trans);
 
-        shader.setUniform("model", model);
-        shader.setUniform("view", view);
-        shader.setUniform("projection", projection);
+        shader->setUniform("model", model);
+        shader->setUniform("view", view);
+        shader->setUniform("projection", projection);
 
         glBindVertexArray(VAO);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);

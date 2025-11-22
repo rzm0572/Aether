@@ -13,6 +13,12 @@
 #define OPENGL_VERSION_MAJOR 4
 #define OPENGL_VERSION_MINOR 1
 
+#define INVALID_VAO 0
+#define INVALID_VBO 0
+#define INVALID_EBO 0
+
+#define INVALID_MATERIAL 0xFFFFFFFF
+
 inline GLenum glCheckError_(const char* file, int line) {
     GLenum error_code;
     bool has_error = false;

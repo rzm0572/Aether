@@ -7,9 +7,13 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <unordered_map>
+#include "utils/path_handler.h"
 
 using ShaderProgramID = unsigned int;
 
+// Shader class
+// Load and hold a shader program from vertex and fragment shader source files
+// Provides methods to set uniform variables and use the shader program
 class Shader {
 public:
     Shader(): ID(0) {}
@@ -43,6 +47,12 @@ public:
 
     void useShader() const;
 
+    // Set a uniform variable with certain value
+    // Example usage:
+    // shader.setUniform("hasTexture", true);
+    // shader.setUniform("color", 1.0f, 1.0f, 1.0f, 1.0f);
+    // shader.setUniform("color", glm::vec4(1.0f));
+    // shader.setUniform("model", glm::mat4(1.0f));
     template<typename T, typename... Args>
     bool setUniform(const std::string& name, T x, Args... args) const {
         constexpr int count = 1 + sizeof...(args);
@@ -105,6 +115,10 @@ public:
         return true;
     }
 
+    const std::string toString() const {
+        return "Shader(ID: " + std::to_string(ID) + ")";
+    }
+
 private:
     unsigned int setVertexShader(const char* vertex_shader_source);
     unsigned int setFragmentShader(const char* fragment_shader_source);
@@ -115,19 +129,37 @@ private:
     friend class ShaderManager;
 };
 
+// Shader manager class
+// Load and manage multiple shader programs
+// Provides methods to get a shader program by name or ID, and to register new shader programs
 class ShaderManager {
 public:
     ShaderManager() = default;
     ~ShaderManager() = default;
 
-    const Shader& getShader(ShaderProgramID id) {
-        return shaders_[id];
+    ShaderManager(const ShaderManager&) = delete;
+    ShaderManager& operator=(const ShaderManager&) = delete;
+
+    void init() {
+        registerShader("default", getShaderPath("trans.vert"), getShaderPath("trans.frag"));
     }
 
-    const Shader& getShader(const std::string& name) {
-        return *shader_registry_.at(name);
+    void clear() {
+        shaders_.clear();
+        shader_registry_.clear();
     }
 
+    // Get a shader program by ID
+    const Shader* getShader(ShaderProgramID id) {
+        return &shaders_[id];
+    }
+
+    // Get a shader program by name
+    const Shader* getShader(const std::string& name) {
+        return shader_registry_.at(name);
+    }
+
+    // Register a new shader program with a given name and shader source files
     void registerShader(std::string name, const char* vertex_shader_path, const char* fragment_shader_path) {
         Shader shader(vertex_shader_path, fragment_shader_path);
         ShaderProgramID id = shader.ID;
@@ -141,5 +173,5 @@ public:
 
 private:
     std::unordered_map<ShaderProgramID, Shader> shaders_;
-    std::unordered_map<std::string, Shader*> shader_registry_;
+    std::unordered_map<std::string, const Shader*> shader_registry_;
 };

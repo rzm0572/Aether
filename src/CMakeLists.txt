@@ -51,21 +51,20 @@ endfunction()
 
 set(
     AETHER_LIBS
-    lib/shader.cpp
-    lib/skybox.cpp
+    resource/shader.cpp
+    resource/material.cpp
+    world/skybox.cpp
 )
 
 # -------------------------------------------------------------------------------
 # Add executables here
 
-add_opengl_executable(test_opengl "test.cpp")
-add_opengl_executable(retangle "${AETHER_LIBS};retangle.cpp")
 add_opengl_executable(main "${AETHER_LIBS};main.cpp")
 
 # -------------------------------------------------------------------------------
 # Install executables here
 
 install(
-    TARGETS test_opengl retangle main
+    TARGETS main
     RUNTIME DESTINATION .
 )

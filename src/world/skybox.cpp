@@ -1,10 +1,13 @@
-#include "Skybox.h"
-#include <iostream>
-#include <glad/glad.h> // 或 glew.h，根据你的项目
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h" // 确保路径正确
-#include "shader.h"
+#include "world/skybox.h"
+#include "service/service_locator.h"
+#include "resource/shader.h"
 #include "utils/path_handler.h"
+
+#include <iostream>
+#include <glad/glad.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
 
 
 class Skybox::CubemapTexture{
@@ -70,6 +73,7 @@ public:
      */
     bool Load()
     {                                                     // 导入图片作为天空盒的纹理特征，会读取6张图片，上传到GPU
+        stbi_set_flip_vertically_on_load(false);
         glGenTextures(1, &m_textureObj);                  // 生成纹理对象
         glBindTexture(GL_TEXTURE_CUBE_MAP, m_textureObj); // 绑定纹理对象到 GL_TEXTURE_CUBE_MAP
         GLenum faceTargets[6] = {//应该贴图到哪个面,定义立方体贴图六个面的标准 OpenGL 枚举常量。
@@ -86,7 +90,7 @@ public:
             unsigned char* data = stbi_load(m_fileNames[i].c_str(), &width, &height, &channels, 4);
             
 
-            if (data) {        
+            if (data) {
                 glTexImage2D(faceTargets[i], 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);// 上传到对应面
                 stbi_image_free(data); // 释放CPU内存
             }
@@ -238,8 +242,8 @@ private:
 
 Skybox::Skybox(const std::string &posX, const std::string &negX,
         const std::string &posY, const std::string &negY,
-        const std::string &posZ, const std::string &negZ,
-        ShaderManager *global_shaderManager){
+        const std::string &posZ, const std::string &negZ
+    ){
     // 创建立方体贴图
     cubemap = new CubemapTexture(posX, negX, posY, negY, posZ, negZ);
     if (!cubemap->Load()) {
@@ -248,8 +252,7 @@ Skybox::Skybox(const std::string &posX, const std::string &negX,
 
     mesh = new SkyboxMesh();// 创建天空盒网格
     // 注册天空盒着色器
-    shaderManager=global_shaderManager;
-    shaderManager->registerShader("skybox", getShaderPath("skybox.vert"), getShaderPath("skybox.frag"));
+    ServiceLocator<ShaderManager>::get()->registerShader("skybox", getShaderPath("skybox.vert"), getShaderPath("skybox.frag"));
 
     // 相机默认参数
     cameraPos   = glm::vec3(0.0f, 0.0f, 3.0f);
@@ -264,17 +267,17 @@ void Skybox::Render(){
     glCullFace(GL_FRONT);// 剔除正面（因为我们在盒子内部，要看到内表面）
     glDepthFunc(GL_LEQUAL);// 允许 Z=1 的像素写入（否则会被丢弃）
     // 着色器
-    auto& shader = shaderManager->getShader("skybox");
-    shader.useShader();
+    const auto* shader = ServiceLocator<ShaderManager>::get()->getShader("skybox");
+    shader->useShader();
 
 
     // 构建视图矩阵
     glm::mat4 viewNoTrans = glm::mat4(glm::mat3(view)); // 移除平移分量，因为天空盒应当无视相机位置
     glm::mat4 skyboxView = projection * viewNoTrans;
     // 输入投影矩阵给着色器
-    shader.setUniform("gWVP", skyboxView);
+    shader->setUniform("gWVP", skyboxView);
     cubemap->Bind(GL_TEXTURE0);
-    shader.setUniform("gCubemapTexture", 0);
+    shader->setUniform("gCubemapTexture", 0);
 
     mesh->Render();
 

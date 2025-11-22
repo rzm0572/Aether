@@ -5,6 +5,8 @@
 #include "glm/ext/quaternion_geometric.hpp"
 #include "interaction/input.h"
 
+// Base class for all cameras
+// A camera is responsible for providing a view matrix and a set of methods for controlling the camera's position and orientation
 class Camera {
 public:
     virtual ~Camera() = default;
@@ -14,8 +16,17 @@ public:
     virtual glm::vec3 getUpVec() const = 0;
 };
 
+// -------------------------------------------------------------------------
+// Free camera
+// We can use this camera to move around in a 3D world, as a free observer.
+// -------------------------------------------------------------------------
+
+// Translator for free camera input
+// For keyboard input, we translate W, A, S, D, space and ctrl keys to movement in the camera's forward, left, backward, right, up and down directions, respectively.
+// For mouse input, we just transfer them to FreeCamera class.
 class FreeCameraInputTranslator : public InputTranslator {
 public:
+    // Moving directions
     enum class Movement {
         FORWARD,
         BACKWARD,
@@ -25,12 +36,18 @@ public:
         DOWN,
         _COUNT
     };
+
+    // Use a bitset to store the moving directions that are currently active
     using MovementSet = std::bitset<(size_t)Movement::_COUNT>;
 
     FreeCameraInputTranslator(const Input& input) : InputTranslator(input) {}
     
+    // Get the input from Input class
     MovementSet getKeyInput() const {
         MovementSet result;
+
+        // If a key is pressed, set the corresponding bit in the result
+        // If keys that represent the opposite direction are pressed, we just cancel them out
         if (input_.getKeyPressed(InputKey::W)) {
             result.set((size_t)Movement::FORWARD);
         }
@@ -67,16 +84,24 @@ public:
         return result;
     }
 
+    // Get the mouse input from Input class
     glm::vec2 getMouseInput() const {
         return input_.getMouseMovement();
     }
 };
 
+// 
 class FreeCamera : public Camera {
 public:
-    FreeCamera(glm::vec3 position, glm::vec3 world_up = glm::vec3(0.0f, 1.0f, 0.0f), glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), float speed = 5.0f, float sensitivity = 0.06f) : position_(position), rotation_(rotation), world_up_(world_up), speed_(speed), sensitivity_(sensitivity) {}
+    FreeCamera(glm::vec3 position, glm::vec3 world_up = glm::vec3(0.0f, 1.0f, 0.0f), float pitch = -90.0f, float yaw = 0.0f, float speed = 5.0f, float sensitivity = 0.06f) : position_(position), world_up_(world_up), pitch_(pitch), yaw_(yaw), speed_(speed), sensitivity_(sensitivity) {
+        updateRotation();
+    }
 
+    // Interface implementation
+
+    // Get the view matrix of the camera
     glm::mat4 getViewMatrix() const override {
+        // View = T^(-1) * R^(-1)
         glm::mat4 rotation_matrix = glm::transpose(glm::mat4_cast(rotation_));
         glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), -position_);
         return rotation_matrix * translation_matrix;
@@ -87,15 +112,27 @@ public:
     }
 
     glm::vec3 getRightVec() const override {
+        // right = front x world_up
         return glm::normalize(glm::cross(getFrontVec(), world_up_));
     }
 
     glm::vec3 getUpVec() const override {
+        // up = right x front
         glm::vec3 front = getFrontVec();
         glm::vec3 right = glm::cross(front, world_up_);
         return glm::normalize(glm::cross(right, front));
     }
 
+    // Setters and getters
+    void setSpeed(float speed) {
+        speed_ = speed;
+    }
+
+    void setSensitivity(float sensitivity) {
+        sensitivity_ = sensitivity;
+    }
+
+    // Input processing methods
     void processKeyInput(FreeCameraInputTranslator::MovementSet movement, float delta_time) {
         float dist = speed_ * delta_time;
         glm::vec3 delta_movement = glm::vec3(0.0f);
@@ -135,12 +172,11 @@ public:
             pitch_ = glm::clamp(pitch_, -89.0f, 89.0f);
         }
 
-        glm::quat yaw_rot = glm::angleAxis(glm::radians(yaw_), glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::quat pitch_rot = glm::angleAxis(glm::radians(pitch_), glm::vec3(1.0f, 0.0f, 0.0f));
-
-        rotation_ = glm::normalize(yaw_rot * pitch_rot);
+        updateRotation();
     }
 
+    // Update the camera's position and orientation based on input
+    // This method should be called every rendering frame
     void update(const FreeCameraInputTranslator& input_translator, float delta_time) {
         prev_position_ = position_;
         prev_rotation_ = rotation_;
@@ -156,6 +192,15 @@ public:
     }
 
 private:
+    // Helper methods
+    // Update the camera's rotation based on the current pitch and yaw values
+    void updateRotation() {
+        glm::quat yaw_rot = glm::angleAxis(glm::radians(yaw_), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::quat pitch_rot = glm::angleAxis(glm::radians(pitch_), glm::vec3(1.0f, 0.0f, 0.0f));
+
+        rotation_ = glm::normalize(yaw_rot * pitch_rot);
+    }
+
     static constexpr glm::vec3 DEFAULT_FRONT = glm::vec3(0.0f, 0.0f, -1.0f);
 
     glm::vec3 position_;
@@ -165,9 +210,9 @@ private:
     glm::vec3 prev_position_;
     glm::quat prev_rotation_;
 
-    float pitch_;
-    float yaw_;
+    float pitch_ {0.0f};
+    float yaw_ {-90.0f};
 
-    float speed_;
-    float sensitivity_;
+    float speed_;          // Camera movement speed
+    float sensitivity_;    // Mouse sensitivity
 };

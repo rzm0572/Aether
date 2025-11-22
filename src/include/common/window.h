@@ -7,6 +7,9 @@
 #include <iostream>
 
 namespace {
+    // GLFW context life manager
+    // This class ensures that GLFW is initialized and terminated only once.
+    // The globalInit() function will be called when the program starts and the static object is created, and globalTerminate() when it is destroyed, just before the program exits.
     static class GLFWContext {
     public:
         GLFWContext() {
@@ -43,6 +46,8 @@ namespace {
     } GLFWContextLifeManager;
 }
 
+// This class is a wrapper for GLFW windows
+// It provides a simple way to manage GLFW window pointers and ensure that they are properly initialized and terminated.
 class Window {
 public:
     Window() : m_window_(nullptr) {}
@@ -52,19 +57,19 @@ public:
         }
     }
 
+    // Window is not copyable
     Window(const Window&) = delete;
     Window& operator=(const Window&) = delete;
 
-    Window(int width, int height, const char* title, GLFWframebuffersizefun framebuffer_size_callback) {
-        create(width, height, title, framebuffer_size_callback);
+    Window(int width, int height, const char* title) {
+        create(width, height, title);
     }
 
-    void create(int width, int height, const char* title, GLFWframebuffersizefun framebuffer_size_callback) {
+    void create(int width, int height, const char* title) {
         m_window_ = glfwCreateWindow(width, height, title, nullptr, nullptr);
         if (!m_window_) {
             throw std::runtime_error("Failed to create GLFW window");
         }
-        setFramebufferSizeCallback(framebuffer_size_callback);
     }
 
     void makeCurrent() {

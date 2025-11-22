@@ -1,5 +1,5 @@
 #include <string>
-#include "shader.h"
+#include "resource/shader.h"
 #include <glm/glm.hpp>
 
 /**
@@ -19,7 +19,7 @@
  * @warning 你需要构造天空盒，修改相机、视角等必要参数之后才能合理的绘制天空盒
  * @note 你可以在循环外面定义这个类，然后在渲染循环中实例化并调用它的Render方法，这个类仅暴露了天空盒图片和相机的接口
  * @warning 你需要在每一帧，即每次循环前清除深度  glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); 
- * @example 示例：Skybox skybox(getAssetPath("skybox/right.jpg"), getAssetPath("skybox/left.jpg"), getAssetPath("skybox/top.jpg"), getAssetPath("skybox/bottom.jpg"), getAssetPath("skybox/front.jpg"), getAssetPath("skybox/back.jpg"), &shaderManager);
+ * @example 示例：Skybox skybox(getAssetPath("skybox/right.jpg"), getAssetPath("skybox/left.jpg"), getAssetPath("skybox/top.jpg"), getAssetPath("skybox/bottom.jpg"), getAssetPath("skybox/front.jpg"), getAssetPath("skybox/back.jpg"));
  *              skybox.changeCameraPos(glm::vec3(0.0f, 0.0f, 3.0f)); // 设置相机位置
  *              skybox.changeProjection(glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f)); // 设置投影矩阵
  *              skybox.changeView(glm::lookAt(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f))); // 设置视角矩阵
@@ -37,7 +37,6 @@ public:
      * @param negY 立方体贴图-Y面(下)的纹理文件路径
      * @param posZ 立方体贴图+Z面(前)的纹理文件路径
      * @param negZ 立方体贴图-Z面(后)的纹理文件路径
-     * @param global_shaderManager 全局着色器管理器指针，用于注册天空盒着色器
      *
      *
      * @throws std::runtime_error 如果加载立方体贴图纹理失败
@@ -47,8 +46,7 @@ public:
      */
     Skybox(const std::string &posX, const std::string &negX,
         const std::string &posY, const std::string &negY,
-        const std::string &posZ, const std::string &negZ,
-        ShaderManager *global_shaderManager);
+        const std::string &posZ, const std::string &negZ);
 
     ~Skybox();
 
@@ -126,7 +124,6 @@ private:
     class SkyboxMesh;       // 天空盒网格类，用于绘制天空盒
     CubemapTexture* cubemap;// 天空盒纹理
     SkyboxMesh* mesh;// 天空盒网格
-    ShaderManager* shaderManager;// 天空盒着色器管理器，构造函数中注册shader，需要shader时取出即可
     glm::vec3 cameraPos;// 相机位置
     glm::mat4 projection;// 投影矩阵
     glm::mat4 view;// 视角矩阵

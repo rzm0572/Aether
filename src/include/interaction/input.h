@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <bitset>
 
+// Keyboard keys
 enum class InputKey {
     W, A, S, D,
     H, J, K, L,
@@ -16,6 +17,7 @@ enum class InputKey {
 
 class Input {
 public:
+    // A table mapping GLFW keys to InputKeys
     inline static const struct KeyTable {
         int glfw_key;
         InputKey key;
@@ -34,21 +36,9 @@ public:
     };
 
 public:
+    // Call this function in the main loop to update the input state
     void pollEvents() {
         glfwPollEvents();
-    }
-
-    void setKey(InputKey key, bool is_pressed) {
-        key_[(size_t)key] = is_pressed;
-        // std::cout << key_.to_string() << std::endl;
-    }
-
-    void setMouseMovement(float xpos, float ypos) {
-        if (first_mouse_focus_) {
-            prev_mouse_pos_ = glm::vec2(xpos, ypos);
-            first_mouse_focus_ = false;
-        }
-        mouse_movement_ = glm::vec2(xpos, ypos) - prev_mouse_pos_;
     }
 
     bool getKeyPressed(InputKey key) const {
@@ -63,6 +53,7 @@ public:
         return mouse_movement_;
     }
 
+    // After all logic which uses the input state in the gameloop has been executed, call this function to update the previous state
     void endUpdate() {
         prev_key_ = key_;
         prev_mouse_pos_ += mouse_movement_;
@@ -78,6 +69,7 @@ public:
         return InputKey::_COUNT;
     }
 
+    // Keyboard callback function
     static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode) {
         Input* input = static_cast<Input*>(glfwGetWindowUserPointer(window));
         if (!input) {
@@ -96,6 +88,7 @@ public:
         input->setKey(key_enum, pressed);
     }
 
+    // Mouse cursor callback function
     static void mouseCallback(GLFWwindow* window, double xpos, double ypos) {
         Input* input = static_cast<Input*>(glfwGetWindowUserPointer(window));
         if (!input) {
@@ -106,6 +99,23 @@ public:
     }
 
 private:
+    // Set the state of a key
+    // Used in keyboard callback function
+    void setKey(InputKey key, bool is_pressed) {
+        key_[(size_t)key] = is_pressed;
+    }
+
+    // Set the mouse movement
+    // Used in mouse cursor callback function
+    void setMouseMovement(float xpos, float ypos) {
+        if (first_mouse_focus_) {
+            prev_mouse_pos_ = glm::vec2(xpos, ypos);
+            first_mouse_focus_ = false;
+        }
+        mouse_movement_ = glm::vec2(xpos, ypos) - prev_mouse_pos_;
+    }
+
+private:
     std::bitset<(size_t)InputKey::_COUNT> key_;
     std::bitset<(size_t)InputKey::_COUNT> prev_key_;
     glm::vec2 prev_mouse_pos_;
@@ -113,6 +123,9 @@ private:
     bool first_mouse_focus_ = false;
 };
 
+// Base class for input translators
+// Input translators translate raw input from the input system to higher-level actions.
+// We can set keyboard mappings in this class.
 class InputTranslator {
 public:
     InputTranslator(const Input& input) : input_(input) {}
