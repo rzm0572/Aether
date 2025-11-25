@@ -62,6 +62,10 @@ public:
         return success;
     }
 
+    const Mesh* getMesh(unsigned int index) {
+        return &meshes_[index];
+    }
+
     // ! [will be deprecated] 渲染工作在之后会被移到 Renderer 类中统一实现，模型作为资源层不参与渲染
     // ! 之后将会由 GameObject 持有 TransformComponent 和 RenderComponent, TransformComponent 记录 GameObject 的层级关系，RenderComponent 持有指向 Mesh 和 Material 的指针，然后由 Renderer 读取并渲染
     // Render the model
