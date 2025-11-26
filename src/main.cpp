@@ -132,6 +132,7 @@ int main() {
         model_test.setCamPos(camera.getPosition());
         model_test.setLightColor(glm::vec3(1.0f, 1.0f, 1.0f));// TODO：光照颜色有待实现，暂时用白色代替
         model_test.setLightDir(glm::vec3(0.0f, 1.0f, 1.0f));// TODO: 光照方向有待实现，暂时用物体指向天空
+        model_test.setAmbientColor(glm::vec3(0.5, 0.75, 1.0));// TODO: 环境光颜色有待实现，暂时用天蓝色代替
         model_test.render();
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 显示线框
 

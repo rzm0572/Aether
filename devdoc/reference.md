@@ -23,4 +23,4 @@
    - [基于物理的实时渲染 -- PBR](https://blog.csdn.net/gghhb12/article/details/136985256)
    4. 实现环境光
    - [LearnOpenGL 基础光照](https://learnopengl-cn.github.io/02%20Lighting/02%20Basic%20Lighting/)
-   - 
+   - [一步步学OpenGL(17) -《环境光》 - Kam92.J的文章 - 知乎](https://zhuanlan.zhihu.com/p/148988756)

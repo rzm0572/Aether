@@ -23,8 +23,8 @@ uniform vec3 lightDir;   // 太阳光方向
 uniform vec3 lightColor; // 太阳光颜色
 uniform vec3 camPos;     // 相机位置
 
-// TODO: 天空盒采样生成环境光
-uniform vec3 ambientLight = vec3(0.5, 0.75, 1.0); // 蓝灰色天空
+//环境光，外界输入
+uniform vec3 ambientLight; 
 
 void main() {
     // 获取不包含任何效果的基础颜色

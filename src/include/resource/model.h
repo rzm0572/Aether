@@ -89,6 +89,7 @@ public:
         shader->setUniform("camPos", camPos);
         shader->setUniform("lightDir", lightDir);
         shader->setUniform("lightColor", lightColor);
+        shader->setUniform("ambientLight", ambientColor);
 
         for (unsigned int i = 0; i < meshes_.size(); ++i) {
             glBindBuffer(GL_ARRAY_BUFFER, meshes_[i].VBO_);
@@ -136,6 +137,9 @@ public:
     }
     void setLightColor(glm::vec3 lightColor){
         this->lightColor = lightColor;
+    }
+    void setAmbientColor(glm::vec3 ambientColor){
+        this->ambientColor = ambientColor;
     }
 
     const std::string toString() const {
@@ -252,4 +256,5 @@ private:
     glm::vec3 camPos;// 相机位置
     glm::vec3 lightDir;   // 光照方向（归一化）
     glm::vec3 lightColor; // 光照颜色
+    glm::vec3 ambientColor; // 环境光颜色
 };
