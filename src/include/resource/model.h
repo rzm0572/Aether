@@ -20,6 +20,9 @@
 // Model class
 // Provide a high-level interface for loading 3D models from file
 // Model class holds the ownership of meshes. For materials, it only holds the shared_ptr to material objects, which are holded by MaterialManager.
+/**
+ * @warning: 请务必注意设置好包括相机、视角、光照信息等所有的条件
+*/
 class Model {
 public:
     Model() {
@@ -82,6 +85,10 @@ public:
         shader->setUniform("view", view);
         shader->setUniform("projection", projection);
         shader->setUniform("ourTexture", 0);
+        // 光照所需的输入
+        shader->setUniform("camPos", camPos);
+        shader->setUniform("lightDir", lightDir);
+        shader->setUniform("lightColor", lightColor);
 
         for (unsigned int i = 0; i < meshes_.size(); ++i) {
             glBindBuffer(GL_ARRAY_BUFFER, meshes_[i].VBO_);
@@ -119,6 +126,16 @@ public:
     }
     void setProjection(glm::mat4 projection){
         this->projection = projection;
+    }
+
+    void setCamPos(glm::vec3 camPos){
+        this->camPos = camPos;
+    }
+    void setLightDir(glm::vec3 lightDir){
+        this->lightDir = lightDir;
+    }
+    void setLightColor(glm::vec3 lightColor){
+        this->lightColor = lightColor;
     }
 
     const std::string toString() const {
@@ -226,7 +243,13 @@ private:
     std::vector<Mesh> meshes_;
     std::vector<std::shared_ptr<Material>> default_materials_;
 
+    // 对点做变换适合位置和相机
     glm::mat4 model;
     glm::mat4 view;
     glm::mat4 projection;
+
+    // 光照和相机位置用于处理光照
+    glm::vec3 camPos;// 相机位置
+    glm::vec3 lightDir;   // 光照方向（归一化）
+    glm::vec3 lightColor; // 光照颜色
 };

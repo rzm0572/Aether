@@ -15,6 +15,10 @@ bool Material::loadMaterial(const aiMaterial* material, const std::filesystem::p
 
     textures_.resize((size_t)TextureType::_COUNT);
     base_colors_.resize((size_t)TextureType::_COUNT, glm::vec4(1.0f));
+    metallic_.resize((size_t)TextureType::_COUNT, 0.0f);
+    roughness_.resize((size_t)TextureType::_COUNT, 0.5f);
+    specular_.resize((size_t)TextureType::_COUNT, 0.35f);
+    specularColor_.resize((size_t)TextureType::_COUNT, glm::vec3(1.0f));
 
     // Load texture for each texture slot
     for (size_t i = 0; i < (size_t)TextureType::_COUNT; ++i) {
@@ -51,6 +55,29 @@ bool Material::loadMaterial(const aiMaterial* material, const std::filesystem::p
             base_color = aiColor4D(1.0f, 1.0f, 1.0f, 1.0f);
         }
         base_colors_[i] = glm::vec4(base_color.r, base_color.g, base_color.b, base_color.a);
+        // 导入金属度
+        float metallic = 0.0f;// 默认金属度，因为战机和导弹有涂装，地形显然不是金属
+        if (AI_SUCCESS == material->Get(AI_MATKEY_METALLIC_FACTOR, metallic)) {
+            
+        }
+        metallic_[i] = metallic;
+        // 导入粗糙度
+        float roughness = 0.5f;// 0.5 的粗糙度适合大部分模型
+        if (AI_SUCCESS == material->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness)) {
+            
+        }
+        roughness_[i] = roughness;
+        // 导入镜面度
+        float specular = 0.35f;
+        if (AI_SUCCESS == material->Get(AI_MATKEY_SPECULAR_FACTOR, specular)) {
+            // 镜面反射系数，默认 0.35
+        }
+        specular_[i] = specular;
+        aiColor3D specularColor = aiColor3D(1.0f, 1.0f, 1.0f);
+        if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_SPECULAR, specularColor)) {
+        
+        }
+        specularColor_[i] = glm::vec3(specularColor.r, specularColor.g, specularColor.b);
     }
 
     return true;
@@ -71,6 +98,10 @@ void Material::apply(TextureType type, int textureUnit) {
     //     auto texture_manager = ServiceLocator<TextureManager>::get();
     //     texture_manager->getDefaultTexture()->Bind(textureUnit);
     // }
+    shader_->setUniform("metallicFactor", metallic_[(size_t)type]);// 金属度输入着色器
+    shader_->setUniform("roughnessFactor", roughness_[(size_t)type]);// 粗糙度输入着色器
+    // shader_->setUniform("specularFactor", specular_[(size_t)type]);// 镜面反射系数输入着色器
+    // shader_->setUniform("specularColorFactor", specularColor_[(size_t)type]);// 镜面颜色输入着色器
 }
 
 // Set shader program for this material

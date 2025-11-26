@@ -85,6 +85,10 @@ private:
     bool has_texture_[(size_t)TextureType::_COUNT] { false };
     std::vector<std::shared_ptr<const Texture> > textures_;
     std::vector<glm::vec4> base_colors_;    // base color for each texture slot
+    std::vector<float> metallic_; // 每个材质的金属度
+    std::vector<float> roughness_; // 每个材质的粗糙度
+    std::vector<float> specular_; // 每个材质的高光系数
+    std::vector<glm::vec3> specularColor_;// 每个材质的高光颜色
 };
 
 

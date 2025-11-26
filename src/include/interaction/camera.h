@@ -14,6 +14,7 @@ public:
     virtual glm::vec3 getFrontVec() const = 0;
     virtual glm::vec3 getRightVec() const = 0;
     virtual glm::vec3 getUpVec() const = 0;
+    virtual glm::vec3 getPosition() const = 0;
 };
 
 // -------------------------------------------------------------------------
@@ -121,6 +122,9 @@ public:
         glm::vec3 front = getFrontVec();
         glm::vec3 right = glm::cross(front, world_up_);
         return glm::normalize(glm::cross(right, front));
+    }
+    glm::vec3 getPosition() const override {
+        return position_;
     }
 
     // Setters and getters
