@@ -4,6 +4,7 @@
 #include "service/service_locator.h"
 #include "utils/macros.h"
 #include "utils/path_handler.h"
+#include "utils/profiler.h"
 #include "common/window.h"
 #include "world/skybox.h"
 #include "interaction/input.h"
@@ -115,6 +116,7 @@ int main() {
     );
 
     // std::cout << "Model loaded: " << model_test.toString() << std::endl;
+    // std::cout << model_test.outputModelTree();
 
     // 开启深度测试
     glEnable(GL_DEPTH_TEST);
@@ -126,8 +128,12 @@ int main() {
     float delta_time_sum = 0.0f;
     int frame_count = 0;
 
+    // Game loop
     while (!window.shouldClose()) {
+        Profiler::instance().get_timer("io").start_clock();
         input.pollEvents();
+        Profiler::instance().get_timer("io").end_clock();
+
         if (input.getKeyPressed(InputKey::ESC)) {
             window.setWindowShouldClose();
         }
@@ -136,15 +142,18 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); 
 
         // Logical frame
+        Profiler::instance().get_timer("logical").start_clock();
         camera.update(translator, curr_frame - last_frame);
         delta_time_sum += curr_frame - last_frame;
         frame_count++;
 
         view = camera.getViewMatrix();
         input.endUpdate();
+        Profiler::instance().get_timer("logical").end_clock();
 
         // Render frame
         // TODO: 逻辑帧与渲染帧分离，渲染采用插值算法，提高帧率
+        Profiler::instance().get_timer("render").start_clock();
         renderer.submit_recursive(plane);
         renderer.render(view, projection, light);
 
@@ -156,14 +165,20 @@ int main() {
         skybox.changeProjection(projection);
         skybox.changeView(view);
         skybox.Render();
-        
+
+        Profiler::instance().get_timer("render").end_clock();
+
+        Profiler::instance().get_timer("swap").start_clock();
         window.swapBuffers();
+        Profiler::instance().get_timer("swap").end_clock();
+
         last_frame = curr_frame;
         curr_frame = glfwGetTime();
     }
 
-    std::cout << "Average frame time: " << delta_time_sum / frame_count << " s" << std::endl;
-    std::cout << "Average FPS: " << 1.0f / (delta_time_sum / frame_count) << std::endl;
+    std::cout << "Average frame time: " CYAN << delta_time_sum / frame_count << " s" RESET << std::endl;
+    std::cout << "Average FPS: " CYAN << 1.0f / (delta_time_sum / frame_count) << RESET << std::endl;
+    Profiler::instance().report();
 
     return 0;
 }
