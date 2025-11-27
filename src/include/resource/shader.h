@@ -119,6 +119,10 @@ public:
         return "Shader(ID: " + std::to_string(ID) + ")";
     }
 
+    unsigned int getShaderID() const {
+        return ID;
+    }
+
 private:
     unsigned int setVertexShader(const char* vertex_shader_source);
     unsigned int setFragmentShader(const char* fragment_shader_source);
@@ -157,6 +161,14 @@ public:
     // Get a shader program by name
     const Shader* getShader(const std::string& name) {
         return shader_registry_.at(name);
+    }
+
+    const Shader* useShader(const std::string& name) {
+        auto shader = getShader(name);
+        if (shader != nullptr) {
+            shader->useShader();
+        }
+        return shader;
     }
 
     // Register a new shader program with a given name and shader source files

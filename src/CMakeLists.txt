@@ -51,6 +51,7 @@ endfunction()
 
 set(
     AETHER_LIBS
+    component/transform.cpp
     resource/shader.cpp
     resource/material.cpp
     world/skybox.cpp

@@ -16,6 +16,14 @@
 #include "resource/shader.h"
 #include "service/service_locator.h"
 #include "utils/macros.h"
+#include "world/light.h"
+
+struct ModelNode {
+    std::string name;
+    glm::mat4 local_transform;
+    std::vector<unsigned int> meshes;
+    std::vector<ModelNode> children;
+};
 
 // Model class
 // Provide a high-level interface for loading 3D models from file
@@ -24,13 +32,7 @@
  * @warning: 请务必注意设置好包括相机、视角、光照信息等所有的条件
 */
 class Model {
-public:
-    struct ModelNode {
-        std::string name;
-        glm::mat4 local_transform;
-        std::vector<unsigned int> meshes;
-        std::vector<ModelNode> children;
-    };
+    friend class GameObject;
 
 public:
     Model() {
@@ -78,54 +80,19 @@ public:
     // ! [will be deprecated] 渲染工作在之后会被移到 Renderer 类中统一实现，模型作为资源层不参与渲染
     // ! 之后将会由 GameObject 持有 TransformComponent 和 RenderComponent, TransformComponent 记录 GameObject 的层级关系，RenderComponent 持有指向 Mesh 和 Material 的指针，然后由 Renderer 读取并渲染
     // Render the model
-    void render() const {
+    void render(glm::mat4 model, glm::mat4 view, glm::mat4 projection, const Light& light) const {
         glBindVertexArray(VAO_);
 
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-        glEnableVertexAttribArray(2);
-
-        auto shader = ServiceLocator<ShaderManager>::get()->getShader("model");
-        shader->useShader();
+        auto shader = ServiceLocator<ShaderManager>::get()->useShader("model");
         shader->setUniform("view", view);
         shader->setUniform("projection", projection);
         shader->setUniform("ourTexture", 0);
         // 光照所需的输入
-        shader->setUniform("camPos", camPos);
-        shader->setUniform("lightDir", lightDir);
-        shader->setUniform("lightColor", lightColor);
-        shader->setUniform("ambientLight", ambientColor);
+        light.use(shader);
 
         renderModelTree(shader, root_node_, model);
 
-        glDisableVertexAttribArray(0);
-        glDisableVertexAttribArray(1);
-        glDisableVertexAttribArray(2);
-
         glBindVertexArray(INVALID_VAO);
-    }
-
-    void setModel(glm::mat4 model){
-        this->model = model;
-    }
-    void setView(glm::mat4 view){
-        this->view = view;
-    }
-    void setProjection(glm::mat4 projection){
-        this->projection = projection;
-    }
-
-    void setCamPos(glm::vec3 camPos){
-        this->camPos = camPos;
-    }
-    void setLightDir(glm::vec3 lightDir){
-        this->lightDir = lightDir;
-    }
-    void setLightColor(glm::vec3 lightColor){
-        this->lightColor = lightColor;
-    }
-    void setAmbientColor(glm::vec3 ambientColor){
-        this->ambientColor = ambientColor;
     }
 
     const std::string toString() const {
@@ -166,15 +133,63 @@ public:
     }
 
 private:
+    // Allocate GPU resources for rendering
+    void allocGPU(std::vector<Vertex>& vertices, std::vector<vIndex>& indices) {
+        releaseGPU();
+
+        glBindVertexArray(VAO_);
+
+        glGenBuffers(1, &VBO_);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO_);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+
+        glGenBuffers(1, &EBO_);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(vIndex), indices.data(), GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
+        glEnableVertexAttribArray(2);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, Position));
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, TexCoords));
+        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, Normal));
+
+        glBindVertexArray(INVALID_VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, INVALID_VBO);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, INVALID_EBO);
+    }
+
+    // Release GPU resources
+    void releaseGPU() {
+        glDisableVertexAttribArray(0);
+        glDisableVertexAttribArray(1);
+        glDisableVertexAttribArray(2);
+        if (glIsBuffer(VBO_)) {
+            glDeleteBuffers(1, &VBO_);
+            VBO_ = INVALID_VBO;
+        }
+        if (glIsBuffer(EBO_)) {
+            glDeleteBuffers(1, &EBO_);
+            EBO_ = INVALID_EBO;
+        }
+    }
+
     bool initFromScene(const aiScene* scene, const std::filesystem::path& directory) {
         meshes_.resize(scene->mNumMeshes);
         default_materials_.resize(scene->mNumMaterials);
 
-        glBindVertexArray(VAO_);
+        std::vector<Vertex> global_vertices;
+        std::vector<vIndex> global_indices;
+
         for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
             const aiMesh* mesh = scene->mMeshes[i];
-            initMesh(i, mesh);
+            initMesh(i, mesh, global_vertices, global_indices);
         }
+
+        std::cout << "Loaded " << global_vertices.size() << " vertices and " << global_indices.size() << " indices" << std::endl;
+
+        allocGPU(global_vertices, global_indices);
 
         for (unsigned int i = 0; i < scene->mNumMaterials; ++i) {
             const aiMaterial* material = scene->mMaterials[i];
@@ -187,9 +202,11 @@ private:
     }
 
     // 根据 Assimp 网格数据初始化模型中的网格
-    void initMesh(unsigned int index, const aiMesh* ai_mesh) {
+    void initMesh(unsigned int index, const aiMesh* ai_mesh, std::vector<Vertex>& global_vertices, std::vector<vIndex>& global_indices) {
         meshes_[index].material_index_ = ai_mesh->mMaterialIndex;
-        
+
+        unsigned int vertex_offset = (unsigned int)global_vertices.size();
+        size_t index_offset = global_indices.size();
         std::string mesh_name = ai_mesh->mName.C_Str();
         std::vector<Vertex> vertices;
         std::vector<vIndex> indices;
@@ -219,8 +236,13 @@ private:
             indices.push_back(face.mIndices[2]);
         }
 
+        global_vertices.insert(global_vertices.end(), vertices.begin(), vertices.end());
+        for (auto index : indices) {
+            global_indices.push_back(index + vertex_offset);
+        }
+
         // 使用转换后的顶点和索引数据初始化模型中的网格对象
-        meshes_[index].initMesh(mesh_name, vertices, indices);
+        meshes_[index].initMesh(mesh_name, vertices, indices, index_offset);
         mesh_map_[mesh_name] = &meshes_[index];
     }
 
@@ -238,9 +260,7 @@ private:
     }
 
     void destroyModel() {
-        for (auto& mesh : meshes_) {
-            mesh.releaseGPU();
-        }
+        releaseGPU();
         meshes_.clear();
         default_materials_.clear();
     }
@@ -259,20 +279,13 @@ private:
     void renderModelNode(const Shader* shader, const ModelNode& node, const glm::mat4& global_transform) const {
         shader->setUniform("model", global_transform);
         for (unsigned int mesh_index : node.meshes) {
-            glBindBuffer(GL_ARRAY_BUFFER, meshes_[mesh_index].VBO_);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, Position));
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, TexCoords));
-            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, Normal));
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshes_[mesh_index].EBO_);
-
             const unsigned int material_index = meshes_[mesh_index].material_index_;
 
             if (material_index < default_materials_.size()) {
                 auto material = default_materials_[material_index];
                 if (material) {
                     // std::cout << "Applying " << material->toString() << " to " << meshes_[i].toString() << std::endl;
-                    material->apply(TextureType::kDIFFUSE, GL_TEXTURE0);
+                    material->apply();
                 }
             }
 
@@ -291,21 +304,12 @@ private:
 private:
     static constexpr unsigned int UV_CHANNEL_DIFFUSE = 0;
 
-    GLuint VAO_;
+    GLuint VAO_ {INVALID_VAO};
+    GLuint VBO_ {INVALID_VBO};
+    GLuint EBO_ {INVALID_EBO};
     std::vector<Mesh> meshes_;
     std::vector<std::shared_ptr<Material>> default_materials_;
 
     std::unordered_map<std::string, const Mesh*> mesh_map_;
-    ModelNode root_node_;    
-
-    // 对点做变换适合位置和相机
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 projection;
-
-    // 光照和相机位置用于处理光照
-    glm::vec3 camPos;// 相机位置
-    glm::vec3 lightDir;   // 光照方向（归一化）
-    glm::vec3 lightColor; // 光照颜色
-    glm::vec3 ambientColor; // 环境光颜色
+    ModelNode root_node_;
 };

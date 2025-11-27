@@ -267,8 +267,7 @@ void Skybox::Render(){
     glCullFace(GL_FRONT);// 剔除正面（因为我们在盒子内部，要看到内表面）
     glDepthFunc(GL_LEQUAL);// 允许 Z=1 的像素写入（否则会被丢弃）
     // 着色器
-    const auto* shader = ServiceLocator<ShaderManager>::get()->getShader("skybox");
-    shader->useShader();
+    const auto* shader = ServiceLocator<ShaderManager>::get()->useShader("skybox");
 
 
     // 构建视图矩阵

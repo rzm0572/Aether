@@ -1,3 +1,5 @@
+#include "common/game_object.h"
+#include "common/renderer.h"
 #include "resource/shader.h"
 #include "service/service_locator.h"
 #include "utils/macros.h"
@@ -90,12 +92,27 @@ int main() {
     assert(shader_manager);
     shader_manager->registerShader("model", getShaderPath("models.vert"), getShaderPath("models.frag"));
 
+    Renderer renderer;
+
     // 加载模型
     Model model_test;
     if (!model_test.loadModel(getAssetPath("models/j10/scene.gltf"))) {
         std::cerr << "Failed to load model!" << std::endl;
         return -1;
     }
+
+    // Create a demo plane
+    GameObject* plane = GameObject::createFromModel(model_test);
+
+    // Light settings
+    auto light = Light(
+        &camera,
+        glm::vec3(0.5f, 0.75f, 1.0f),     // TODO: 环境光颜色有待实现，暂时用天蓝色代替
+        {
+            glm::vec3(0.0f, 1.0f, 1.0f),      // TODO: 光照方向有待实现，暂时用物体指向天空
+            glm::vec3(1.0f, 1.0f, 1.0f),    // TODO：光照颜色有待实现，暂时用白色代替
+        }
+    );
 
     // std::cout << "Model loaded: " << model_test.toString() << std::endl;
 
@@ -118,6 +135,7 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); 
 
+        // Logical frame
         camera.update(translator, curr_frame - last_frame);
         delta_time_sum += curr_frame - last_frame;
         frame_count++;
@@ -125,15 +143,13 @@ int main() {
         view = camera.getViewMatrix();
         input.endUpdate();
 
-        // 绘制模型
-        model_test.setModel(model);
-        model_test.setView(view);
-        model_test.setProjection(projection);
-        model_test.setCamPos(camera.getPosition());
-        model_test.setLightColor(glm::vec3(1.0f, 1.0f, 1.0f));// TODO：光照颜色有待实现，暂时用白色代替
-        model_test.setLightDir(glm::vec3(0.0f, 1.0f, 1.0f));// TODO: 光照方向有待实现，暂时用物体指向天空
-        model_test.setAmbientColor(glm::vec3(0.5, 0.75, 1.0));// TODO: 环境光颜色有待实现，暂时用天蓝色代替
-        model_test.render();
+        // Render frame
+        // TODO: 逻辑帧与渲染帧分离，渲染采用插值算法，提高帧率
+        renderer.submit_recursive(plane);
+        renderer.render(view, projection, light);
+
+        // 预览模型
+        // model_test.render(model, view, projection, light);
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 显示线框
 
         // 渲染天空盒（在其他物体之后渲染以优化性能）
