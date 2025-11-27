@@ -22,22 +22,34 @@ public:
     glm::mat4 getLocalModelMatrix();
     glm::mat4 getGlobalModelMatrix();
 
+    glm::vec3 getPosition() const {
+        return position_;
+    }
+
+    glm::quat getRotation() const {
+        return rotation_;
+    }
+
+    glm::vec3 getScale() const {
+        return scale_;
+    }
+
     void setPosition(glm::vec3 position) {
         position_ = position;
         local_dirty_ = true;
-        global_dirty_ = true;
+        markGlobalDirty();
     }
 
     void setRotation(glm::quat rotation) {
         rotation_ = rotation;
         local_dirty_ = true;
-        global_dirty_ = true;
+        markGlobalDirty();
     }
 
     void setScale(glm::vec3 scale) {
         scale_ = scale;
         local_dirty_ = true;
-        global_dirty_ = true;
+        markGlobalDirty();
     }
 
     void setlocalModelMatrix(const glm::mat4& local_model_matrix) {
@@ -46,7 +58,13 @@ public:
         glm::decompose(local_model_matrix, scale_, rotation_, position_, skew, perspective);
         local_cache_ = local_model_matrix;
         local_dirty_ = false;
-        global_dirty_ = true;
+        markGlobalDirty();
+    }
+
+    void translate(glm::vec3 translation) {
+        position_ += translation;
+        local_dirty_ = true;
+        markGlobalDirty();
     }
 
     void setParent(GameObject* parent, GameObject* owner);

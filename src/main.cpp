@@ -148,6 +148,9 @@ int main() {
         frame_count++;
 
         view = camera.getViewMatrix();
+
+        plane->getTransformComponent().translate(glm::vec3(0.04f, 0.0f, 0.0f));
+
         input.endUpdate();
         Profiler::instance().get_timer("logical").end_clock();
 
