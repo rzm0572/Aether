@@ -25,6 +25,14 @@
 */
 class Model {
 public:
+    struct ModelNode {
+        std::string name;
+        glm::mat4 local_transform;
+        std::vector<unsigned int> meshes;
+        std::vector<ModelNode> children;
+    };
+
+public:
     Model() {
         glGenVertexArrays(1, &VAO_);
     }
@@ -50,10 +58,8 @@ public:
             aiProcess_Triangulate |         // 所有多边形转成三角形
             aiProcess_GenSmoothNormals |            // 自动生成平滑法线
             aiProcess_FlipUVs |                     // 翻转 UV（适配 OpenGL）
-            aiProcess_JoinIdenticalVertices |       // 合并重复顶点，节省内存
-            aiProcess_PreTransformVertices          // 预先对顶点进行变换，刚体模型的gltf文件必须要增加，可以将几组部件自动计算后组合
+            aiProcess_JoinIdenticalVertices       // 合并重复顶点，节省内存
         );
-        // ! [will be deprecated] aiProcess_PreTransformVertices 将会被移除，以适配之后要实现的 GameObject 的层级关系
 
         if (scene && scene->HasMeshes()) {
             std::filesystem::path path(filepath);
@@ -81,7 +87,6 @@ public:
 
         auto shader = ServiceLocator<ShaderManager>::get()->getShader("model");
         shader->useShader();
-        shader->setUniform("model", model);
         shader->setUniform("view", view);
         shader->setUniform("projection", projection);
         shader->setUniform("ourTexture", 0);
@@ -91,26 +96,7 @@ public:
         shader->setUniform("lightColor", lightColor);
         shader->setUniform("ambientLight", ambientColor);
 
-        for (unsigned int i = 0; i < meshes_.size(); ++i) {
-            glBindBuffer(GL_ARRAY_BUFFER, meshes_[i].VBO_);
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, Position));
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, TexCoords));
-            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, Normal));
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshes_[i].EBO_);
-
-            const unsigned int material_index = meshes_[i].material_index_;
-
-            if (material_index < default_materials_.size()) {
-                auto material = default_materials_[material_index];
-                if (material) {
-                    // std::cout << "Applying " << material->toString() << " to " << meshes_[i].toString() << std::endl;
-                    material->apply(TextureType::kDIFFUSE, GL_TEXTURE0);
-                }
-            }
-
-            glDrawElements(GL_TRIANGLES, meshes_[i].getNumIndices(), GL_UNSIGNED_INT, 0);
-        }
+        renderModelTree(shader, root_node_, model);
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
@@ -159,6 +145,26 @@ public:
         return str;
     }
 
+    // Debugging function
+    void outputModelTree() const {
+        outputModelTree(root_node_);
+    }
+
+    void outputModelTree(const ModelNode& node) const {
+        std::cout << node.name << " (" << node.meshes.size() << " meshes, " << node.children.size() << " children)" << std::endl;
+        for (const auto& mesh_index : node.meshes) {
+            std::cout << "\t" << mesh_map_.at(meshes_[mesh_index].name_)->toString() << std::endl;
+        }
+        std::cout << "\tchild: ";
+        for (const auto& child : node.children) {
+            std::cout << child.name << " ";
+        }
+        std::cout << std::endl;
+        for (const auto& child : node.children) {
+            outputModelTree(child);
+        }
+    }
+
 private:
     bool initFromScene(const aiScene* scene, const std::filesystem::path& directory) {
         meshes_.resize(scene->mNumMeshes);
@@ -174,6 +180,8 @@ private:
             const aiMaterial* material = scene->mMaterials[i];
             initMaterial(i, material, directory);
         }
+
+        loadModelTree(scene->mRootNode, root_node_);
 
         return true;
     }
@@ -213,6 +221,7 @@ private:
 
         // 使用转换后的顶点和索引数据初始化模型中的网格对象
         meshes_[index].initMesh(mesh_name, vertices, indices);
+        mesh_map_[mesh_name] = &meshes_[index];
     }
 
     bool initMaterial(unsigned int index, const aiMaterial* material, const std::filesystem::path& directory) {
@@ -225,10 +234,6 @@ private:
 
         // std::cout << "Material " << index << " loaded: " << success << std::endl;
 
-        // default_materials_[index] = ServiceLocator<MaterialManager>::get()->getMaterial(
-        //     directory.string()
-        // );
-
         return true;
     }
 
@@ -240,12 +245,58 @@ private:
         default_materials_.clear();
     }
 
+    void loadModelTree(const aiNode* node, ModelNode& model_node) {
+        model_node.name = node->mName.C_Str();
+        model_node.local_transform = glm::transpose(glm::make_mat4(&node->mTransformation.a1));
+        model_node.meshes.insert(model_node.meshes.end(), node->mMeshes, node->mMeshes + node->mNumMeshes);
+        for (unsigned int i = 0; i < node->mNumChildren; ++i) {
+            ModelNode child_node;
+            loadModelTree(node->mChildren[i], child_node);
+            model_node.children.push_back(child_node);
+        }
+    }
+
+    void renderModelNode(const Shader* shader, const ModelNode& node, const glm::mat4& global_transform) const {
+        shader->setUniform("model", global_transform);
+        for (unsigned int mesh_index : node.meshes) {
+            glBindBuffer(GL_ARRAY_BUFFER, meshes_[mesh_index].VBO_);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, Position));
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, TexCoords));
+            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const GLvoid*)offsetof(Vertex, Normal));
+
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, meshes_[mesh_index].EBO_);
+
+            const unsigned int material_index = meshes_[mesh_index].material_index_;
+
+            if (material_index < default_materials_.size()) {
+                auto material = default_materials_[material_index];
+                if (material) {
+                    // std::cout << "Applying " << material->toString() << " to " << meshes_[i].toString() << std::endl;
+                    material->apply(TextureType::kDIFFUSE, GL_TEXTURE0);
+                }
+            }
+
+            glDrawElements(GL_TRIANGLES, meshes_[mesh_index].getNumIndices(), GL_UNSIGNED_INT, 0);
+        }
+    }
+
+    void renderModelTree(const Shader* shader, const ModelNode& node, const glm::mat4& parent_transform) const {
+        glm::mat4 global_transform = parent_transform * node.local_transform;
+        renderModelNode(shader, node, global_transform);
+        for (const auto& child : node.children) {
+            renderModelTree(shader, child, global_transform);
+        }
+    }
+
 private:
     static constexpr unsigned int UV_CHANNEL_DIFFUSE = 0;
 
     GLuint VAO_;
     std::vector<Mesh> meshes_;
     std::vector<std::shared_ptr<Material>> default_materials_;
+
+    std::unordered_map<std::string, const Mesh*> mesh_map_;
+    ModelNode root_node_;    
 
     // 对点做变换适合位置和相机
     glm::mat4 model;
