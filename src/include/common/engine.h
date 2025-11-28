@@ -4,6 +4,7 @@
 #include "resource/texture.h"
 #include "resource/material.h"
 #include "service/service_locator.h"
+#include "utils/config.h"
 
 // Game engine class
 // This class is responsible for initializing and cleaning up all the managers and services
@@ -12,6 +13,9 @@ public:
     GameEngine(): shader_manager(), texture_manager(), material_manager()
     {
         // Initialize managers and services and register them in service locators
+        config.init();
+        ServiceLocator<Config>::provide(&config);
+
         shader_manager.init();
         ServiceLocator<ShaderManager>::provide(&shader_manager);
 
@@ -32,9 +36,13 @@ public:
 
         ServiceLocator<ShaderManager>::provide(nullptr);
         shader_manager.clear();
+
+        ServiceLocator<Config>::provide(nullptr);
+        config.clear();
     }
 
 private:
+    Config config;
     ShaderManager shader_manager;
     TextureManager texture_manager;
     MaterialManager material_manager;

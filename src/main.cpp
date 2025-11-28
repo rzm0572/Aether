@@ -2,6 +2,7 @@
 #include "common/renderer.h"
 #include "resource/shader.h"
 #include "service/service_locator.h"
+#include "utils/config.h"
 #include "utils/macros.h"
 #include "utils/path_handler.h"
 #include "utils/profiler.h"
@@ -10,6 +11,7 @@
 #include "interaction/input.h"
 #include "interaction/camera.h"
 #include "common/engine.h"
+#include "world/terrain.h"
 
 #include <iostream>
 #include <string>
@@ -32,6 +34,7 @@
 // TODO: 粗糙度贴图（Roughness）
 // TODO: 不透明度（Opacity）
 // TODO: 自发光（Emission）
+// TODO: PBR 材质导入（Physically Based Rendering）
 // TODO: 法线贴图（Normal Map）
 // TODO: 材质捕捉（Material Capture）
 // TODO: 自阴影（Self-shadowing）
@@ -41,10 +44,11 @@
 
 
 int main() {
-    const unsigned int SCR_WIDTH = 800;
-    const unsigned int SCR_HEIGHT = 600;
+    auto config = ServiceLocator<Config>::get();
+    config->debug_mode = true;
 
-    Window window(SCR_WIDTH, SCR_HEIGHT, "Main");
+    // Window initialization
+    Window window(config->scr_width, config->scr_height, "Aether");
 
     window.setFramebufferSizeCallback([](GLFWwindow* window, int width, int height) {
         glViewport(0, 0, width, height);
@@ -77,10 +81,7 @@ int main() {
     );
     FreeCameraInputTranslator translator(input);
 
-
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-    glm::mat4 view = glm::mat4(1.0f);
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)config->scr_width / (float)config->scr_height, config->z_near, config->z_far);
     
     // 创建天空盒
     // TODO: 使用合适的图片作为天空盒
@@ -112,7 +113,7 @@ int main() {
     PlainGenerator generator(-6.0f);
     Terrain terrain(generator);
 
-    terrain.createChunks(0, 1, 0, 1, 4.0f, getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
+    terrain.createChunks(0, 1, 0, 1, 4.0f, getAssetPath("textures/Poliigon_GrassPatchyGround_4585_2K/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
     GameObject* terrain_obj = GameObject::createFromModel(terrain);
 
     // std::cout << terrain.toString() << std::endl;
@@ -193,9 +194,11 @@ int main() {
         curr_frame = glfwGetTime();
     }
 
-    std::cout << "Average frame time: " CYAN << delta_time_sum / frame_count << " s" RESET << std::endl;
-    std::cout << "Average FPS: " CYAN << 1.0f / (delta_time_sum / frame_count) << RESET << std::endl;
-    Profiler::instance().report();
+    if (config->debug_mode) {
+        std::cout << "Average frame time: " CYAN << delta_time_sum / frame_count << " s" RESET << std::endl;
+        std::cout << "Average FPS: " CYAN << 1.0f / (delta_time_sum / frame_count) << RESET << std::endl;
+        Profiler::instance().report();
+    }
 
     return 0;
 }
