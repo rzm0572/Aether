@@ -44,11 +44,15 @@
 
 
 int main() {
-    auto config = ServiceLocator<Config>::get();
-    config->debug_mode = true;
+    Config config;
+    ServiceLocator<Config>::provide(&config);
+
+    if (config.debug_mode) {
+        config.output();
+    }
 
     // Window initialization
-    Window window(config->scr_width, config->scr_height, "Aether");
+    Window window(config.scr_width, config.scr_height, "Aether");
 
     window.setFramebufferSizeCallback([](GLFWwindow* window, int width, int height) {
         glViewport(0, 0, width, height);
@@ -63,7 +67,7 @@ int main() {
 
     // Engine initialization
     // Service initialized and provided to ServiceLocator
-    GameEngine* engine = new GameEngine();
+    GameEngine* engine = new GameEngine(config);
 
     // Input initialization
     Input input;
@@ -81,7 +85,7 @@ int main() {
     );
     FreeCameraInputTranslator translator(input);
 
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)config->scr_width / (float)config->scr_height, config->z_near, config->z_far);
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)config.scr_width / (float)config.scr_height, config.z_near, config.z_far);
     
     // 创建天空盒
     // TODO: 使用合适的图片作为天空盒
@@ -113,7 +117,7 @@ int main() {
     PlainGenerator generator(-6.0f);
     Terrain terrain(generator);
 
-    terrain.createChunks(0, 1, 0, 1, 4.0f, getAssetPath("textures/Poliigon_GrassPatchyGround_4585_2K/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
+    terrain.createChunks(0, 1, 0, 1, 4.0f, getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
     GameObject* terrain_obj = GameObject::createFromModel(terrain);
 
     // std::cout << terrain.toString() << std::endl;
@@ -194,7 +198,7 @@ int main() {
         curr_frame = glfwGetTime();
     }
 
-    if (config->debug_mode) {
+    if (config.debug_mode) {
         std::cout << "Average frame time: " CYAN << delta_time_sum / frame_count << " s" RESET << std::endl;
         std::cout << "Average FPS: " CYAN << 1.0f / (delta_time_sum / frame_count) << RESET << std::endl;
         Profiler::instance().report();
