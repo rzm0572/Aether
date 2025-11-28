@@ -26,9 +26,9 @@ class Mesh {
 public:
     Mesh() = default;
 
-    Mesh(const std::string& name, const std::vector<Vertex>& vertices, const std::vector<vIndex>& indices, size_t index_offset = 0) : name_(name), vertices_(vertices), indices_(indices), index_offset_(index_offset) {}
+    Mesh(const std::string& name, const std::vector<Vertex>& vertices, const std::vector<vIndex>& indices, size_t index_offset = 0, unsigned int material_index = INVALID_MATERIAL) : name_(name), vertices_(vertices), indices_(indices), index_offset_(index_offset), material_index_(material_index) {}
 
-    Mesh(const std::string& name, std::vector<Vertex>&& vertices, std::vector<vIndex>&& indices, size_t index_offset = 0) : name_(name), vertices_(std::move(vertices)), indices_(std::move(indices)), index_offset_(index_offset) {}
+    Mesh(const std::string& name, std::vector<Vertex>&& vertices, std::vector<vIndex>&& indices, size_t index_offset = 0, unsigned int material_index = INVALID_MATERIAL) : name_(name), vertices_(std::move(vertices)), indices_(std::move(indices)), index_offset_(index_offset), material_index_(material_index) {}
 
     ~Mesh() = default;
 
@@ -36,11 +36,11 @@ public:
     Mesh& operator=(const Mesh&) = delete;
 
     Mesh(Mesh&& other) noexcept {
-        material_index_ = other.material_index_;
         name_ = std::move(other.name_);
         vertices_ = std::move(other.vertices_);
         indices_ = std::move(other.indices_);
         index_offset_ = other.index_offset_;
+        material_index_ = other.material_index_;
 
         other.material_index_ = INVALID_MATERIAL;
     }
@@ -48,10 +48,10 @@ public:
     Mesh& operator=(Mesh&& other) noexcept {
         if (this != &other) {
             name_ = std::move(other.name_);
-            material_index_ = other.material_index_;
             vertices_ = std::move(other.vertices_);
             indices_ = std::move(other.indices_);
             index_offset_ = other.index_offset_;
+            material_index_ = other.material_index_;
 
             other.material_index_ = INVALID_MATERIAL;
         }
@@ -60,14 +60,19 @@ public:
 
     // Initialize the mesh with vertex data and index data
     //! warning: this function will destroy the data stored in the input vectors
-    void initMesh(const std::string& name, std::vector<Vertex>& vertices, std::vector<vIndex>& indices, size_t index_offset = 0) {
+    void initMesh(const std::string& name, std::vector<Vertex>& vertices, std::vector<vIndex>& indices, size_t index_offset = 0, unsigned int material_index = INVALID_MATERIAL) {
         name_ = name;
         vertices_.swap(vertices);
         indices_.swap(indices);
         index_offset_ = index_offset;
+        material_index_ = material_index;
     }
 
     // Setters and getters
+    void setMaterialIndex(unsigned int material_index) {
+        material_index_ = material_index;
+    }
+
     size_t getNumIndices() const {
         return indices_.size();
     }
@@ -89,13 +94,11 @@ private:
     // Identification
     std::string name_;
 
-    // Material index
-    unsigned int material_index_ {INVALID_MATERIAL};
-
     // Vertex data
     std::vector<Vertex> vertices_;
     std::vector<vIndex> indices_;
 
     size_t index_offset_ {0};
+    unsigned int material_index_ {INVALID_MATERIAL};
 };
 

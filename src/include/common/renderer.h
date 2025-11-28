@@ -3,6 +3,7 @@
 #include "common/game_object.h"
 #include "component/render.h"
 #include "world/light.h"
+#include "utils/profiler.h"
 #include <glm/glm.hpp>
 
 class Renderer {
@@ -54,6 +55,7 @@ public:
     }
 
     void submit(GameObject* obj) {
+        // debug_output(obj);
         const auto* rc = &obj->getRenderComponent();
         if (!rc->renderable_) {
             return;
@@ -72,6 +74,22 @@ public:
     }
 
 private:
+    void debug_output(GameObject* obj) {
+        const auto* rc = &obj->getRenderComponent();
+        std::cout << "Submitting " << obj->GetUUID() << std::endl;
+
+        if (rc->renderable_) {
+            std::cout << "Mesh: " << rc->mesh_->toString() << std::endl;
+            std::cout << "Material: " << rc->material_->toString() << std::endl;
+        }
+
+        auto transform = obj->getTransformComponent();
+        auto position = transform.getPosition();
+        std::cout << "Position: " << position << std::endl;
+        std::cout << "Local transform: " << transform.getLocalModelMatrix() << std::endl;
+        std::cout << "Global transform: " << transform.getGlobalModelMatrix() << std::endl;
+    }
+
     struct RenderQueueEntry {
         unsigned int key;
         const RenderComponent* rc;

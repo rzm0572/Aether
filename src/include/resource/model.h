@@ -17,6 +17,7 @@
 #include "service/service_locator.h"
 #include "utils/macros.h"
 #include "world/light.h"
+#include "utils/profiler.h"
 
 struct ModelNode {
     std::string name;
@@ -60,7 +61,7 @@ public:
             aiProcess_Triangulate |         // 所有多边形转成三角形
             aiProcess_GenSmoothNormals |            // 自动生成平滑法线
             aiProcess_FlipUVs |                     // 翻转 UV（适配 OpenGL）
-            aiProcess_JoinIdenticalVertices       // 合并重复顶点，节省内存
+            aiProcess_JoinIdenticalVertices         // 合并重复顶点，节省内存
         );
 
         if (scene && scene->HasMeshes()) {
@@ -119,6 +120,7 @@ public:
 
     void outputModelTree(const ModelNode& node) const {
         std::cout << node.name << " (" << node.meshes.size() << " meshes, " << node.children.size() << " children)" << std::endl;
+        std::cout << "\tlocal_transform: \n" << node.local_transform << std::endl;
         for (const auto& mesh_index : node.meshes) {
             std::cout << "\t" << mesh_map_.at(meshes_[mesh_index].name_)->toString() << std::endl;
         }
@@ -132,7 +134,7 @@ public:
         }
     }
 
-private:
+protected:
     // Allocate GPU resources for rendering
     void allocGPU(std::vector<Vertex>& vertices, std::vector<vIndex>& indices) {
         releaseGPU();
@@ -175,6 +177,48 @@ private:
         }
     }
 
+    void renderModelNode(const Shader* shader, const ModelNode& node, const glm::mat4& global_transform) const {
+        shader->setUniform("model", global_transform);
+        for (unsigned int mesh_index : node.meshes) {
+            const unsigned int material_index = meshes_[mesh_index].material_index_;
+
+            if (material_index < default_materials_.size()) {
+                auto material = default_materials_[material_index];
+                if (material) {
+                    // std::cout << "Applying " << material->toString() << " to " << meshes_[i].toString() << std::endl;
+                    material->apply();
+                }
+            }
+
+            glDrawElements(GL_TRIANGLES, meshes_[mesh_index].getNumIndices(), GL_UNSIGNED_INT, 0);
+        }
+    }
+
+    void renderModelTree(const Shader* shader, const ModelNode& node, const glm::mat4& parent_transform) const {
+        glm::mat4 global_transform = parent_transform * node.local_transform;
+        renderModelNode(shader, node, global_transform);
+        for (const auto& child : node.children) {
+            renderModelTree(shader, child, global_transform);
+        }
+    }
+
+    ModelNode& getRootNode() {
+        return root_node_;
+    }
+
+    unsigned int insertMesh(Mesh&& mesh) {
+        std::string mesh_name = mesh.name_;
+        meshes_.emplace_back(std::move(mesh));
+        mesh_map_[mesh_name] = &meshes_.back();
+        return meshes_.size() - 1;
+    }
+
+    unsigned int insertMaterial(std::shared_ptr<Material> material) {
+        default_materials_.push_back(material);
+        return default_materials_.size() - 1;
+    }
+
+private:
     bool initFromScene(const aiScene* scene, const std::filesystem::path& directory) {
         meshes_.resize(scene->mNumMeshes);
         default_materials_.resize(scene->mNumMaterials);
@@ -203,8 +247,6 @@ private:
 
     // 根据 Assimp 网格数据初始化模型中的网格
     void initMesh(unsigned int index, const aiMesh* ai_mesh, std::vector<Vertex>& global_vertices, std::vector<vIndex>& global_indices) {
-        meshes_[index].material_index_ = ai_mesh->mMaterialIndex;
-
         unsigned int vertex_offset = (unsigned int)global_vertices.size();
         size_t index_offset = global_indices.size();
         std::string mesh_name = ai_mesh->mName.C_Str();
@@ -242,7 +284,7 @@ private:
         }
 
         // 使用转换后的顶点和索引数据初始化模型中的网格对象
-        meshes_[index].initMesh(mesh_name, vertices, indices, index_offset);
+        meshes_[index].initMesh(mesh_name, vertices, indices, index_offset, ai_mesh->mMaterialIndex);
         mesh_map_[mesh_name] = &meshes_[index];
     }
 
@@ -273,31 +315,6 @@ private:
             ModelNode child_node;
             loadModelTree(node->mChildren[i], child_node);
             model_node.children.push_back(child_node);
-        }
-    }
-
-    void renderModelNode(const Shader* shader, const ModelNode& node, const glm::mat4& global_transform) const {
-        shader->setUniform("model", global_transform);
-        for (unsigned int mesh_index : node.meshes) {
-            const unsigned int material_index = meshes_[mesh_index].material_index_;
-
-            if (material_index < default_materials_.size()) {
-                auto material = default_materials_[material_index];
-                if (material) {
-                    // std::cout << "Applying " << material->toString() << " to " << meshes_[i].toString() << std::endl;
-                    material->apply();
-                }
-            }
-
-            glDrawElements(GL_TRIANGLES, meshes_[mesh_index].getNumIndices(), GL_UNSIGNED_INT, 0);
-        }
-    }
-
-    void renderModelTree(const Shader* shader, const ModelNode& node, const glm::mat4& parent_transform) const {
-        glm::mat4 global_transform = parent_transform * node.local_transform;
-        renderModelNode(shader, node, global_transform);
-        for (const auto& child : node.children) {
-            renderModelTree(shader, child, global_transform);
         }
     }
 

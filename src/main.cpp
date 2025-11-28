@@ -57,14 +57,18 @@ int main() {
         return -1;
     }
 
+    // Engine initialization
+    // Service initialized and provided to ServiceLocator
     GameEngine* engine = new GameEngine();
 
+    // Input initialization
     Input input;
 
     window.setWindowUserPointer(&input);
     window.setKeyCallback(input.keyCallback);
     window.setCursorPosCallback(input.mouseCallback);
 
+    // Camera settings
     FreeCamera camera(
         glm::vec3(0.0f, 0.0f, 3.0f),
         glm::vec3(0.0f, 1.0f, 0.0f),
@@ -95,15 +99,24 @@ int main() {
 
     Renderer renderer;
 
-    // 加载模型
-    Model model_test;
-    if (!model_test.loadModel(getAssetPath("models/j10/scene.gltf"))) {
+    // Load models
+    Model plane_model;
+    if (!plane_model.loadModel(getAssetPath("models/j10/scene.gltf"))) {
         std::cerr << "Failed to load model!" << std::endl;
         return -1;
     }
 
-    // Create a demo plane
-    GameObject* plane = GameObject::createFromModel(model_test);
+    GameObject* plane = GameObject::createFromModel(plane_model);
+
+    // Terrain generation
+    PlainGenerator generator(-6.0f);
+    Terrain terrain(generator);
+
+    terrain.createChunks(0, 1, 0, 1, 4.0f, getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
+    GameObject* terrain_obj = GameObject::createFromModel(terrain);
+
+    // std::cout << terrain.toString() << std::endl;
+    // terrain.outputModelTree();
 
     // Light settings
     auto light = Light(
@@ -116,7 +129,7 @@ int main() {
     );
 
     // std::cout << "Model loaded: " << model_test.toString() << std::endl;
-    // std::cout << model_test.outputModelTree();
+    // model_test.outputModelTree();
 
     // 开启深度测试
     glEnable(GL_DEPTH_TEST);
@@ -147,7 +160,7 @@ int main() {
         delta_time_sum += curr_frame - last_frame;
         frame_count++;
 
-        view = camera.getViewMatrix();
+        glm::mat4 view = camera.getViewMatrix();
 
         plane->getTransformComponent().translate(glm::vec3(0.04f, 0.0f, 0.0f));
 
@@ -158,6 +171,7 @@ int main() {
         // TODO: 逻辑帧与渲染帧分离，渲染采用插值算法，提高帧率
         Profiler::instance().get_timer("render").start_clock();
         renderer.submit_recursive(plane);
+        renderer.submit_recursive(terrain_obj);
         renderer.render(view, projection, light);
 
         // 预览模型

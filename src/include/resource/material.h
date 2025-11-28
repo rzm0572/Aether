@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <filesystem>
 #include "assimp/material.h"
 #include "shader.h"
@@ -50,6 +51,34 @@ public:
 
     void setShader(const std::string& name);
 
+    void setTexture(TextureType type, std::shared_ptr<const Texture> texture) {
+        size_t index = (size_t)type;
+        if (index < (size_t)TextureType::_COUNT) {
+            textures_[index] = texture;
+            has_texture_[index] = true;
+        }
+    }
+
+    void setBaseColor(glm::vec4 base_color) {
+        base_colors_ = base_color;
+    }
+
+    void setMetallic(float metallic) {
+        metallic_ = metallic;
+    }
+
+    void setRoughness(float roughness) {
+        roughness_ = roughness;
+    }
+
+    void setSpecular(float specular) {
+        specular_ = specular;
+    }
+
+    void setSpecularColor(glm::vec3 specular_color) {
+        specularColor_ = specular_color;
+    }
+
     const Shader* getShader() const {
         return shader_;
     }
@@ -77,9 +106,10 @@ private:
     const Shader* shader_;
 
     // texture slots
-    bool has_texture_[(size_t)TextureType::_COUNT] { false };
-    std::vector<std::shared_ptr<const Texture> > textures_;
+    std::array<bool, size_t(TextureType::_COUNT)> has_texture_ = { false };
+    std::array<std::shared_ptr<const Texture>, size_t(TextureType::_COUNT)> textures_;
 
+    // TODO: 实现 PBR 工作流
     // material properties
     glm::vec4 base_colors_;                     // 材质的基本颜色
     float metallic_ { 0.0f };                   // 材质的金属度

@@ -13,8 +13,6 @@ bool Material::loadMaterial(const aiMaterial* material, const std::filesystem::p
 
     // std::cout << "Loading material: " << material->GetName().C_Str() << std::endl;
 
-    textures_.resize((size_t)TextureType::_COUNT);
-
     // Load texture for each texture slot
     for (size_t i = 0; i < (size_t)TextureType::_COUNT; ++i) {
         has_texture_[i] = false;

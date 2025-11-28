@@ -1,7 +1,9 @@
 #pragma once
 
 #include "utils/macros.h"
+#include <glm/glm.hpp>
 #include <chrono>
+#include <ostream>
 #include <unordered_map>
 #include <string>
 #include <iostream>
@@ -65,3 +67,32 @@ public:
 private:
     std::unordered_map<std::string, Timer> timers_;
 };
+
+inline std::ostream& operator<<(std::ostream& os, const glm::vec2& vec) {
+    os << "(" << vec.x << ", " << vec.y << ")";
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const glm::vec3& vec) {
+    os << "(" << vec.x << ", " << vec.y << ", " << vec.z << ")";
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const glm::vec4& vec) {
+    os << "(" << vec.x << ", " << vec.y << ", " << vec.z << ", " << vec.w << ")";
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const glm::mat4& mat) {
+    std::string indent = "[";
+    for (int i = 0; i < 4; i++) {
+        indent += "[ ";
+        for (int j = 0; j < 4; j++) {
+            indent += std::to_string(mat[i][j]) + " ";
+        }
+        indent = indent + "]" + (i == 3 ? "" : "\n");
+    }
+    indent = indent + "]";
+    os << indent;
+    return os;
+}
