@@ -1,6 +1,7 @@
 #pragma once
 
 #include "glm/fwd.hpp"
+#include "utils/profiler.h"
 #include <cstddef>
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
@@ -113,13 +114,16 @@ private:
             first_mouse_focus_ = false;
         }
         mouse_movement_ = glm::vec2(xpos, ypos) - prev_mouse_pos_;
+        if (std::abs(mouse_movement_.x) > 1.0e4f || std::abs(mouse_movement_.y) > 1.0e4f) {
+            mouse_movement_ = glm::vec2(0.0f);
+        }
     }
 
 private:
     std::bitset<(size_t)InputKey::_COUNT> key_;
     std::bitset<(size_t)InputKey::_COUNT> prev_key_;
-    glm::vec2 prev_mouse_pos_;
-    glm::vec2 mouse_movement_;
+    glm::vec2 prev_mouse_pos_ { 0.0f };
+    glm::vec2 mouse_movement_ { 0.0f };
     bool first_mouse_focus_ = false;
 };
 
