@@ -3,7 +3,11 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include "glm/ext/quaternion_geometric.hpp"
+#include "glm/fwd.hpp"
+#include "glm/trigonometric.hpp"
 #include "interaction/input.h"
+
+class GameObject;
 
 // Base class for all cameras
 // A camera is responsible for providing a view matrix and a set of methods for controlling the camera's position and orientation
@@ -219,4 +223,98 @@ private:
 
     float speed_;          // Camera movement speed
     float sensitivity_;    // Mouse sensitivity
+};
+
+
+class ThirdPersonCamera : public Camera {
+public:
+    ThirdPersonCamera(
+        GameObject* target,
+        float distance = 10.0f,
+        float pitch = 0.0f,
+        float yaw = 0.0f,
+        float smooth_factor = 5.0f,
+        float sensitivity = 0.06f,
+        glm::vec3 offset = glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::quat base_rotation = glm::quat(0.0f, 0.0f, 0.0f, 1.0f)
+    ): distance_(distance), pitch_(pitch), yaw_(yaw), smooth_factor_(smooth_factor), sensitivity_(sensitivity), offset_(offset), target_(target), base_rotation_(base_rotation) {
+        lookat_position_ = getLookAtTargetPosition();
+        rotation_ = getRotation();
+    }
+
+    glm::mat4 getViewMatrix() const override {
+        return glm::lookAt(camera_position_, lookat_position_, camera_up_);
+    }
+
+    glm::vec3 getFrontVec() const override;
+
+    glm::vec3 getRightVec() const override {
+        return glm::normalize(glm::cross(getFrontVec(), camera_up_));
+    }
+
+    glm::vec3 getUpVec() const override {
+        return glm::normalize(glm::cross(getRightVec(), getFrontVec()));
+    }
+
+    glm::vec3 getPosition() const override {
+        return camera_position_;
+    }
+
+    glm::vec3 getUp() const {
+        return camera_up_;
+    }
+
+    void update(glm::vec2 mouse_offset, float dt) {
+        processMouseInput(mouse_offset);
+
+        glm::vec3 lookat_position_interp = getLookAtPosition(dt);
+        rotation_ = getRotation();
+        camera_up_ = getCameraUpVector();
+        camera_position_ = lookat_position_interp - getFrontVec() * distance_;
+        lookat_position_ = lookat_position_interp;
+    }
+
+    void processMouseInput(glm::vec2 look_pos_offset, bool constrain_pitch = true) {
+        float x_offset = look_pos_offset.x;
+        float y_offset = look_pos_offset.y;
+
+        yaw_ -= x_offset * sensitivity_;
+        pitch_ -= y_offset * sensitivity_;
+
+        if (constrain_pitch) {
+            pitch_ = glm::clamp(pitch_, -89.0f, 89.0f);
+        }
+    }
+
+private:
+    glm::vec3 getLookAtTargetPosition() const;
+
+    glm::vec3 getLookAtPosition(float dt) const {
+        float param = dt * smooth_factor_;
+        if (param > 1.0f) {
+            param = 1.0f;
+        }
+        return glm::mix(lookat_position_, getLookAtTargetPosition(), param);
+    }
+
+    glm::vec3 getCameraUpVector() const;
+
+    glm::quat getRotation() const;
+
+    glm::vec3 lookat_position_;
+
+    float distance_ { 5.0f };
+    float pitch_ { 0.0f };
+    float yaw_ { 0.0f };
+    
+    float smooth_factor_ { 5.0f };
+    float sensitivity_ { 0.06f };
+    glm::vec3 offset_ { 0.0f, 0.0f, 0.0f };
+    glm::quat base_rotation_ { 0.0f, 0.0f, 0.0f, 1.0f };
+    
+    GameObject* target_ = nullptr;
+
+    glm::vec3 camera_up_ { 0.0f, 1.0f, 0.0f };
+    glm::vec3 camera_position_ { 0.0f, 0.0f, 0.0f };
+    glm::quat rotation_ { 0.0f, 0.0f, 0.0f, 1.0f };
 };

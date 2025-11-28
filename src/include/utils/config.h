@@ -31,6 +31,6 @@ public:
     unsigned int scr_width = 800;
     unsigned int scr_height = 600;
     float z_near = 0.1f;
-    float z_far = 100.0f;
+    float z_far = 500.0f;
     bool debug_mode = true;
 };

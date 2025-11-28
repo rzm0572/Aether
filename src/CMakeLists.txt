@@ -52,6 +52,7 @@ endfunction()
 set(
     AETHER_LIBS
     component/transform.cpp
+    interaction/camera.cpp
     resource/shader.cpp
     resource/material.cpp
     world/skybox.cpp

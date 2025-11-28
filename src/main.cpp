@@ -76,15 +76,6 @@ int main() {
     window.setKeyCallback(input.keyCallback);
     window.setCursorPosCallback(input.mouseCallback);
 
-    // Camera settings
-    FreeCamera camera(
-        glm::vec3(0.0f, 0.0f, 3.0f),
-        glm::vec3(0.0f, 1.0f, 0.0f),
-        0.0f, 0.0f,
-        5.0f, 0.06f
-    );
-    FreeCameraInputTranslator translator(input);
-
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)config.scr_width / (float)config.scr_height, config.z_near, config.z_far);
     
     // 创建天空盒
@@ -117,11 +108,25 @@ int main() {
     PlainGenerator generator(-6.0f);
     Terrain terrain(generator);
 
-    terrain.createChunks(0, 1, 0, 1, 4.0f, getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
+    terrain.createChunks(-1, 1, -1, 1, 4.0f, getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
     GameObject* terrain_obj = GameObject::createFromModel(terrain);
 
     // std::cout << terrain.toString() << std::endl;
     // terrain.outputModelTree();
+    // std::cout << "Model loaded: " << plane_model.toString() << std::endl;
+    // plane_model.outputModelTree();
+
+     // Camera settings
+    FreeCamera camera(
+        glm::vec3(0.0f, 0.0f, 3.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f),
+        0.0f, 0.0f,
+        5.0f, 0.06f
+    );
+    FreeCameraInputTranslator translator(input);
+
+    glm::quat base_rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    ThirdPersonCamera third_person_camera(plane, 10.0f, 0.0f, 90.0f, 10.0f, 0.06f, glm::vec3(0.5f, 0.75f, 0.0f), base_rotation);
 
     // Light settings
     auto light = Light(
@@ -133,8 +138,7 @@ int main() {
         }
     );
 
-    // std::cout << "Model loaded: " << model_test.toString() << std::endl;
-    // model_test.outputModelTree();
+
 
     // 开启深度测试
     glEnable(GL_DEPTH_TEST);
@@ -161,13 +165,15 @@ int main() {
 
         // Logical frame
         Profiler::instance().get_timer("logical").start_clock();
-        camera.update(translator, curr_frame - last_frame);
+        // camera.update(translator, curr_frame - last_frame);
+        third_person_camera.update(input.getMouseMovement(), curr_frame - last_frame);
         delta_time_sum += curr_frame - last_frame;
         frame_count++;
 
-        glm::mat4 view = camera.getViewMatrix();
+        // glm::mat4 view = camera.getViewMatrix();
+        glm::mat4 view = third_person_camera.getViewMatrix();
 
-        plane->getTransformComponent().translate(glm::vec3(0.04f, 0.0f, 0.0f));
+        plane->getTransformComponent().translate(glm::vec3(0.25f, 0.0f, 0.0f));
 
         input.endUpdate();
         Profiler::instance().get_timer("logical").end_clock();
