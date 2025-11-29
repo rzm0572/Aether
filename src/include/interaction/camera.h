@@ -236,13 +236,11 @@ public:
         float smooth_factor = 5.0f,
         float sensitivity = 0.06f,
         glm::vec3 offset = glm::vec3(0.0f, 0.0f, 0.0f),
-        glm::quat base_rotation = glm::quat(0.0f, 0.0f, 0.0f, 1.0f)
-    ): distance_(distance), pitch_(pitch), yaw_(yaw), smooth_factor_(smooth_factor), sensitivity_(sensitivity), offset_(offset), target_(target), base_rotation_(base_rotation) {
-        lookat_position_ = getLookAtTargetPosition();
-        rotation_ = getRotation();
-    }
+        glm::quat base_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f)
+    );
 
     glm::mat4 getViewMatrix() const override {
+        // std::cout << camera_position_ << " " << lookat_position_ << " " << camera_up_ << std::endl;
         return glm::lookAt(camera_position_, lookat_position_, camera_up_);
     }
 
@@ -267,9 +265,9 @@ public:
     void update(glm::vec2 mouse_offset, float dt) {
         processMouseInput(mouse_offset);
 
-        glm::vec3 lookat_position_interp = getLookAtPosition(dt);
         rotation_ = getRotation();
         camera_up_ = getCameraUpVector();
+        glm::vec3 lookat_position_interp = getLookAtPosition(dt);
         camera_position_ = lookat_position_interp - getFrontVec() * distance_;
         lookat_position_ = lookat_position_interp;
     }
@@ -310,11 +308,11 @@ private:
     float smooth_factor_ { 5.0f };
     float sensitivity_ { 0.06f };
     glm::vec3 offset_ { 0.0f, 0.0f, 0.0f };
-    glm::quat base_rotation_ { 0.0f, 0.0f, 0.0f, 1.0f };
+    glm::quat base_rotation_ { 1.0f, 0.0f, 0.0f, 0.0f };
     
     GameObject* target_ = nullptr;
 
     glm::vec3 camera_up_ { 0.0f, 1.0f, 0.0f };
     glm::vec3 camera_position_ { 0.0f, 0.0f, 0.0f };
-    glm::quat rotation_ { 0.0f, 0.0f, 0.0f, 1.0f };
+    glm::quat rotation_ { 1.0f, 0.0f, 0.0f, 0.0f };
 };

@@ -1,5 +1,20 @@
 #include "interaction/camera.h"
 #include "common/game_object.h"
+#include "component/transform.h"
+
+ThirdPersonCamera::ThirdPersonCamera(
+    GameObject* target,
+    float distance,
+    float pitch,
+    float yaw,
+    float smooth_factor,
+    float sensitivity,
+    glm::vec3 offset,
+    glm::quat base_rotation
+): distance_(distance), pitch_(pitch), yaw_(yaw), smooth_factor_(smooth_factor), sensitivity_(sensitivity), target_(target), offset_(offset), base_rotation_(base_rotation) {
+    lookat_position_ = getLookAtTargetPosition();
+    rotation_ = getRotation();
+}
 
 glm::vec3 ThirdPersonCamera::getFrontVec() const {
     float pitch = glm::radians(pitch_);

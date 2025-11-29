@@ -62,7 +62,14 @@ public:
     }
 
     static GameObject* createFromModel(const Model& model) {
-        return createFromModelTree(model.root_node_, model, nullptr);
+        GameObject* wrapper = new GameObject();
+        wrapper->transform_.setParent(nullptr, wrapper);
+        wrapper->render_.renderable_ = false;
+
+        auto* go = createFromModelTree(model.root_node_, model, nullptr);
+        go->getTransformComponent().setParent(wrapper, go);
+
+        return wrapper;
     }
 
     const std::vector<GameObject*>& getChildren() const {

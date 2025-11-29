@@ -125,8 +125,8 @@ int main() {
     );
     FreeCameraInputTranslator translator(input);
 
-    glm::quat base_rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    ThirdPersonCamera third_person_camera(plane, 10.0f, 0.0f, 90.0f, 10.0f, 0.06f, glm::vec3(0.5f, 0.75f, 0.0f), base_rotation);
+    // glm::quat base_rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    ThirdPersonCamera third_person_camera(plane, 10.0f, 0.0f, 90.0f, 10.0f, 0.06f, glm::vec3(0.5f, 0.0f, 0.0f));
 
     // Light settings
     auto light = Light(
@@ -163,8 +163,11 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); 
 
-        // Logical frame
+        // Logical frame        
         Profiler::instance().get_timer("logical").start_clock();
+
+        plane->getTransformComponent().translate(glm::vec3(0.25f, 0.0f, 0.0f));
+
         // camera.update(translator, curr_frame - last_frame);
         third_person_camera.update(input.getMouseMovement(), curr_frame - last_frame);
         delta_time_sum += curr_frame - last_frame;
@@ -172,8 +175,6 @@ int main() {
 
         // glm::mat4 view = camera.getViewMatrix();
         glm::mat4 view = third_person_camera.getViewMatrix();
-
-        plane->getTransformComponent().translate(glm::vec3(0.25f, 0.0f, 0.0f));
 
         input.endUpdate();
         Profiler::instance().get_timer("logical").end_clock();

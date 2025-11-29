@@ -2,6 +2,7 @@
 
 #include "utils/macros.h"
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <chrono>
 #include <ostream>
 #include <unordered_map>
@@ -94,5 +95,10 @@ inline std::ostream& operator<<(std::ostream& os, const glm::mat4& mat) {
     }
     indent = indent + "]";
     os << indent;
+    return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const glm::quat& q) {
+    os << "(" << q.x << ", " << q.y << ", " << q.z << ", " << q.w << ")";
     return os;
 }
