@@ -103,6 +103,8 @@ int main() {
     }
 
     GameObject* plane = GameObject::createFromModel(plane_model);
+    glm::vec3 velocity = glm::vec3(15.0f, 0.0f, 0.0f);
+    glm::vec3 angular_velocity = glm::vec3(0.1f, 0.0f, 0.0f);
 
     // Terrain generation
     PlainGenerator generator(-6.0f);
@@ -126,7 +128,7 @@ int main() {
     FreeCameraInputTranslator translator(input);
 
     // glm::quat base_rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    ThirdPersonCamera third_person_camera(plane, 10.0f, 0.0f, 90.0f, 10.0f, 0.06f, glm::vec3(0.5f, 0.0f, 0.0f));
+    ThirdPersonCamera third_person_camera(plane, 16.0f, 0.0f, 90.0f, 10.0f, 0.06f, glm::vec3(0.5f, 0.0f, 0.0f));
 
     // Light settings
     auto light = Light(
@@ -163,14 +165,18 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); 
 
-        // Logical frame        
-        Profiler::instance().get_timer("logical").start_clock();
+        float dt = curr_frame - last_frame;
 
-        plane->getTransformComponent().translate(glm::vec3(0.25f, 0.0f, 0.0f));
+        // Logical frame
+        Profiler::instance().get_timer("logical").start_clock();
+        plane->getTransformComponent().translate(velocity * dt);
+        // plane->getTransformComponent().translate(plane_speed * glm::sin(curr_frame) * dt);
+        plane->getTransformComponent().apply_angluar_velocity(angular_velocity * glm::cos(curr_frame) * 3.0f, dt);
+
 
         // camera.update(translator, curr_frame - last_frame);
-        third_person_camera.update(input.getMouseMovement(), curr_frame - last_frame);
-        delta_time_sum += curr_frame - last_frame;
+        third_person_camera.update(input.getMouseMovement(), dt);
+        delta_time_sum += dt;
         frame_count++;
 
         // glm::mat4 view = camera.getViewMatrix();
