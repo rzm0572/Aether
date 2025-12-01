@@ -241,7 +241,7 @@ public:
 
     glm::mat4 getViewMatrix() const override {
         // std::cout << camera_position_ << " " << lookat_position_ << " " << camera_up_ << std::endl;
-        return glm::lookAt(camera_position_, lookat_position_, camera_up_);
+        return glm::lookAt(camera_position_, getLookAtTargetPosition(), camera_up_);
     }
 
     glm::vec3 getFrontVec() const override;

@@ -67,6 +67,24 @@ public:
         markGlobalDirty();
     }
 
+    void rotate(glm::quat rotation) {
+        rotation_ = glm::normalize(rotation_ * rotation);
+        local_dirty_ = true;
+        markGlobalDirty();
+    }
+
+    void rotate(glm::vec3 axis, float angle) {
+        if (glm::abs(angle) < 1.0e-5f) {
+            return;
+        }
+        rotate(glm::angleAxis(angle, axis));
+    }
+
+    void apply_angluar_velocity(glm::vec3 angular_velocity, float dt) {
+        float angle = glm::length(angular_velocity) * dt;
+        rotate(glm::normalize(angular_velocity), angle);
+    }
+
     void setParent(GameObject* parent, GameObject* owner);
 
     const std::vector<GameObject*>& getChildren() const {
