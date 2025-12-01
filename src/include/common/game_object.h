@@ -5,14 +5,14 @@
 #include "resource/model.h"
 #include "service/service_locator.h"
 
-using UUID = unsigned long long;
+using UUID_t = unsigned long long;
 
 class GameObject {
 public:
     GameObject(TransformComponent transform = TransformComponent(), RenderComponent render = RenderComponent()): uuid_(next_uuid_++), transform_(transform), render_(render) {}
-    GameObject(UUID uuid, TransformComponent transform = TransformComponent(), RenderComponent render = RenderComponent()): uuid_(uuid), transform_(transform), render_(render) {}
+    GameObject(UUID_t uuid, TransformComponent transform = TransformComponent(), RenderComponent render = RenderComponent()): uuid_(uuid), transform_(transform), render_(render) {}
 
-    UUID GetUUID() const { return uuid_; }
+    UUID_t GetUUID() const { return uuid_; }
     TransformComponent& getTransformComponent() { return transform_; }
 
     RenderComponent& getRenderComponent() { return render_; }
@@ -77,9 +77,9 @@ public:
     }
 
 private:
-    UUID uuid_;
+    UUID_t uuid_;
     TransformComponent transform_;
     RenderComponent render_;
 
-    inline static UUID next_uuid_ = 0;
+    inline static UUID_t next_uuid_ = 0;
 };
