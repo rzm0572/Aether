@@ -118,7 +118,7 @@ int main() {
     // std::cout << "Model loaded: " << plane_model.toString() << std::endl;
     // plane_model.outputModelTree();
 
-     // Camera settings
+    // Camera settings
     FreeCamera camera(
         glm::vec3(0.0f, 0.0f, 3.0f),
         glm::vec3(0.0f, 1.0f, 0.0f),

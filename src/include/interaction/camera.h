@@ -272,6 +272,7 @@ public:
         lookat_position_ = lookat_position_interp;
     }
 
+private:
     void processMouseInput(glm::vec2 look_pos_offset, bool constrain_pitch = true) {
         float x_offset = look_pos_offset.x;
         float y_offset = look_pos_offset.y;
@@ -283,8 +284,7 @@ public:
             pitch_ = glm::clamp(pitch_, -89.0f, 89.0f);
         }
     }
-
-private:
+    
     glm::vec3 getLookAtTargetPosition() const;
 
     glm::vec3 getLookAtPosition(float dt) const {
