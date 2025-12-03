@@ -12,6 +12,7 @@
 #include "interaction/camera.h"
 #include "common/engine.h"
 #include "world/terrain.h"
+#include "resource/particles.h"
 
 #include <iostream>
 #include <string>
@@ -140,7 +141,9 @@ int main() {
         }
     );
 
-
+    // GPU 粒子的粒子效果测试
+    Particle_Fireball fireball(10000,42,getAssetPath("textures/particles/particle200.png"));
+    fireball.start_();
 
     // 开启深度测试
     glEnable(GL_DEPTH_TEST);
@@ -195,6 +198,9 @@ int main() {
         // 预览模型
         // model_test.render(model, view, projection, light);
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 显示线框
+
+        // 绘制爆炸的粒子效果
+        fireball.draw(plane->getTransformComponent().getPosition(),view, projection, third_person_camera.getPosition(),3.0f,3.0f,0.1f);
 
         // 渲染天空盒（在其他物体之后渲染以优化性能）
         skybox.changeProjection(projection);
