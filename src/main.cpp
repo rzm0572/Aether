@@ -12,6 +12,7 @@
 #include "interaction/camera.h"
 #include "common/engine.h"
 #include "world/terrain.h"
+#include "entity/plane.h"
 
 #include <iostream>
 #include <string>
@@ -102,15 +103,20 @@ int main() {
         return -1;
     }
 
-    GameObject* plane = GameObject::createFromModel(plane_model);
-    glm::vec3 velocity = glm::vec3(15.0f, 0.0f, 0.0f);
-    glm::vec3 angular_velocity = glm::vec3(0.1f, 0.0f, 0.0f);
+    // GameObject* plane = GameObject::createFromModel(plane_model);
+    glm::vec3 initial_position = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::quat initial_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+    glm::vec3 velocity = glm::vec3(70.0f, 0.0f, 0.0f);
+    glm::vec3 angular_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+
+    Plane* plane = new Plane(input, plane_model, initial_position, initial_rotation, velocity, angular_velocity);
+    
 
     // Terrain generation
     PlainGenerator generator(-6.0f);
     Terrain terrain(generator);
 
-    terrain.createChunks(-1, 1, -1, 1, 4.0f, getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
+    terrain.createChunks(0, 100, -1, 1, 4.0f, getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
     GameObject* terrain_obj = GameObject::createFromModel(terrain);
 
     // std::cout << terrain.toString() << std::endl;
@@ -169,9 +175,11 @@ int main() {
 
         // Logical frame
         Profiler::instance().get_timer("logical").start_clock();
-        plane->getTransformComponent().translate(velocity * dt);
+        // plane->getTransformComponent().translate(velocity * dt);
         // plane->getTransformComponent().translate(plane_speed * glm::sin(curr_frame) * dt);
-        plane->getTransformComponent().apply_angluar_velocity(angular_velocity * glm::cos(curr_frame) * 3.0f, dt);
+        // plane->getTransformComponent().apply_angluar_velocity(angular_velocity * glm::cos(curr_frame) * 3.0f, dt);
+
+        plane->update(dt);
 
 
         // camera.update(translator, curr_frame - last_frame);

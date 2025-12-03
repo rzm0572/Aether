@@ -95,7 +95,7 @@ public:
     }
 };
 
-// 
+
 class FreeCamera : public Camera {
 public:
     FreeCamera(glm::vec3 position, glm::vec3 world_up = glm::vec3(0.0f, 1.0f, 0.0f), float pitch = -90.0f, float yaw = 0.0f, float speed = 5.0f, float sensitivity = 0.06f) : position_(position), world_up_(world_up), pitch_(pitch), yaw_(yaw), speed_(speed), sensitivity_(sensitivity) {

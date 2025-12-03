@@ -125,11 +125,19 @@ public:
         GameObjectDerived* wrapper = new GameObjectDerived();
         wrapper->transform_.setParent(nullptr, wrapper);
         wrapper->render_.renderable_ = false;
+        createFromModel(wrapper, model);
+        return wrapper;
+    }
+
+    template<typename GameObjectDerived = GameObject>
+    static void createFromModel(GameObjectDerived* wrapper, const Model& model) {
+        // Check that GameObjectDerived is derived from GameObject
+        if constexpr (!std::is_base_of_v<GameObject, GameObjectDerived>) {
+            static_assert(false, "GameObjectDerived must be derived from GameObject");
+        }
 
         auto* go = createFromModelTree(model.root_node_, model, nullptr);
         go->getTransformComponent().setParent(wrapper, go);
-
-        return wrapper;
     }
 
     const std::vector<GameObject*>& getChildren() const {

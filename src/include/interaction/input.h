@@ -11,7 +11,8 @@
 enum class InputKey {
     W, A, S, D,
     H, J, K, L,
-    CTRL, SPACE,
+    Q, E,
+    SHIFT, CTRL, SPACE,
     ESC,
     _COUNT
 };
@@ -31,6 +32,9 @@ public:
         {GLFW_KEY_J, InputKey::J},
         {GLFW_KEY_K, InputKey::K},
         {GLFW_KEY_L, InputKey::L},
+        {GLFW_KEY_Q, InputKey::Q},
+        {GLFW_KEY_E, InputKey::E},
+        {GLFW_KEY_LEFT_SHIFT, InputKey::SHIFT},
         {GLFW_KEY_LEFT_CONTROL, InputKey::CTRL},
         {GLFW_KEY_SPACE, InputKey::SPACE},
         {GLFW_KEY_ESCAPE, InputKey::ESC},
