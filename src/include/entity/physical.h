@@ -24,7 +24,7 @@ public:
     using PhysicalInputSet = std::bitset<(size_t)PhysicalInput::_COUNT>;
 
     PhysicalInputSet translate() const {
-        size_t result_raw;
+        size_t result_raw = 0;
 
         if (input_.getKeyPressed(InputKey::W)) {
             result_raw |= (1 << (size_t)PhysicalInput::SPEEDUP);
