@@ -5,7 +5,8 @@
 #include "world/light.h"
 #include "utils/profiler.h"
 #include <glm/glm.hpp>
-
+#include "resource/shadow_map.h"
+#include "utils/config.h"
 /**
  * @brief Renderer class
  * 
@@ -25,6 +26,40 @@ public:
      * @param projection The projection matrix (perspective/orthographic)
      * @param light The light to apply to the scene
      */
+    void renderShadow(const std::vector<GameObject*>& objects,const Light& light) {
+        if (!depth_shader_) {
+            auto shader_manager = ServiceLocator<ShaderManager>::get();
+            depth_shader_ = shader_manager->getShader("depth");
+        }
+
+        glViewport(0, 0, ShadowMap::SHADOW_WIDTH, ShadowMap::SHADOW_HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_.getFBO());
+        glClear(GL_DEPTH_BUFFER_BIT);
+
+        depth_shader_->useShader();
+        depth_shader_->setUniform("lightSpaceMatrix", light.getLightSpaceMatrix());
+
+        for (auto* obj : objects) {
+            submit_for_shadow(obj, depth_shader_);
+        }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        // 恢复默认视口
+        Config* config = ServiceLocator<Config>::get();
+        glViewport(0, 0, config->scr_width, config->scr_height);
+    }
+
+    void submit_for_shadow(GameObject* obj,const Shader* shader) {
+        const auto& rc = obj->getRenderComponent();
+        if (!rc.renderable_) return;
+
+        glBindVertexArray(rc.VAO_);
+        glm::mat4 model = obj->getTransformComponent().getGlobalModelMatrix();
+        shader->setUniform("model", model);
+        glDrawElements(GL_TRIANGLES, rc.mesh_->getNumIndices(), GL_UNSIGNED_INT,
+                    (void*)(rc.mesh_->getIndexOffset() * sizeof(unsigned int)));
+        glBindVertexArray(0);
+    }
     void render(glm::mat4 view, glm::mat4 projection, const Light& light) {
         std::sort(render_queue_.begin(), render_queue_.end());
 
@@ -52,6 +87,10 @@ public:
 
                 shader->setUniform("view", view);
                 shader->setUniform("projection", projection);
+                shader->setUniform("lightSpaceMatrix", light.getLightSpaceMatrix());
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, shadow_map_.getDepthMap());
+                shader->setUniform("shadowMap", 1);
                 light.use(shader);
             }
 
@@ -60,7 +99,8 @@ public:
 
             // Update the model matrix by the global transform of the object
             shader->setUniform("model", entry.global_transform);
-            shader->setUniform("ourTexture", 0);
+            shader->setUniform("ourTexture", 0);            
+            shader->setUniform("lightSpaceMatrix", light.getLightSpaceMatrix());
 
             // Render the object
             void* offset = (void*)(entry.rc->mesh_->getIndexOffset() * sizeof(unsigned int));
@@ -160,4 +200,8 @@ private:
     // Copy of OpenGL states
     GLuint current_VAO_ {INVALID_VAO};
     unsigned int current_shader_ID_ {0};
+
+    // Shadow map 需要的着色器和深度纹理
+    const Shader* depth_shader_ = nullptr;
+    ShadowMap shadow_map_;
 };

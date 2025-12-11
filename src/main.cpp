@@ -93,6 +93,7 @@ int main() {
     auto shader_manager = ServiceLocator<ShaderManager>::get();
     assert(shader_manager);
     shader_manager->registerShader("model", getShaderPath("models.vert"), getShaderPath("models.frag"));
+    shader_manager->registerShader("depth", getShaderPath("depth.vert"), getShaderPath("depth.frag"));// 深度渲染着色器
 
     Renderer renderer;
 
@@ -139,7 +140,7 @@ int main() {
     // Light settings
     auto light = Light(
         &camera,
-        glm::vec3(0.5f, 0.75f, 1.0f),     // TODO: 环境光颜色有待实现，暂时用天蓝色代替
+        glm::vec3(0.8f, 0.8f, 0.8f),     // TODO: 环境光颜色有待实现，暂时用天蓝色代替
         {
             glm::vec3(0.0f, 1.0f, 1.0f),      // TODO: 光照方向有待实现，暂时用物体指向天空
             glm::vec3(1.0f, 1.0f, 1.0f),    // TODO：光照颜色有待实现，暂时用白色代替
@@ -196,6 +197,10 @@ int main() {
         // Render frame
         // TODO: 逻辑帧与渲染帧分离，渲染采用插值算法，提高帧率
         Profiler::instance().get_timer("render").start_clock();
+        // --- Shadow Pass ---
+        std::vector<GameObject*> shadow_objects = {plane, terrain_obj};
+        renderer.renderShadow( shadow_objects,light);
+        // --- Main Render Pass ---
         renderer.submit_recursive(plane);
         renderer.submit_recursive(terrain_obj);
         renderer.render(view, projection, light);

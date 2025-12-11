@@ -26,6 +26,39 @@ uniform vec3 camPos;     // 相机位置
 //环境光，外界输入
 uniform vec3 ambientLight; 
 
+// 阴影贴图
+
+uniform sampler2D shadowMap;
+uniform mat4 lightSpaceMatrix;
+
+
+float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir) {
+    // 执行透视除法
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // 变换到 [0,1] 范围
+    projCoords = projCoords * 0.5 + 0.5;
+    // 获取最近点的深度
+    float closestDepth = texture(shadowMap, projCoords.xy).r;
+    // 获取当前片段的深度
+    float currentDepth = projCoords.z;
+    // 阴影偏移（防止自阴影 artifacts）
+    float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005);
+    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    // PCF
+
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    for(int x = -1; x <= 1; ++x) {
+        for(int y = -1; y <= 1; ++y) {
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+    shadow /= 9.0;
+    return shadow;
+}
+
+
+
 void main() {
     // 获取不包含任何效果的基础颜色
     vec3 albedo;
@@ -84,8 +117,13 @@ void main() {
 
     vec3 diffuse = kD * albedo / 3.14159265359;
 
+    // 叠加阴影贴图、自然光、直接光
+    vec4 fragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);
+    float shadow = ShadowCalculation(fragPosLightSpace, N, L);
+    vec3 directLight = (diffuse + specular) * lightColor * NdotL * (1.0 - shadow);
+
     // 最终光照，叠加直接光和自然光
-    vec3 directLight = (diffuse + specular) * lightColor * NdotL;
+    // vec3 directLight = (diffuse + specular) * lightColor * NdotL;
     vec3 ambient = albedo * ambientLight; // 简单环境光
 
     vec3 color = directLight + ambient;
@@ -102,4 +140,11 @@ void main() {
     // FragColor = vec4(normalize(Normal), 1.0); // 输出法线颜色
     // FragColor = vec4(albedo, 1.0); // 输出 albedo
     // FragColor = vec4(L, 1.0); // 输出太阳光
+    // FragColor = vec4(shadow, shadow, shadow, 1.0); // 输出阴影贴图
+    // vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    // 变换到 [0,1] 范围
+    // projCoords = projCoords * 0.5 + 0.5;
+    // FragColor = vec4(projCoords.x, projCoords.y, projCoords.z, 1.0);
+
+    FragColor = texture(shadowMap, projCoords.xy).r;
 }
