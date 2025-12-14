@@ -31,6 +31,7 @@ uniform vec3 ambientLight;
 uniform sampler2D shadowMap;
 uniform mat4 lightSpaceMatrix;
 
+// TODO: 调整PCF采样
 
 float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir) {
     // 执行透视除法
@@ -42,18 +43,19 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir) {
     // 获取当前片段的深度
     float currentDepth = projCoords.z;
     // 阴影偏移（防止自阴影 artifacts）
-    float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.0005);
-    float shadow = currentDepth - bias > closestDepth ? 1.0 : 0.0;
+    float bias = max(0.00005 * (1.0 - dot(normal, lightDir)), 0.000005);
+    float shadow = 0.0;
+    // shadow = currentDepth > closestDepth ? 1.0 : 0.0;
     // PCF
-
+    
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-    for(int x = -1; x <= 1; ++x) {
-        for(int y = -1; y <= 1; ++y) {
+    for(int x = -2; x <= 2; ++x) {
+        for(int y = -2; y <= 2; ++y) {
             float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
             shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
         }
     }
-    shadow /= 9.0;
+    shadow /= 25.0;
     return shadow;
 }
 
@@ -144,7 +146,12 @@ void main() {
     // vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     // 变换到 [0,1] 范围
     // projCoords = projCoords * 0.5 + 0.5;
-    // FragColor = vec4(projCoords.x, projCoords.y, projCoords.z, 1.0);
+    // FragColor = vec4( projCoords.xy,0.0, 1.0); //检查盒子覆盖范围
+    // FragColor = vec4( projCoords.x, projCoords.x, projCoords.x, 1.0);
+    // FragColor = vec4( projCoords.y, projCoords.y, projCoords.y, 1.0);
+    // FragColor = vec4( projCoords.z, projCoords.z, projCoords.z, 1.0);
+    // FragColor = vec4( 1- projCoords.z>1.0, projCoords.z>1.0, projCoords.z, 1.0);
 
-    FragColor = texture(shadowMap, projCoords.xy).r;
+    // float depthFromShadowMap = texture(shadowMap, projCoords.xy).r*0.5+0.5;
+    // FragColor = vec4(depthFromShadowMap, depthFromShadowMap, depthFromShadowMap, 1.0);
 }

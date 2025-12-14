@@ -139,10 +139,10 @@ int main() {
 
     // Light settings
     auto light = Light(
-        &camera,
+        &third_person_camera,
         glm::vec3(0.8f, 0.8f, 0.8f),     // TODO: 环境光颜色有待实现，暂时用天蓝色代替
         {
-            glm::vec3(0.0f, 1.0f, 1.0f),      // TODO: 光照方向有待实现，暂时用物体指向天空
+            glm::vec3(0.0f, 1.0f, 0.0f),      // TODO: 光照方向有待实现，暂时用物体指向天空
             glm::vec3(1.0f, 1.0f, 1.0f),    // TODO：光照颜色有待实现，暂时用白色代替
         }
     );
@@ -182,7 +182,9 @@ int main() {
 
         plane->update(dt);
 
-
+        // // 打印模型位置
+        // std::cout << "Plane position: " << plane->getTransformComponent().getPosition().x << " " << plane->getTransformComponent().getPosition().y << " " << plane->getTransformComponent().getPosition().z << std::endl;
+        // std::cout<<  "camera position: " << third_person_camera.getPosition().x << " " << third_person_camera.getPosition().y << " " << third_person_camera.getPosition().z << std::endl;
         // camera.update(translator, curr_frame - last_frame);
         third_person_camera.update(input.getMouseMovement(), dt);
         delta_time_sum += dt;
@@ -198,8 +200,10 @@ int main() {
         // TODO: 逻辑帧与渲染帧分离，渲染采用插值算法，提高帧率
         Profiler::instance().get_timer("render").start_clock();
         // --- Shadow Pass ---
-        std::vector<GameObject*> shadow_objects = {plane, terrain_obj};
-        renderer.renderShadow( shadow_objects,light);
+        renderer.beginShadowPass(light);        
+        renderer.submit_recursive_renderShadow(plane, light);
+        renderer.submit_recursive_renderShadow(terrain_obj, light);
+        renderer.endShadowPass();
         // --- Main Render Pass ---
         renderer.submit_recursive(plane);
         renderer.submit_recursive(terrain_obj);

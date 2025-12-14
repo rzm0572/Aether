@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utils/config.h"
+#include "service/service_locator.h"
 #include <glm/glm.hpp>
 #include <resource/shader.h>
 #include <interaction/camera.h>
@@ -32,19 +34,22 @@ public:
             return glm::mat4(1.0f);
         }
 
-        // 1. 获取相机参数
-        float fov = glm::radians(60.0f);
-        float aspect = (float)800 / (float)600;
-        float near_plane = 0.1f;
-        float far_plane = 100.0f;
+        // 获取相机参数
+        auto config = ServiceLocator<Config>::get();
+        float fov = glm::radians(45.0f);
+        float aspect = (float)config->scr_width / (float)config->scr_height;
+        float near_plane = config->z_near;
+        float far_plane = config->z_far;
 
-        // 2. 计算视锥体8个角点（世界空间）
+        // 计算视锥体8个角点（世界空间） 
+        // TODO: 不行，这里需要考虑摄像机外面的物体
         float nh = near_plane * tan(fov / 2.0f); // 近平面高度的一半
         float nw = nh * aspect;                  // 近平面宽度的一半
         float fh = far_plane * tan(fov / 2.0f);  // 远平面高度的一半
         float fw = fh * aspect;                  // 远平面宽度的一半
 
         glm::vec3 camPos = camera_->getPosition();
+        // std::cout<<"camPos: "<<camPos.x<<" "<<camPos.y<<" "<<camPos.z<<std::endl;
         glm::vec3 camFront = glm::normalize(camera_->getFrontVec());
         glm::vec3 camRight = glm::normalize(camera_->getRightVec());
         glm::vec3 camUp = glm::normalize(camera_->getUpVec());
@@ -68,14 +73,14 @@ public:
             ftl, ftr, fbl, fbr
         };
 
-        // 3. 光源方向（注意：平行光方向指向光源，但 lookAt 需要“从哪看”）
-        glm::vec3 lightDir = glm::normalize(parallel_.light_dir);
+
+        glm::vec3 lightDir = -glm::normalize(parallel_.light_dir); // 光的传播方向
         glm::vec3 up = glm::abs(lightDir.y) > 0.99f ? glm::vec3(1.0f, 0.0f, 0.0f) : glm::vec3(0.0f, 1.0f, 0.0f);
 
         // 光源位置：可以设为任意点，只要 view 矩阵正确即可（这里用原点后退）
         // 实际上我们只关心方向，所以 view 矩阵由 lookAt(任意点沿 -lightDir, 任意点, up) 决定
-        glm::vec3 lightPos = camPos - lightDir * (far_plane + near_plane); // 足够远
-        glm::mat4 lightView = glm::lookAt(lightPos, camPos, up);
+        glm::vec3 lightPos = camPos - lightDir * 3.0f*(far_plane + near_plane); // 足够远
+        glm::mat4 lightView = glm::lookAt(lightPos,  camPos,up); // 这个矩阵将世界坐标转换为以光源为原点观察、光线传播方向为 -z 的坐标系
 
         // 4. 将视锥体角点变换到光源空间（即 lightView * point）
         glm::vec4 minBound(FLT_MAX);
@@ -87,19 +92,26 @@ public:
             maxBound = glm::max(maxBound, lightSpaceCorner);
         }
 
-        // 可选：扩大一点边界防止走样（例如加 1~2 单位 padding）
+        // 扩大一点边界防止走样
         float padding = 2.0f;
         minBound.x -= padding; minBound.y -= padding; minBound.z -= padding;
         maxBound.x += padding; maxBound.y += padding; maxBound.z += padding;
 
-        // 5. 构建正交投影矩阵（注意 Z 范围：OpenGL 是 -1 到 1，但深度通常用 near/far）
-        // 注意：Z 轴方向需与 lightView 一致（通常取 [min.z, max.z]）
         glm::mat4 lightProjection = glm::ortho(
             minBound.x, maxBound.x,
             minBound.y, maxBound.y,
-            minBound.z, maxBound.z
+            -maxBound.z  ,-minBound.z//因为ortho需要两个正数的z，所以这里取负值
         );
-
+        // // 输出包围盒调试
+        // std::cout << "minBound: " << minBound.x << " " << minBound.y << " " << minBound.z << std::endl;
+        // std::cout << "maxBound: " << maxBound.x << " " << maxBound.y << " " << maxBound.z << std::endl;
+        // // 输出光线方向调试
+        // std::cout << "lightDir: " << lightDir.x << " " << lightDir.y << " " << lightDir.z << std::endl;
+        // // 输出飞机位置的light space坐标
+        // glm::vec4 lightSpacePos = lightView * glm::vec4(camPos, 1.0f);
+        // std::cout << "lightSpacePos: " << lightSpacePos.x << " " << lightSpacePos.y << " " << lightSpacePos.z << std::endl;
+        // lightSpacePos = lightProjection * lightSpacePos;
+        // std::cout << "lightSpacePos: " << lightSpacePos.x / lightSpacePos.w << " " << lightSpacePos.y / lightSpacePos.w << " " << lightSpacePos.z / lightSpacePos.w << std::endl;
         return lightProjection * lightView;
     }
 

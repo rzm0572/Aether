@@ -26,30 +26,46 @@ public:
      * @param projection The projection matrix (perspective/orthographic)
      * @param light The light to apply to the scene
      */
-    void renderShadow(const std::vector<GameObject*>& objects,const Light& light) {
+    void submit_recursive_renderShadow(GameObject* obj,const Light& light) {
+        
+        light_view_matrix_ = light.getLightSpaceMatrix();
+        renderShadow(obj,light);
+        for (auto* child : obj->getChildren()) {
+            submit_recursive_renderShadow(child,light);
+        }
+    }
+    void beginShadowPass(const Light& light) {
+        light_view_matrix_ = light.getLightSpaceMatrix();
+        glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_.getFBO());
+        glViewport(0, 0, ShadowMap::SHADOW_WIDTH, ShadowMap::SHADOW_HEIGHT);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+        glDepthFunc(GL_LESS);
+    }
+
+    void renderShadow(GameObject* object, const Light& light) {
         if (!depth_shader_) {
             auto shader_manager = ServiceLocator<ShaderManager>::get();
             depth_shader_ = shader_manager->getShader("depth");
         }
 
-        glViewport(0, 0, ShadowMap::SHADOW_WIDTH, ShadowMap::SHADOW_HEIGHT);
-        glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_.getFBO());
-        glClear(GL_DEPTH_BUFFER_BIT);
-
         depth_shader_->useShader();
-        depth_shader_->setUniform("lightSpaceMatrix", light.getLightSpaceMatrix());
-
-        for (auto* obj : objects) {
-            submit_for_shadow(obj, depth_shader_);
+        depth_shader_->setUniform("lightSpaceMatrix", light_view_matrix_);
+        
+        const auto& rc = object->getRenderComponent();
+        if (rc.renderable_) {
+            submit_for_shadow(object, depth_shader_);
         }
+    }
 
+    void endShadowPass() {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        // 恢复默认视口
         Config* config = ServiceLocator<Config>::get();
         glViewport(0, 0, config->scr_width, config->scr_height);
     }
 
-    void submit_for_shadow(GameObject* obj,const Shader* shader) {
+    void submit_for_shadow(GameObject* obj, const Shader* shader) {
         const auto& rc = obj->getRenderComponent();
         if (!rc.renderable_) return;
 
@@ -87,7 +103,7 @@ public:
 
                 shader->setUniform("view", view);
                 shader->setUniform("projection", projection);
-                shader->setUniform("lightSpaceMatrix", light.getLightSpaceMatrix());
+                shader->setUniform("lightSpaceMatrix", light_view_matrix_);
                 glActiveTexture(GL_TEXTURE1);
                 glBindTexture(GL_TEXTURE_2D, shadow_map_.getDepthMap());
                 shader->setUniform("shadowMap", 1);
@@ -99,8 +115,11 @@ public:
 
             // Update the model matrix by the global transform of the object
             shader->setUniform("model", entry.global_transform);
-            shader->setUniform("ourTexture", 0);            
-            shader->setUniform("lightSpaceMatrix", light.getLightSpaceMatrix());
+            shader->setUniform("ourTexture", 0);   
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, shadow_map_.getDepthMap());
+            shader->setUniform("shadowMap", 1);         
+            shader->setUniform("lightSpaceMatrix", light_view_matrix_);
 
             // Render the object
             void* offset = (void*)(entry.rc->mesh_->getIndexOffset() * sizeof(unsigned int));
@@ -204,4 +223,5 @@ private:
     // Shadow map 需要的着色器和深度纹理
     const Shader* depth_shader_ = nullptr;
     ShadowMap shadow_map_;
+    glm::mat4 light_view_matrix_= glm::mat4(1.0f);
 };
