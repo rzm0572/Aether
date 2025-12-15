@@ -21,7 +21,6 @@ struct ParallelLight {
 
 class Light {
 public:
-    Light() = default;
     Light(const Camera* camera, const glm::vec3& ambient_color, const ParallelLight& parallel,Input& input)
         : camera_(camera), ambient_color_(ambient_color), parallel_(parallel),input_(input){
             // 昼夜自动循环控制关闭
