@@ -2,9 +2,11 @@
 
 #include "utils/config.h"
 #include "service/service_locator.h"
+#include "interaction/input.h"
 #include <glm/glm.hpp>
 #include <resource/shader.h>
 #include <interaction/camera.h>
+#include <cmath>
 
 struct ParallelLight {
     glm::vec3 light_dir;
@@ -20,8 +22,42 @@ struct ParallelLight {
 class Light {
 public:
     Light() = default;
-    Light(const Camera* camera, const glm::vec3& ambient_color, const ParallelLight& parallel)
-        : camera_(camera), ambient_color_(ambient_color), parallel_(parallel) {}
+    Light(const Camera* camera, const glm::vec3& ambient_color, const ParallelLight& parallel,Input& input)
+        : camera_(camera), ambient_color_(ambient_color), parallel_(parallel),input_(input){
+            // 昼夜自动循环控制关闭
+            auto_daynight_mode_ = false;   // 是否启用自动昼夜
+
+            // 手动控制状态
+
+            
+            manual_intensity_ = glm::length(parallel.light_color);
+            if(manual_intensity_==0){
+                manual_color_ = glm::vec3(0.0f);
+            }
+            else{
+                manual_color_ = parallel.light_color/manual_intensity_;
+            }
+            
+            // 按照 parallel.light_dir 方向，计算出光源位置
+            float length = glm::length(parallel.light_dir);
+            glm::vec3 normalized_dir = parallel.light_dir / length;
+            manual_azimuth_ = asin(normalized_dir.y);
+            float horizontal_length = sqrt(normalized_dir.x*normalized_dir.x+normalized_dir.z*normalized_dir.z);
+            
+            if (horizontal_length > 0.0001f) {
+                float x_norm = normalized_dir.x / horizontal_length;
+                float z_norm = normalized_dir.z / horizontal_length;
+                manual_azimuth_ = atan2(x_norm, z_norm);
+                
+                // 规范化到 [0, 2π)
+                if (manual_azimuth_ < 0.0f) {
+                    manual_azimuth_ += 2.0f * glm::pi<float>();
+                }
+            } else {
+                // 垂直方向的情况
+                manual_azimuth_ = 0.0f;
+            }
+        }
 
     void use(const Shader* shader) const {
         shader->setUniform("camPos", camera_->getPosition());
@@ -114,9 +150,234 @@ public:
         // std::cout << "lightSpacePos: " << lightSpacePos.x / lightSpacePos.w << " " << lightSpacePos.y / lightSpacePos.w << " " << lightSpacePos.z / lightSpacePos.w << std::endl;
         return lightProjection * lightView;
     }
+    void update(float dt) {
+        if(input_.getKeyPressedDown(InputKey::SLASH)|input_.getKeyPressed(InputKey::SLASH)){
+            // 昼夜自动循环控制
+            auto_daynight_mode_ = false;   // 关闭昼夜循环模式
+            // 手动控制状态
+            manual_azimuth_ = 0.0f;// 经度
+            manual_altitude_ = glm::radians(-90.0f);// 纬度
+            manual_color_ = glm::vec3(1.0f);
+            manual_intensity_ = 2.5f;
+            parallel_.light_dir = glm::vec3(0.0f, 1.0f, 0.0f);
+            parallel_.light_color = glm::vec3(2.5f, 2.5f, 2.5f);
+            ambient_color_ = 0.333f * parallel_.light_color;
+            return ;
+        }
+
+        if (input_.getKeyPressed(InputKey::BACKSLASH)) {// 若按下 \\ 则切换自动昼夜循环模式
+            auto_daynight_mode_ = true;
+        }
+        else{
+            auto_daynight_mode_ = false;
+        }
+
+        glm::vec3 final_dir;// 临时变量，可以不影响原先接口
+        glm::vec3 final_color;
+
+        if (auto_daynight_mode_) {  // ========== 自动昼夜循环模式 ==========
+            // 计算当前时间
+            day_time_ += dt * (24.0f / day_cycle_duration_);
+            while (day_time_ >= 24.0f){
+                day_time_ -= 24.0f;
+            }
+
+            // 太阳从东(-90°)升到西(+90°)，正午在正上方(0°)
+            float azimuth_deg = -90.0f + day_time_ * 15.0f; // 每小时15度（360/24）
+            float altitude_deg;
+
+            // 高度角：正午最高（~60°），日出日落为0°，夜晚为负
+            float t = (day_time_ - 12.0f) / 6.0f;
+            altitude_deg = 60.0f * cos(t * glm::half_pi<float>());// 太阳高度角
+
+
+            float azimuth = glm::radians(azimuth_deg);
+            float altitude = glm::radians(altitude_deg);
+
+            // 计算太阳方向（世界空间，Z向前）
+            final_dir = glm::vec3(
+                cos(altitude) * sin(azimuth),
+                sin(altitude),
+                cos(altitude) * cos(azimuth)
+            );
+            final_dir = glm::normalize(final_dir);
+
+
+
+            // 根据时间设置光照颜色和强度
+            glm::vec3 dawn_color   = glm::vec3(1.0f, 0.5f, 0.3f);   // 清晨/黄昏：暖橙
+            glm::vec3 noon_color   = glm::vec3(1.0f, 1.0f, 1.0f);   // 正午：白色
+            glm::vec3 dusk_color   = glm::vec3(1.0f, 0.6f, 0.2f);   // 黄昏：更红
+            glm::vec3 moon_light= glm::vec3(0.6f, 0.6f, 0.95f); // 半夜 冷色、较暗
+            // 插值颜色
+            if (day_time_ <= 12.0f) {
+                if(day_time_ >=6.0f){
+                    float t = (day_time_ - 6.0f) / 6.0f;
+                    final_color = glm::mix(dawn_color, noon_color, t);
+                }
+                else{
+                    float t = day_time_ / 6.0f;
+                    final_color = glm::mix(moon_light, dawn_color, t);
+                }            
+            } else {
+                if(day_time_ <= 18.0f){
+                    float t = (day_time_ - 12.0f) / 6.0f;
+                    final_color = glm::mix(noon_color, dusk_color, t);
+                }
+                else{
+                    float t = (day_time_ - 18.0f) / 6.0f;
+                    final_color = glm::mix(dusk_color, moon_light, t);
+                }
+            }
+
+            // 强度：正午最亮，早晚较暗
+            float intensity_t;
+            if(day_time_ <= 12.0f){
+                intensity_t=(day_time_ - 6.0f) / 6.0f ;
+            }
+            else{
+                intensity_t = (18.0f - day_time_) / 6.0f;
+            }
+            if(intensity_t<0.0f){
+                intensity_t=0.0f;
+            }
+            float intensity = 1.0f + 1.8f * intensity_t;
+            final_color *= intensity;
+
+
+        } else {// ========== 手动控制模式 ==========
+
+            // 方向控制
+            const float rot_speed = glm::radians(30.0f) * dt;
+            if (input_.getKeyPressed(InputKey::LEFT_BRACKET)){
+                manual_azimuth_ -= rot_speed;
+            } 
+            if (input_.getKeyPressed(InputKey::RIGHT_BRACKET)){
+                manual_azimuth_ += rot_speed;
+            } 
+            if (input_.getKeyPressed(InputKey::SEMICOLON)){
+                manual_altitude_ += rot_speed;
+            }     
+            if (input_.getKeyPressed(InputKey::APOSTROPHE)){
+                manual_altitude_ -= rot_speed;
+            }
+            float bias = 0.02f;
+            while(manual_altitude_ <-glm::pi<float>()-bias){
+                manual_altitude_ += 2.0f*glm::pi<float>();
+            }
+            while(manual_altitude_ >glm::pi<float>()+bias){
+                manual_altitude_ -= 2.0f*glm::pi<float>();
+            }
+            while(manual_azimuth_ < -glm::pi<float>()-bias){
+                manual_azimuth_ += 2.0f*glm::pi<float>();
+            }
+            while(manual_azimuth_ > glm::pi<float>() + bias){
+                manual_azimuth_ -= 2.0f*glm::pi<float>();
+            }
+            
+            // 构建方向
+            final_dir = glm::vec3(
+                cos(manual_altitude_) * sin(manual_azimuth_),
+                sin(manual_altitude_),
+                cos(manual_altitude_) * cos(manual_azimuth_)
+            );
+            bool is_morning=true;// 判断是否是白天
+            if(final_dir.z < 0.0f){// 如果太阳下山，即指向太阳的向量向下那么就是晚上
+                is_morning=false;
+                final_dir = -final_dir;// 月光，方向反转
+            }
+
+            // 光强
+            const float intensity_step = 0.5f * dt;
+            if (input_.getKeyPressed(InputKey::COMMA)){
+                manual_intensity_ -= intensity_step;
+            }  
+            if (input_.getKeyPressed(InputKey::PERIOD)){
+                manual_intensity_ += intensity_step;
+            }
+            manual_intensity_ = glm::clamp(manual_intensity_, 0.0f, 4.0f);// 限制光强区间
+
+
+
+            // 颜色比例（保持亮度）
+            glm::vec3 color = manual_color_;// 手动颜色
+            float current_L = 0.299f * color.r + 0.587f * color.g + 0.114f * color.b;// 使用人眼感知公式
+            const float delta = 0.01f;
+            if (input_.getKeyPressed(InputKey::B)) {
+                color.r = glm::min(1.0f, color.r + delta);
+                float new_L = 0.299f * color.r + 0.587f * color.g + 0.114f * color.b;
+                float diff = new_L - current_L;
+                color.g -= diff * (0.587f / (0.587f + 0.114f));
+                color.b -= diff * (0.114f / (0.587f + 0.114f));
+                color.g = glm::clamp(color.g, 0.0f, 1.0f);
+                color.b = glm::clamp(color.b, 0.0f, 1.0f);
+            }
+            if (input_.getKeyPressed(InputKey::N)) {
+                color.g = glm::min(1.0f, color.g + delta);
+                float new_L = 0.299f * color.r + 0.587f * color.g + 0.114f * color.b;
+                float diff = new_L - current_L;
+                color.r -= diff * (0.299f / (0.299f + 0.114f));
+                color.b -= diff * (0.114f / (0.299f + 0.114f));
+                color.r = glm::clamp(color.r, 0.0f, 1.0f);
+                color.b = glm::clamp(color.b, 0.0f, 1.0f);
+            }
+            if (input_.getKeyPressed(InputKey::M)) {
+                color.b = glm::min(1.0f, color.b + delta);
+                float new_L = 0.299f * color.r + 0.587f * color.g + 0.114f * color.b;
+                float diff = new_L - current_L;
+                color.r -= diff * (0.299f / (0.299f + 0.587f));
+                color.g -= diff * (0.587f / (0.299f + 0.587f));
+                color.r = glm::clamp(color.r, 0.0f, 1.0f);
+                color.g = glm::clamp(color.g, 0.0f, 1.0f);
+            }
+
+
+            manual_color_ = color;
+
+
+            final_dir = glm::normalize(final_dir);
+
+            if(is_morning){
+                final_color = manual_color_ * manual_intensity_;
+            }
+            else{
+                final_color = manual_color_ * manual_intensity_/1.5f;
+            }
+            
+            std::cout<<"manual_color: "<<manual_color_.x<<" "<<manual_color_.y<<" "<<manual_color_.z<<std::endl;
+            std::cout<<"manual_intensity: "<<manual_intensity_<<std::endl;
+            std::cout<<"final_dir: "<<final_dir.x<<" "<<final_dir.y<<" "<<final_dir.z<<std::endl;
+        }
+
+        // ========== 应用最终结果 ==========
+        parallel_.light_dir = final_dir;
+        parallel_.light_color = final_color;
+        ambient_color_ = 0.333f * parallel_.light_color;
+
+        // 打印中间结果调试
+        // std::cout<<"final_dir: "<<final_dir.x<<" "<<final_dir.y<<" "<<final_dir.z<<std::endl;
+        // std::cout<<"final_color: "<<final_color.x<<" "<<final_color.y<<" "<<final_color.z<<std::endl;
+        // std::cout<<"ambient_color: "<<ambient_color_.x<<" "<<ambient_color_.y<<" "<<ambient_color_.z<<std::endl;
+
+    }
 
 private:
     const Camera* camera_ {nullptr};
     glm::vec3 ambient_color_;
     ParallelLight parallel_;
+
+
+    // 昼夜自动循环控制
+    bool auto_daynight_mode_ = false;   // 是否启用自动昼夜
+    float day_time_ = 6.0f;             // 一天中的时间（0 ~ 24 小时）
+    const float day_cycle_duration_ = 24.0f; // 自动循环一圈的时间，用秒表示
+
+    // 手动控制状态
+    float manual_azimuth_ = 0.0f;// 经度
+    float manual_altitude_ = glm::radians(45.0f);// 纬度
+    glm::vec3 manual_color_ = glm::vec3(2.5f);
+    float manual_intensity_ = 1.0f;
+
+protected:
+    const Input& input_;
 };

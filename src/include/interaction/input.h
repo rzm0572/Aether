@@ -12,6 +12,10 @@ enum class InputKey {
     W, A, S, D,
     H, J, K, L,
     Q, E,
+    B, N, M, COMMA, PERIOD,// 控制光照，分别为 RGB，增加亮度，减少亮度
+    LEFT_BRACKET, RIGHT_BRACKET, BACKSLASH,// 控制光线方向  [ ] 控制y方向太阳高度角，\\ 符号可以控制昼夜变换
+    SEMICOLON, APOSTROPHE,// 控制光线方向  ; ' 控制x方向太阳高度角
+    SLASH,// 控制光线方向，/ 回到正午时分
     SHIFT, CTRL, SPACE,
     ESC,
     _COUNT
@@ -34,6 +38,20 @@ public:
         {GLFW_KEY_L, InputKey::L},
         {GLFW_KEY_Q, InputKey::Q},
         {GLFW_KEY_E, InputKey::E},
+        // 光照控制
+        {GLFW_KEY_B, InputKey::B},// B增加红色光照
+        {GLFW_KEY_N, InputKey::N},// N增加绿色光照
+        {GLFW_KEY_M, InputKey::M},// M增加蓝色光照
+        {GLFW_KEY_COMMA, InputKey::COMMA},// ,减小亮度
+        {GLFW_KEY_PERIOD, InputKey::PERIOD},// .增加亮度
+        // 光线方向控制
+        {GLFW_KEY_LEFT_BRACKET, InputKey::LEFT_BRACKET},// [ 控制y方向太阳高度角向-y方向移动
+        {GLFW_KEY_RIGHT_BRACKET, InputKey::RIGHT_BRACKET},//  ] 控制y方向太阳高度角向+y方向移动
+        {GLFW_KEY_BACKSLASH, InputKey::BACKSLASH},// \\ 控制昼夜变换
+        {GLFW_KEY_SEMICOLON, InputKey::SEMICOLON},// ;控制x方向太阳高度角向-x方向移动
+        {GLFW_KEY_APOSTROPHE, InputKey::APOSTROPHE},// ' 控制x方向太阳高度角向+x方向移动
+        {GLFW_KEY_SLASH, InputKey::SLASH},// / 回到正午时分
+        // end of 光照控制
         {GLFW_KEY_LEFT_SHIFT, InputKey::SHIFT},
         {GLFW_KEY_LEFT_CONTROL, InputKey::CTRL},
         {GLFW_KEY_SPACE, InputKey::SPACE},
