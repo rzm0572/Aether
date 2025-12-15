@@ -21,6 +21,16 @@
    - [PBR渲染: Cook-Torrance的实现与补充](https://www.blurredcode.com/2021/05/dec701b2/)
    - [PBR：基于物理的着色](https://huailiang.github.io/blog/2018/pbr/)
    - [基于物理的实时渲染 -- PBR](https://blog.csdn.net/gghhb12/article/details/136985256)
+   - [Gamma校正](https://learnopengl-cn.github.io/05%20Advanced%20Lighting/02%20Gamma%20Correction/)
    4. 实现环境光
    - [LearnOpenGL 基础光照](https://learnopengl-cn.github.io/02%20Lighting/02%20Basic%20Lighting/)
    - [一步步学OpenGL(17) -《环境光》 - Kam92.J的文章 - 知乎](https://zhuanlan.zhihu.com/p/148988756)
+   5. 实现实时阴影
+   - [实时阴影技术——阴影贴图 - tkstar的文章 - 知乎](https://zhuanlan.zhihu.com/p/353392356)
+   - [阴影的PCF采样优化算法 - zilch的文章 - 知乎](https://zhuanlan.zhihu.com/p/369761748)
+   - [阴影技术(1)——朴素Shadowmap,PCF,PCSS](https://chillstepp.github.io/2024/07/19/%E9%98%B4%E5%BD%B1%E6%8A%80%E6%9C%AF(1)%E2%80%94%E2%80%94%E6%9C%B4%E7%B4%A0Shadowmap%EF%BC%8CPCF,PCSS/)
+   - [实时阴影技术](https://www.xianlongok.site/post/3725508f/)
+   - [实时阴影(一) shadow map,PCF,PCSS](https://www.bilibili.com/opus/617384184253184966)
+   - [阴影映射](https://learnopengl-cn.github.io/05%20Advanced%20Lighting/03%20Shadows/01%20Shadow%20Mapping/)
+   - [一步步学OpenGL(23) -《阴影贴图1》 - Kam92.J的文章 - 知乎](https://zhuanlan.zhihu.com/p/150570547)
+   - [一步步学OpenGL(24) -《阴影贴图2》 - Kam92.J的文章 - 知乎](https://zhuanlan.zhihu.com/p/150570621)

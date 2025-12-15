@@ -26,10 +26,10 @@ public:
      * @param projection The projection matrix (perspective/orthographic)
      * @param light The light to apply to the scene
      */
-    void submit_recursive_renderShadow(GameObject* obj,const Light& light) {
-        renderShadow(obj,light);
+    void submit_recursive_renderShadow(GameObject* obj) {
+        renderShadow(obj);
         for (auto* child : obj->getChildren()) {
-            submit_recursive_renderShadow(child,light);
+            submit_recursive_renderShadow(child);
         }
     }
     void beginShadowPass(const Light& light) {
@@ -42,7 +42,7 @@ public:
         glDepthFunc(GL_LESS);
     }
 
-    void renderShadow(GameObject* object, const Light& light) {
+    void renderShadow(GameObject* object) {
         if (!depth_shader_) {
             auto shader_manager = ServiceLocator<ShaderManager>::get();
             depth_shader_ = shader_manager->getShader("depth");

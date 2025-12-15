@@ -81,12 +81,12 @@ int main() {
     // 创建天空盒
     // TODO: 使用合适的图片作为天空盒
     Skybox skybox(
-        getAssetPath("skybox/right.jpg"), 
-        getAssetPath("skybox/left.jpg"),
-        getAssetPath("skybox/top.jpg"),   
-        getAssetPath("skybox/bottom.jpg"),
-        getAssetPath("skybox/front.jpg"), 
-        getAssetPath("skybox/back.jpg")
+        getAssetPath("skybox/skybox1/right.jpg"), 
+        getAssetPath("skybox/skybox1/left.jpg"),
+        getAssetPath("skybox/skybox1/top.jpg"),   
+        getAssetPath("skybox/skybox1/bottom.jpg"),
+        getAssetPath("skybox/skybox1/front.jpg"), 
+        getAssetPath("skybox/skybox1/back.jpg")
     );
 
     auto shader_manager = ServiceLocator<ShaderManager>::get();
@@ -199,10 +199,10 @@ int main() {
         // TODO: 逻辑帧与渲染帧分离，渲染采用插值算法，提高帧率
         Profiler::instance().get_timer("render").start_clock();
         // --- Shadow Pass ---
-        renderer.beginShadowPass(light);        
-        renderer.submit_recursive_renderShadow(plane, light);
-        renderer.submit_recursive_renderShadow(terrain_obj, light);
-        renderer.endShadowPass();
+        renderer.beginShadowPass(light);// 开启阴影渲染，设置光源空间矩阵以及绑定阴影贴图纹理
+        renderer.submit_recursive_renderShadow(plane);
+        renderer.submit_recursive_renderShadow(terrain_obj);
+        renderer.endShadowPass();// 关闭阴影渲染，恢复渲染状态
         // --- Main Render Pass ---
         renderer.submit_recursive(plane);
         renderer.submit_recursive(terrain_obj);

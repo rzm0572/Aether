@@ -397,6 +397,16 @@ Shader* shader = shader_manager->useShader("my_shader");
 
 我们可以通过以下接口函数使用渲染器：
 
+> 你需要先进行阴影贴图渲染 pass，然后再渲染主场景。
+
+- `void beginShadowPass(const Light& light)`：开启阴影贴图渲染 pass
+
+- `void submit_recursive_renderShadow(GameObject* obj) `： 递归地将 GameObject 及其所有子孙节点进行阴影贴图渲染。
+
+- `void endShadowPass() `：结束阴影贴图渲染 pass
+
+> 这里是主场景的渲染
+
 - `void submit(GameObject* obj)`: 将 GameObject 提交到渲染队列中。
 
 - `void submit_recursive(GameObject* obj)`: 通过调用 `submit` 函数，递归地将 GameObject 及其所有子孙节点提交到渲染队列中。
@@ -427,7 +437,13 @@ int main() {
     while (...) {
         // GameObject 更新
         // ...
-        
+        // 提交光线更新光照信息，为阴影贴图提供 light_view_metrix 将世界坐标转换为光照坐标，并绑定阴影贴图纹理
+        renderer.beginShadowPass(light);        
+        // 渲染阴影贴图
+        renderer.submit_recursive_renderShadow(plane);
+        renderer.submit_recursive_renderShadow(terrain_obj);
+        // 结束 shadow pass，解绑 shadow map 纹理
+        renderer.endShadowPass();
         // 向渲染队列中提交 GameObject
         renderer.submit_recursive(obj1);
         renderer.submit_recursive(obj2);
