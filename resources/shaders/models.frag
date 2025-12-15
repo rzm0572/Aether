@@ -31,7 +31,7 @@ uniform vec3 ambientLight;
 uniform sampler2D shadowMap;
 uniform mat4 lightSpaceMatrix;
 
-// TODO: 调整PCF采样
+
 
 float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir) {
     // 执行透视除法
@@ -42,20 +42,22 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir) {
     float closestDepth = texture(shadowMap, projCoords.xy).r;
     // 获取当前片段的深度
     float currentDepth = projCoords.z;
-    // 阴影偏移（防止自阴影 artifacts）
-    float bias = max(0.00005 * (1.0 - dot(normal, lightDir)), 0.000005);
+    // 阴影偏移（防止自阴影 artifacts） TODO: 调整偏移量 shadowOffset，太小会导致自己覆盖自己，太大会导致无法有效产生阴影
+    float shadowOffset = 0.00005;
+    float bias = shadowOffset * max( (1.0 - dot(normal, lightDir)), 0.1);
     float shadow = 0.0;
     // shadow = currentDepth > closestDepth ? 1.0 : 0.0;
     // PCF
-    
+    // TODO: 调整PCF采样，采样范围为 [-1,1]，采样次数为 (2.0 * half_sample + 1.0) * (2.0 * half_sample + 1.0)
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-    for(int x = -2; x <= 2; ++x) {
-        for(int y = -2; y <= 2; ++y) {
+    int half_sample = 4;
+    for(int x = -half_sample; x <= half_sample; ++x) {
+        for(int y = -half_sample; y <= half_sample; ++y) {
             float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
             shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
         }
     }
-    shadow /= 25.0;
+    shadow /= (2.0 * half_sample + 1.0) * (2.0 * half_sample + 1.0);
     return shadow;
 }
 
@@ -150,7 +152,6 @@ void main() {
     // FragColor = vec4( projCoords.x, projCoords.x, projCoords.x, 1.0);
     // FragColor = vec4( projCoords.y, projCoords.y, projCoords.y, 1.0);
     // FragColor = vec4( projCoords.z, projCoords.z, projCoords.z, 1.0);
-    // FragColor = vec4( 1- projCoords.z>1.0, projCoords.z>1.0, projCoords.z, 1.0);
 
     // float depthFromShadowMap = texture(shadowMap, projCoords.xy).r*0.5+0.5;
     // FragColor = vec4(depthFromShadowMap, depthFromShadowMap, depthFromShadowMap, 1.0);

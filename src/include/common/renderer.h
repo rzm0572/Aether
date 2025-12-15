@@ -27,8 +27,6 @@ public:
      * @param light The light to apply to the scene
      */
     void submit_recursive_renderShadow(GameObject* obj,const Light& light) {
-        
-        light_view_matrix_ = light.getLightSpaceMatrix();
         renderShadow(obj,light);
         for (auto* child : obj->getChildren()) {
             submit_recursive_renderShadow(child,light);
@@ -49,13 +47,16 @@ public:
             auto shader_manager = ServiceLocator<ShaderManager>::get();
             depth_shader_ = shader_manager->getShader("depth");
         }
-
         depth_shader_->useShader();
-        depth_shader_->setUniform("lightSpaceMatrix", light_view_matrix_);
-        
+        depth_shader_->setUniform("lightSpaceMatrix", light_view_matrix_);        
         const auto& rc = object->getRenderComponent();
         if (rc.renderable_) {
-            submit_for_shadow(object, depth_shader_);
+            glBindVertexArray(rc.VAO_);
+            glm::mat4 model = object->getTransformComponent().getGlobalModelMatrix();
+            depth_shader_->setUniform("model", model);
+            glDrawElements(GL_TRIANGLES, rc.mesh_->getNumIndices(), GL_UNSIGNED_INT,
+                        (void*)(rc.mesh_->getIndexOffset() * sizeof(unsigned int)));
+            glBindVertexArray(0);
         }
     }
 
@@ -65,17 +66,6 @@ public:
         glViewport(0, 0, config->scr_width, config->scr_height);
     }
 
-    void submit_for_shadow(GameObject* obj, const Shader* shader) {
-        const auto& rc = obj->getRenderComponent();
-        if (!rc.renderable_) return;
-
-        glBindVertexArray(rc.VAO_);
-        glm::mat4 model = obj->getTransformComponent().getGlobalModelMatrix();
-        shader->setUniform("model", model);
-        glDrawElements(GL_TRIANGLES, rc.mesh_->getNumIndices(), GL_UNSIGNED_INT,
-                    (void*)(rc.mesh_->getIndexOffset() * sizeof(unsigned int)));
-        glBindVertexArray(0);
-    }
     void render(glm::mat4 view, glm::mat4 projection, const Light& light) {
         std::sort(render_queue_.begin(), render_queue_.end());
 

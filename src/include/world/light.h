@@ -42,7 +42,7 @@ public:
         float far_plane = config->z_far;
 
         // 计算视锥体8个角点（世界空间） 
-        // TODO: 不行，这里需要考虑摄像机外面的物体
+        // TODO: 不行，这里需要考虑摄像机外面的物体，但是如果空中空旷那么未尝不可
         float nh = near_plane * tan(fov / 2.0f); // 近平面高度的一半
         float nw = nh * aspect;                  // 近平面宽度的一半
         float fh = far_plane * tan(fov / 2.0f);  // 远平面高度的一半
@@ -79,7 +79,7 @@ public:
 
         // 光源位置：可以设为任意点，只要 view 矩阵正确即可（这里用原点后退）
         // 实际上我们只关心方向，所以 view 矩阵由 lookAt(任意点沿 -lightDir, 任意点, up) 决定
-        glm::vec3 lightPos = camPos - lightDir * 3.0f*(far_plane + near_plane); // 足够远
+        glm::vec3 lightPos = camPos - lightDir * 1.5f*(far_plane + near_plane); // 足够远
         glm::mat4 lightView = glm::lookAt(lightPos,  camPos,up); // 这个矩阵将世界坐标转换为以光源为原点观察、光线传播方向为 -z 的坐标系
 
         // 4. 将视锥体角点变换到光源空间（即 lightView * point）

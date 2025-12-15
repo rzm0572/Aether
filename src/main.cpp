@@ -140,10 +140,10 @@ int main() {
     // Light settings
     auto light = Light(
         &third_person_camera,
-        glm::vec3(0.8f, 0.8f, 0.8f),     // TODO: 环境光颜色有待实现，暂时用天蓝色代替
+        glm::vec3(0.6f, 0.6f, 0.6f),     // TODO: 环境光颜色有待实现，暂时用天蓝色代替
         {
             glm::vec3(0.0f, 1.0f, 0.0f),      // TODO: 光照方向有待实现，暂时用物体指向天空
-            glm::vec3(1.0f, 1.0f, 1.0f),    // TODO：光照颜色有待实现，暂时用白色代替
+            glm::vec3(2.0f, 2.0f, 2.0f),    // TODO:光照颜色有待实现，暂时用白色代替
         }
     );
 
