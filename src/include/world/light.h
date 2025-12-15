@@ -157,7 +157,7 @@ public:
             // 手动控制状态
             manual_azimuth_ = 0.0f;// 经度
             manual_altitude_ = glm::radians(-90.0f);// 纬度
-            manual_color_ = glm::vec3(1.0f);
+            manual_color_ = glm::vec3(1.0f,1.0f,1.0f);
             manual_intensity_ = 2.5f;
             parallel_.light_dir = glm::vec3(0.0f, 1.0f, 0.0f);
             parallel_.light_color = glm::vec3(2.5f, 2.5f, 2.5f);
@@ -344,9 +344,9 @@ public:
                 final_color = manual_color_ * manual_intensity_/1.5f;
             }
             
-            std::cout<<"manual_color: "<<manual_color_.x<<" "<<manual_color_.y<<" "<<manual_color_.z<<std::endl;
-            std::cout<<"manual_intensity: "<<manual_intensity_<<std::endl;
-            std::cout<<"final_dir: "<<final_dir.x<<" "<<final_dir.y<<" "<<final_dir.z<<std::endl;
+            // std::cout<<"manual_color: "<<manual_color_.x<<" "<<manual_color_.y<<" "<<manual_color_.z<<std::endl;
+            // std::cout<<"manual_intensity: "<<manual_intensity_<<std::endl;
+            // std::cout<<"final_dir: "<<final_dir.x<<" "<<final_dir.y<<" "<<final_dir.z<<std::endl;
         }
 
         // ========== 应用最终结果 ==========
