@@ -217,7 +217,7 @@ int main() {
         // 渲染天空盒（在其他物体之后渲染以优化性能）
         skybox.changeProjection(projection);
         skybox.changeView(view);
-        skybox.Render();
+        skybox.Render(light.getSkyTint());
 
         Profiler::instance().get_timer("render").end_clock();
 

@@ -257,7 +257,7 @@ Skybox::Skybox(const std::string &posX, const std::string &negX,
     cameraPos   = glm::vec3(0.0f, 0.0f, 3.0f);
 }
 
-void Skybox::Render(){
+void Skybox::Render(glm::vec3 TintColor){
     // 记录过去深度测试状态，因为要修改
     GLint OldCullFaceMode;
     glGetIntegerv(GL_CULL_FACE_MODE, &OldCullFaceMode);
@@ -276,6 +276,7 @@ void Skybox::Render(){
     shader->setUniform("gWVP", skyboxView);
     cubemap->Bind(GL_TEXTURE0);
     shader->setUniform("gCubemapTexture", 0);
+    shader->setUniform("gTintColor", TintColor);
 
     mesh->Render();
 

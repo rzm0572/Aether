@@ -295,7 +295,7 @@ public:
             if (input_.getKeyPressed(InputKey::PERIOD)){
                 manual_intensity_ += intensity_step;
             }
-            manual_intensity_ = glm::clamp(manual_intensity_, 0.0f, 4.0f);// 限制光强区间
+            manual_intensity_ = glm::clamp(manual_intensity_, 0.0f, 3.2f);// 限制光强区间
 
 
 
@@ -359,6 +359,30 @@ public:
         // std::cout<<"final_color: "<<final_color.x<<" "<<final_color.y<<" "<<final_color.z<<std::endl;
         // std::cout<<"ambient_color: "<<ambient_color_.x<<" "<<ambient_color_.y<<" "<<ambient_color_.z<<std::endl;
 
+    }
+    // 给天空盒染色，可以传给天空盒着色器一个颜色参数
+    glm::vec3 getSkyTint() const {
+        glm::vec3 light = parallel_.light_color;
+
+        // 限制最大亮度
+        float luma = dot(light, glm::vec3(0.299f, 0.587f, 0.114f));
+        if (luma > 1.5f) {
+            light *= (1.5f / luma);
+        }
+
+        // 降低饱和度30% 原色+70% 灰
+        glm::vec3 gray = glm::vec3(luma);
+        glm::vec3 desaturated = glm::mix(gray, light, 0.3f); // 30% 原色，70% 灰
+
+        // 向蓝色偏移，模拟瑞利散射
+        glm::vec3 skyTint = desaturated * glm::vec3(0.8f, 0.9f, 1.2f);
+
+        // 夜晚自动变暗：如果光很弱，天空必须更暗
+        if (luma < 0.5f) {
+            skyTint *= (0.2f + 0.8f * luma);
+        }
+
+        return glm::clamp(skyTint, 0.0f, 1.5f);
     }
 
 private:

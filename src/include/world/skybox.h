@@ -65,7 +65,7 @@ public:
      * @note 视图矩阵会移除平移分量，确保天空盒始终围绕相机
      *
      */
-    void Render();
+    void Render(glm::vec3 TintColor);
 
     /**
      * @brief 设置相机位置
