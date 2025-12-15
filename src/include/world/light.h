@@ -27,8 +27,6 @@ public:
             auto_daynight_mode_ = false;   // 是否启用自动昼夜
 
             // 手动控制状态
-
-            
             manual_intensity_ = glm::length(parallel.light_color);
             if(manual_intensity_==0){
                 manual_color_ = glm::vec3(0.0f);

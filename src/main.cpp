@@ -113,14 +113,10 @@ int main() {
     
 
     // Terrain generation
-    PlainGenerator generator(-6.0f);
-    PerlinGenerator perlin_generator(0.0f, 20.0f, 16, 1);
-    // Terrain terrain(generator);
+    PerlinGenerator perlin_generator(-10.0f, 10.0f, 16, 1);
     Terrain terrain(perlin_generator);
 
-    perlin_generator.printChunk({0, 0});
-
-    terrain.createChunks(0, 16, -2, 2, 4.0f, getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
+    terrain.createChunks(0, 100, -2, 2, 4.0f, getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
     GameObject* terrain_obj = GameObject::createFromModel(terrain);
 
     // std::cout << terrain.toString() << std::endl;
@@ -181,12 +177,8 @@ int main() {
 
         // Logical frame
         Profiler::instance().get_timer("logical").start_clock();
-        // plane->getTransformComponent().translate(velocity * dt);
-        // plane->getTransformComponent().translate(plane_speed * glm::sin(curr_frame) * dt);
-        // plane->getTransformComponent().apply_angluar_velocity(angular_velocity * glm::cos(curr_frame) * 3.0f, dt);
+        plane->update(dt);
 
-        // plane->update(dt);
-        
         // free_camera.update(translator, curr_frame - last_frame);
         third_person_camera.update(input.getMouseMovement(), dt);
         light.update(dt);

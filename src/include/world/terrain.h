@@ -204,16 +204,24 @@ private:
         );
 
         float partial_x = y_scale_ * lerp(
-            g[0].x - (g[0].x + g[1].x) * u + (dot[1] - dot[0]) * du,
-            g[2].x - (g[2].x + g[3].x) * u + (dot[3] - dot[2]) * du,
+            g[0].x + (g[1].x - g[0].x) * u + (dot[1] - dot[0]) * du,
+            g[2].x + (g[3].x - g[2].x) * u + (dot[3] - dot[2]) * du,
             v
         );
 
         float partial_z = y_scale_ * lerp(
-            g[0].y - (g[0].y + g[2].y) * v + (dot[2] - dot[0]) * dv,
-            g[1].y - (g[1].y + g[3].y) * v + (dot[3] - dot[1]) * dv,
+            g[0].y + (g[2].y - g[0].y) * v + (dot[2] - dot[0]) * dv,
+            g[1].y + (g[3].y - g[1].y) * v + (dot[3] - dot[1]) * dv,
             u
         );
+
+        float approx_partial_x = (calculateHeight(x + 0.001f, z) - calculateHeight(x - 0.001f, z)) / 0.002f;
+        float approx_partial_z = (calculateHeight(x, z + 0.001f) - calculateHeight(x, z - 0.001f)) / 0.002f;
+
+        // std::cout << "X: " << x << " Z: " << z << std::endl;
+        // std::cout << "Height: " << height << std::endl;
+        // std::cout << "Partial x: " << partial_x << " Approx: " << approx_partial_x << std::endl;
+        // std::cout << "Partial z: " << partial_z << " Approx: " << approx_partial_z << std::endl;
 
         height = height * y_scale_ + y_base_;
 
