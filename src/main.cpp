@@ -27,18 +27,17 @@
 #include <stb_image.h>
 
 
-// TODO: 注释
+
 
 // 主要参考了 一步步学OpenGL(22) -《OpenGL使用Assimp库导入3d模型》 - Kam92.J的文章 - 知乎 https://zhuanlan.zhihu.com/p/150570465
 // 修改了片段着色器的输入，使其能够接受纯色输入，否则会失去颜色，这是模型常用的做法即纯色模型加上细节贴图
-// TODO: 金属度贴图（Metalness）
-// TODO: 粗糙度贴图（Roughness）
+
 // TODO: 不透明度（Opacity）
 // TODO: 自发光（Emission）
-// TODO: PBR 材质导入（Physically Based Rendering）
+
 // TODO: 法线贴图（Normal Map）
 // TODO: 材质捕捉（Material Capture）
-// TODO: 自阴影（Self-shadowing）
+
 
 // TODO: 线框调试
 // TODO: 顶点法线
