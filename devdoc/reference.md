@@ -24,3 +24,7 @@
    4. 实现环境光
    - [LearnOpenGL 基础光照](https://learnopengl-cn.github.io/02%20Lighting/02%20Basic%20Lighting/)
    - [一步步学OpenGL(17) -《环境光》 - Kam92.J的文章 - 知乎](https://zhuanlan.zhihu.com/p/148988756)
+
+4. 地形生成参考
+   - [Understanding Perlin Noise](https://adrianb.io/2014/08/09/perlinnoise.html)
+   - [Perlin Noise: A Procedural Generation Algorithm](https://rtouti.github.io/graphics/perlin-noise-algorithm)

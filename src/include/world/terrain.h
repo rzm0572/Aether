@@ -5,6 +5,8 @@
 #include "resource/shader.h"
 #include "resource/texture.h"
 #include "service/service_locator.h"
+#include <chrono>
+#include <random>
 
 struct ChunkCoord {
     int x;
@@ -48,6 +50,215 @@ public:
 
 private:
     float y_ { 0.0f };
+};
+
+
+class PerlinGenerator : public TerrainGenerator {
+public:
+    PerlinGenerator(float y_base = 0.0f, float y_scale = 1.0f, int freq = 16, unsigned long seed = 0) : freq_(freq), y_base_(y_base), y_scale_(y_scale) {
+        if (seed) {
+            seed_ = seed;
+        } else {
+            seed_ = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+        }
+        
+        generateGradients();
+    }
+
+    float getHeight(ChunkCoord chunk_coord, float x, float z) const override {
+        float x_perl = module(chunk_coord.x, freq_) + x / Chunk::length;
+        float z_perl = module(chunk_coord.z, freq_) + z / Chunk::width;
+        return calculateHeight(x_perl, z_perl);
+    }
+
+    Vertex getVertex(ChunkCoord chunk_coord, float x, float z) const override {
+        float x_perl = module(chunk_coord.x, freq_) + x / Chunk::length;
+        float z_perl = module(chunk_coord.z, freq_) + z / Chunk::width;
+        TerrainData data = calculateVertex(x_perl, z_perl);
+        
+        return {
+            glm::vec3(x, data.height, z),
+            glm::vec2(x, z) * 0.125f,
+            data.normal
+        };
+    }
+
+    void printChunk(ChunkCoord chunk_coord) const {
+        for (int x = 0; x < Chunk::length; ++x) {
+            for (int z = 0; z < Chunk::width; ++z) {
+                std::cout << getHeight(chunk_coord, x, z) << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
+    
+private:
+    struct TerrainData {
+        float height { 0.0f };
+        glm::vec3 normal { 0.0f };
+    };
+
+    void generatePermutation(int length) {
+        perm_.resize(length * 2);
+        std::iota(perm_.begin(), perm_.begin() + length, 0);
+
+        std::mt19937 rng(seed_);
+        std::shuffle(perm_.begin(), perm_.begin() + length, rng);
+        std::copy(perm_.begin(), perm_.begin() + length, perm_.begin() + length);
+    }
+
+    void generateGradients() {
+        const unsigned int perm_length = freq_ * freq_;
+        generatePermutation(perm_length);
+    }
+
+    /*
+     * Calculate height for a given position on the terrain.
+     * @param x range [0, freq_) chunk
+     * @param z range [0, freq_) chunk
+     * @return range [-1, 1]
+     */
+    float calculateHeight(float x, float z) const {
+        int x_int = std::floor(x);
+        int z_int = std::floor(z);
+        
+        float x_frac = x - x_int;
+        float z_frac = z - z_int;
+
+        glm::vec2 offset[4] = {
+            glm::vec2(x_frac, z_frac),
+            glm::vec2(x_frac - 1, z_frac),
+            glm::vec2(x_frac, z_frac - 1),
+            glm::vec2(x_frac - 1, z_frac - 1)
+        };
+
+        glm::vec2 g[4] = {
+            kGradient[hash(x_int, z_int)],
+            kGradient[hash(x_int + 1, z_int)],
+            kGradient[hash(x_int, z_int + 1)],
+            kGradient[hash(x_int + 1, z_int + 1)]
+        };
+
+        float dot[4] = {
+            glm::dot(offset[0], g[0]),
+            glm::dot(offset[1], g[1]),
+            glm::dot(offset[2], g[2]),
+            glm::dot(offset[3], g[3])
+        };
+
+        float u = fade(x_frac);
+        float v = fade(z_frac);
+
+        float height = lerp(
+            lerp(dot[0], dot[1], u),
+            lerp(dot[2], dot[3], u),
+            v
+        );
+
+        return height * y_scale_ + y_base_;
+    }
+
+    /*
+     * Calculate vertex data for a given position on the terrain.
+     * @param x range [0, freq_) chunk
+     * @param z range [0, freq_) chunk
+     * @return TerrainData { height, normal }
+     */
+    TerrainData calculateVertex(float x, float z) const {
+        int x_int = std::floor(x);
+        int z_int = std::floor(z);
+        
+        float x_frac = x - x_int;
+        float z_frac = z - z_int;
+
+        glm::vec2 offset[4] = {
+            glm::vec2(x_frac, z_frac),
+            glm::vec2(x_frac - 1, z_frac),
+            glm::vec2(x_frac, z_frac - 1),
+            glm::vec2(x_frac - 1, z_frac - 1)
+        };
+
+        glm::vec2 g[4] = {
+            kGradient[hash(x_int, z_int)],
+            kGradient[hash(x_int + 1, z_int)],
+            kGradient[hash(x_int, z_int + 1)],
+            kGradient[hash(x_int + 1, z_int + 1)]
+        };
+
+        float dot[4] = {
+            glm::dot(offset[0], g[0]),
+            glm::dot(offset[1], g[1]),
+            glm::dot(offset[2], g[2]),
+            glm::dot(offset[3], g[3])
+        };
+
+        float u = fade(x_frac);
+        float v = fade(z_frac);
+        float du = fade_derivative(x_frac);
+        float dv = fade_derivative(z_frac);
+
+        float height = lerp(
+            lerp(dot[0], dot[1], u),
+            lerp(dot[2], dot[3], u),
+            v
+        );
+
+        float partial_x = y_scale_ * lerp(
+            g[0].x - (g[0].x + g[1].x) * u + (dot[1] - dot[0]) * du,
+            g[2].x - (g[2].x + g[3].x) * u + (dot[3] - dot[2]) * du,
+            v
+        );
+
+        float partial_z = y_scale_ * lerp(
+            g[0].y - (g[0].y + g[2].y) * v + (dot[2] - dot[0]) * dv,
+            g[1].y - (g[1].y + g[3].y) * v + (dot[3] - dot[1]) * dv,
+            u
+        );
+
+        height = height * y_scale_ + y_base_;
+
+        glm::vec3 normal = glm::normalize(glm::vec3(-partial_x, 1.0f, -partial_z));
+        
+        return { height, normal };
+    }
+
+    int hash(int x, int z) const {
+        return perm_[perm_[module(x, freq_)] + module(z, freq_)] & 7;
+    }
+
+    float fade(float t) const {
+        return (10 + t * (-15 + 6 * t)) * t * t * t;
+    }
+
+    float fade_derivative(float t) const {
+        return 30 * t * t * (t - 1) * (t - 1);
+    }
+
+    float lerp(float a, float b, float t) const {
+        return a + (b - a) * t;
+    }
+
+    int module(int x, int m) const {
+        int p = x % m;
+        return p < 0 ? p + m : p;
+    }
+
+    static constexpr glm::vec2 kGradient[8] = {
+        {1, 0},
+        {1, 1},
+        {0, 1},
+        {-1, 1},
+        {-1, 0},
+        {1, -1},
+        {0, -1},
+        {-1, -1}
+    };
+
+    unsigned long seed_ { 0 };
+    int freq_ { 16 };            // chunk(s)
+    float y_base_ { 0.0f };
+    float y_scale_ { 1.0f };
+    std::vector<int> perm_;
 };
 
 
