@@ -34,3 +34,8 @@
    - [阴影映射](https://learnopengl-cn.github.io/05%20Advanced%20Lighting/03%20Shadows/01%20Shadow%20Mapping/)
    - [一步步学OpenGL(23) -《阴影贴图1》 - Kam92.J的文章 - 知乎](https://zhuanlan.zhihu.com/p/150570547)
    - [一步步学OpenGL(24) -《阴影贴图2》 - Kam92.J的文章 - 知乎](https://zhuanlan.zhihu.com/p/150570621)
+
+
+4. 地形生成参考
+   - [Understanding Perlin Noise](https://adrianb.io/2014/08/09/perlinnoise.html)
+   - [Perlin Noise: A Procedural Generation Algorithm](https://rtouti.github.io/graphics/perlin-noise-algorithm)
