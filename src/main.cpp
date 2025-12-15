@@ -204,7 +204,7 @@ int main() {
         renderer.beginShadowPass(light);// 开启阴影渲染，设置光源空间矩阵以及绑定阴影贴图纹理
         renderer.submit_recursive_renderShadow(plane);
         renderer.submit_recursive_renderShadow(terrain_obj);
-        renderer.endShadowPass();// 关闭阴影渲染，恢复渲染状态
+        renderer.endShadowPass(window);// 关闭阴影渲染，恢复渲染状态
         // --- Main Render Pass ---
         renderer.submit_recursive(plane);
         renderer.submit_recursive(terrain_obj);

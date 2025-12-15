@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/game_object.h"
+#include "common/window.h"
 #include "component/render.h"
 #include "world/light.h"
 #include "utils/profiler.h"
@@ -60,10 +61,12 @@ public:
         }
     }
 
-    void endShadowPass() {
+    void endShadowPass(Window& window) {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        Config* config = ServiceLocator<Config>::get();
-        glViewport(0, 0, config->scr_width, config->scr_height);
+
+        int window_width = 0, window_height = 0;
+        window.getFramebufferSize(window_width, window_height);
+        glViewport(0, 0, window_width, window_height);
     }
 
     void render(glm::mat4 view, glm::mat4 projection, const Light& light) {

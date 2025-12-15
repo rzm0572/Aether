@@ -109,6 +109,10 @@ public:
         glfwSetWindowShouldClose(m_window_, GLFW_TRUE);
     }
 
+    void getFramebufferSize(int& width, int& height) {
+        glfwGetFramebufferSize(m_window_, &width, &height);
+    }
+
 private:
     GLFWwindow* m_window_;
 };
