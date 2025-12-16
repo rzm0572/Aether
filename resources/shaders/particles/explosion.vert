@@ -110,13 +110,13 @@ void main() {
                 // 早期：明亮黄白色-->金黄
                 float fade = (t - 0.15) / (0.5 - 0.15);
                 baseColor = mix(vec3(1.0, 0.95, 0.8), vec3(1.0, 0.7, 0.2), fade);
-            } else if (t < 0.9) {
+            } else if (t < 0.98) {
                 // 中期：橙红火焰
-                float fade = (t - 0.5) / (0.9 - 0.4);
+                float fade = (t - 0.5) / (0.98 - 0.4);
                 baseColor = mix(vec3(1.0, 0.7, 0.2), vec3(0.8, 0.3, 0.05), fade);
             } else {
                 // 后期：暗红-->灰黑
-                float fade = (t - 0.9) / (1.0 - 0.9);
+                float fade = (t - 0.98) / (1.0 - 0.98);
                 baseColor = mix(vec3(0.8, 0.3, 0.05), vec3(0.15, 0.1, 0.08), fade);
             }
         }

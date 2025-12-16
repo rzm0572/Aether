@@ -32,9 +32,13 @@
     - [笔记 OpenGL-粒子特效](https://www.bilibili.com/opus/643329300082196501)
     - [NeHe OpenGL第十九课：粒子系统](https://www.cnblogs.com/arxive/p/6239474.html)
     - [OpenGL/GLUT实践：粒子系统，并添加纹理、动态模糊、边界碰撞](https://blog.csdn.net/WJwwwwwww/article/details/141866159)
+    - [3.12 创建一个3D爆炸效果，简单的粒子系统](https://enjoyphysics.cn/Article499)
+    - [https://github.com/835127729/ViewExplosion](https://github.com/835127729/ViewExplosion)
+    
    2. GPU 粒子系统
     - [使用计算着色器（Compute Shader）模拟粒子效果【OpenGL】【GLSL】](https://developer.aliyun.com/article/828953)
     - [一步步学OpenGL(28) -《Transform Feedback粒子系统》](https://zhuanlan.zhihu.com/p/150570974)
+    - [一步步学OpenGL(27) -《公告牌技术与几何着色器》 - Kam92.J的文章 - 知乎](https://zhuanlan.zhihu.com/p/150570892)
    3. ribbon 与 billboard 粒子效果
     - [粒子系统实现与原理](https://blog.csdn.net/chenweiyu11962/article/details/127130466)
     - [android opengl 实现粒子效果](https://blog.51cto.com/u_16099181/13241069?)
