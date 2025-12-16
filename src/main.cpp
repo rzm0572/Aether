@@ -142,10 +142,12 @@ int main() {
     );
 
     // GPU 粒子的粒子效果测试
-    Particle_Fireball fireball(10000,42,getAssetPath("textures/particles/particle200.png"));
+    Particle_Fireball fireball(10000,42,getAssetPath("textures/particles/particle_generated.png"));
     fireball.start_();
-    Particle_Flareback flareback(10000, 42, getAssetPath("textures/particles/particle200.png"),glm::vec3(0.0f, 0.0f, 0.0f),1.0f);
+    Particle_Flareback flareback(10000, 42, getAssetPath("textures/particles/particle_generated.png"),glm::vec3(0.0f, 0.0f, 0.0f),1.0f);
     flareback.start_();
+    Particle_Explosion explosion(100000,5000, 42, getAssetPath("textures/particles/particle_generated.png"));
+    explosion.start_();
 
     // 开启深度测试
     glEnable(GL_DEPTH_TEST);
@@ -202,8 +204,9 @@ int main() {
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 显示线框
 
         // 绘制爆炸的粒子效果
-        fireball.draw(plane->getTransformComponent().getPosition(),view, projection, third_person_camera.getPosition(),3.0f,3.0f,0.1f);
-        flareback.draw(plane->getTransformComponent().getPosition()-glm::vec3(3.0f,1.0f,0.0f), view, projection, third_person_camera.getPosition(), 4.0f, 1.5f, 0.1f,velocity);
+        // fireball.draw(plane->getTransformComponent().getPosition(),view, projection, third_person_camera.getPosition(),3.0f,3.0f,0.1f);
+        // flareback.draw(plane->getTransformComponent().getPosition()-glm::vec3(3.0f,1.0f,0.0f), view, projection, third_person_camera.getPosition(), 4.0f, 1.5f, 0.1f,velocity);
+        explosion.draw(plane->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 3.0f,3.0f,0.1f);
 
         // 渲染天空盒（在其他物体之后渲染以优化性能）
         skybox.changeProjection(projection);
