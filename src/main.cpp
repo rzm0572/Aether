@@ -104,7 +104,7 @@ int main() {
     }
 
     // GameObject* plane = GameObject::createFromModel(plane_model);
-    glm::vec3 initial_position = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 initial_position = glm::vec3(0.0f, 64.0f, 0.0f);
     glm::quat initial_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
     glm::vec3 velocity = glm::vec3(70.0f, 0.0f, 0.0f);
     glm::vec3 angular_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -113,10 +113,12 @@ int main() {
     
 
     // Terrain generation
-    PerlinGenerator perlin_generator(-10.0f, 10.0f, 16, 1);
-    Terrain terrain(perlin_generator);
+    // PerlinGenerator perlin_generator(-10.0f, 10.0f, 16, 1);
+    // Terrain terrain(perlin_generator);
+    fBmGenerator fBm_generator(0.0f, 64.0f, 5, 2, 0.6f, -4, 16, 1);
+    Terrain terrain(fBm_generator);
 
-    terrain.createChunks(0, 100, -2, 2, 4.0f, getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
+    terrain.createChunks(0, 31, -2, 2, 4.0f, getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
     GameObject* terrain_obj = GameObject::createFromModel(terrain);
 
     // std::cout << terrain.toString() << std::endl;
