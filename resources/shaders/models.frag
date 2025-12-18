@@ -36,6 +36,7 @@ uniform vec3 ambientLight;
 // 阴影贴图
 
 uniform sampler2D shadowMap;
+// uniform sampler2DShadow shadowMap;
 uniform mat4 lightSpaceMatrix;
 
 
@@ -57,7 +58,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir) {
     // PCF
     // TODO: 调整PCF采样，采样范围为 [-1,1]，采样次数为 (2.0 * half_sample + 1.0) * (2.0 * half_sample + 1.0)
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
-    int half_sample = 4;
+    int half_sample = 5;
     for(int x = -half_sample; x <= half_sample; ++x) {
         for(int y = -half_sample; y <= half_sample; ++y) {
             float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
@@ -66,6 +67,23 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir) {
     }
     shadow /= (2.0 * half_sample + 1.0) * (2.0 * half_sample + 1.0);
     return shadow;
+
+    // float shadow = 0.0;
+    // // PCF
+    // vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    // int half_sample = 4;
+    // for(int x = -half_sample; x <= half_sample; ++x) {
+    //     for(int y = -half_sample; y <= half_sample; ++y) {
+    //         if(projCoords.z > 1.0){
+    //             shadow += 0.0;
+    //         }
+    //         else{// 自动比较：projCoords.z vs shadowMap 中的深度
+    //             shadow += texture(shadowMap, vec3(projCoords.xy+ vec2(x, y) * texelSize, projCoords.z));
+    //         }            
+    //     }
+    // }
+    // shadow /= (2.0 * half_sample + 1.0) * (2.0 * half_sample + 1.0);
+    // return 1.0 - shadow;
 }
 
 

@@ -7,7 +7,7 @@
 #include <resource/shader.h>
 #include <interaction/camera.h>
 #include <cmath>
-
+#include <algorithm>
 struct ParallelLight {
     glm::vec3 light_dir;
     glm::vec3 light_color;
@@ -112,7 +112,7 @@ public:
 
         // 光源位置：可以设为任意点，只要 view 矩阵正确即可（这里用原点后退）
         // 实际上我们只关心方向，所以 view 矩阵由 lookAt(任意点沿 -lightDir, 任意点, up) 决定
-        glm::vec3 lightPos = camPos - lightDir * 1.5f*(far_plane + near_plane); // 足够远
+        glm::vec3 lightPos = camPos - lightDir *(far_plane + near_plane); // 足够远
         glm::mat4 lightView = glm::lookAt(lightPos,  camPos,up); // 这个矩阵将世界坐标转换为以光源为原点观察、光线传播方向为 -z 的坐标系
 
         // 4. 将视锥体角点变换到光源空间（即 lightView * point）
@@ -129,7 +129,6 @@ public:
         float padding = 2.0f;
         minBound.x -= padding; minBound.y -= padding; minBound.z -= padding;
         maxBound.x += padding; maxBound.y += padding; maxBound.z += padding;
-
         glm::mat4 lightProjection = glm::ortho(
             minBound.x, maxBound.x,
             minBound.y, maxBound.y,
