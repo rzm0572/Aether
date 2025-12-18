@@ -87,7 +87,7 @@ public:
         auto shader = ServiceLocator<ShaderManager>::get()->useShader("model");
         shader->setUniform("view", view);
         shader->setUniform("projection", projection);
-        shader->setUniform("ourTexture", 0);
+        // shader->setUniform("TextureDiffuse", 0);
         // 光照所需的输入
         light.use(shader);
 

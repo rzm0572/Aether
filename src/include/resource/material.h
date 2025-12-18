@@ -3,21 +3,21 @@
 #include <array>
 #include <filesystem>
 #include "assimp/material.h"
+#include "utils/profiler.h"
 #include "shader.h"
 #include "resource/texture.h"
 
-// Texture type
-// e.g. diffuse, specular, normal, height
-enum class TextureType {
-    kDIFFUSE = 0,
-    // kSPECULAR = 1,
-    _COUNT
-};
 
-// A table mapping TextureType to aiTextureType in Assimp
-inline aiTextureType kTableTextureType[] = {
-    [(size_t)TextureType::kDIFFUSE] = aiTextureType_DIFFUSE,
-    // [(size_t)TextureType::kSPECULAR] = aiTextureType_SPECULAR,
+// A table mapping AssimpTextureType to its corresponding string in shader
+inline std::string kAssimpTextureTypeStr[] = {
+    [aiTextureType_DIFFUSE] = "Diffuse",
+    [aiTextureType_SPECULAR] = "Specular",
+    // [aiTextureType_AMBIENT] = "Ambient",
+    // [aiTextureType_EMISSIVE] = "Emissive",
+    // [aiTextureType_HEIGHT] = "Height",
+    // [aiTextureType_NORMALS] = "Normal",
+    // [aiTextureType_SHININESS] = "Shininess",
+    // [aiTextureType_OPACITY] = "Opacity",
 };
 
 
@@ -25,6 +25,39 @@ inline aiTextureType kTableTextureType[] = {
 // Provide method to load material from Assimp aiMaterial, and to apply material to shader program
 // Each Material instance holds a reference to a Shader instance, and a set of slots for textures and base colors
 class Material {
+private:
+    struct TextureSlot {
+        using TextureUnion = std::variant<float, glm::vec3, glm::vec4>;
+        std::shared_ptr<const Texture> texture { nullptr };
+        TextureUnion texture_const { 0.0f };
+
+        TextureSlot(): texture_const(0.0f) {}
+        TextureSlot(TextureUnion texture_const): texture_const(texture_const) {}
+        TextureSlot(float texture_const): texture_const(texture_const) {}
+        TextureSlot(glm::vec3 texture_const): texture_const(texture_const) {}
+        TextureSlot(glm::vec4 texture_const): texture_const(texture_const) {}
+        TextureSlot(std::shared_ptr<const Texture> texture, TextureUnion texture_const): texture(texture), texture_const(texture_const) {}
+        TextureSlot(std::shared_ptr<const Texture> texture, float texture_const): texture(texture), texture_const(texture_const) {}
+        TextureSlot(std::shared_ptr<const Texture> texture, glm::vec3 texture_const): texture(texture), texture_const(texture_const) {}
+        TextureSlot(std::shared_ptr<const Texture> texture, glm::vec4 texture_const): texture(texture), texture_const(texture_const) {}
+
+        void apply(const Shader* shader, const std::string& name, int& texture_unit) {
+            if (texture != nullptr) {
+                texture->Bind(texture_unit + GL_TEXTURE0);
+                shader->setUniform("HasTexture" + name, true);
+                shader->setUniform("Texture" + name, texture_unit);
+                texture_unit++;
+            } else {
+                shader->setUniform("HasTexture" + name, false);
+            }
+
+            std::visit([&](auto&& arg) {
+                using T = std::decay_t<decltype(arg)>;
+                shader->setUniform("Constant" + name, arg);
+            }, texture_const);
+        }
+    };
+
 public:
     Material(const Shader* shader) : shader_(shader) {}
     Material(const Shader* shader, const aiMaterial* material, const std::filesystem::path& directory) : shader_(shader) {
@@ -51,52 +84,43 @@ public:
 
     void setShader(const std::string& name);
 
-    void setTexture(TextureType type, std::shared_ptr<const Texture> texture) {
-        size_t index = (size_t)type;
-        if (index < (size_t)TextureType::_COUNT) {
-            textures_[index] = texture;
-            has_texture_[index] = true;
+    void setTexture(std::string name, std::shared_ptr<const Texture> texture, TextureSlot::TextureUnion constant = 0.0f) {
+        texture_slots_[name] = TextureSlot(texture, constant);
+    }
+
+    void setConstant(std::string name, TextureSlot::TextureUnion constant) {
+        if (texture_slots_.find(name) != texture_slots_.end()) {
+            texture_slots_[name].texture_const = constant;
+        } else {
+            texture_slots_[name] = TextureSlot(constant);
         }
-    }
-
-    void setBaseColor(glm::vec4 base_color) {
-        base_colors_ = base_color;
-    }
-
-    void setMetallic(float metallic) {
-        metallic_ = metallic;
-    }
-
-    void setRoughness(float roughness) {
-        roughness_ = roughness;
-    }
-
-    void setSpecular(float specular) {
-        specular_ = specular;
-    }
-
-    void setSpecularColor(glm::vec3 specular_color) {
-        specularColor_ = specular_color;
     }
 
     const Shader* getShader() const {
         return shader_;
     }
 
-    glm::vec4 getBaseColor() {
-        return base_colors_;
-    }
-
     // Debugging
     const std::string toString() const {
-        std::string str = "Material(shader: " + shader_->toString() + ", base_color: (" + std::to_string(base_colors_.r) + " " + std::to_string(base_colors_.g) + " " + std::to_string(base_colors_.b) + " " + std::to_string(base_colors_.a) + "), texture slots: [";
-        for (size_t i = 0; i < (size_t)TextureType::_COUNT; ++i) {
-            std::string texture_str = std::string("\n\t{\n\t\thas_texture: ") + (has_texture_[i] ? "Y" : "N");
-            if (has_texture_[i]) {
-                texture_str += std::string(",\n\t\ttexture: ") + textures_[i]->toString();
+        std::string str = "Material(shader: " + shader_->toString() + ", texture slots: [";
+        for (auto it : texture_slots_) {
+            str += "\n\t{\n\t\tname: " + it.first + ",\n\t\ttexture_const: ";
+            std::visit([&](auto&& arg) {
+                using T = std::decay_t<decltype(arg)>;
+                if constexpr (std::is_same_v<T, std::shared_ptr<const Texture>>) {
+                    str += arg->toString();
+                } else if constexpr (std::is_same_v<T, glm::vec3>) {
+                    str += "vec3(" + std::to_string(arg.x) + ", " + std::to_string(arg.y) + ", " + std::to_string(arg.z) + ")";
+                } else if constexpr (std::is_same_v<T, glm::vec4>) {
+                    str += "vec4(" + std::to_string(arg.x) + ", " + std::to_string(arg.y) + ", " + std::to_string(arg.z) + ", " + std::to_string(arg.w) + ")";
+                } else if constexpr (std::is_same_v<T, float>) {
+                    str += "float(" + std::to_string(arg) + ")";
+                }
+            }, it.second.texture_const);
+            if (it.second.texture != nullptr) {
+                str += "\n\t\ttexture: " + it.second.texture->toString();
             }
-
-            str += texture_str + "\n\t},";
+            str += "\n\t},";
         }
         return str + "\n\t], addr = " + std::to_string((size_t)this) + ")";
     }
@@ -106,16 +130,7 @@ private:
     const Shader* shader_;
 
     // texture slots
-    std::array<bool, size_t(TextureType::_COUNT)> has_texture_ = { false };
-    std::array<std::shared_ptr<const Texture>, size_t(TextureType::_COUNT)> textures_;
-
-    // TODO: 实现 PBR 工作流
-    // material properties
-    glm::vec4 base_colors_;                     // 材质的基本颜色
-    float metallic_ { 0.0f };                   // 材质的金属度
-    float roughness_ { 0.5f };                  // 材质的粗糙度
-    float specular_ { 0.35f };                  // 材质的高光系数
-    glm::vec3 specularColor_ { 1.0f };  // 材质的高光颜色
+    std::unordered_map<std::string, TextureSlot> texture_slots_;
 };
 
 
@@ -169,6 +184,10 @@ public:
         } else {
             return default_material_;
         }
+    }
+
+    void registerMaterial(const std::string& material_key, std::shared_ptr<Material> material) {
+        materials_[material_key] = material;
     }
 
 private:

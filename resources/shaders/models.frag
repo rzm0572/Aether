@@ -9,13 +9,20 @@ out vec4 FragColor;//  输出颜色
 
 
 // 材质属性 material
-uniform vec4 baseColorFactor;   //  传入颜色
-uniform bool hasTexture;        //  是否使用纹理
-uniform sampler2D ourTexture;   //  纹理可能未使用
-uniform float metallicFactor;   //  金属度
-uniform float roughnessFactor;  //  粗糙度
-// uniform float specularFactor;      // 镜面度
-// uniform vec3 specularColorFactor;  // 镜面颜色
+uniform sampler2D TextureDiffuse;     // 漫反射贴图（颜色贴图）
+uniform sampler2D TextureSpecular;    // 镜面反射贴图
+uniform sampler2D TextureMetallic;    // 金属度贴图
+uniform sampler2D TextureRoughness;   // 粗糙度贴图
+
+uniform bool HasTextureDiffuse;
+uniform bool HasTextureSpecular;
+uniform bool HasTextureMetallic;
+uniform bool HasTextureRoughness;
+
+uniform vec4 ConstantDiffuse;         // 漫反射系数（基本颜色）
+uniform vec3 ConstantSpecular;        // 镜面反射系数（镜面颜色）
+uniform float ConstantMetallic;       // 金属度
+uniform float ConstantRoughness;      // 粗糙度
 
 
 // 光照处理
@@ -66,10 +73,10 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir) {
 void main() {
     // 获取不包含任何效果的基础颜色
     vec3 albedo;
-    if (hasTexture) {
-        albedo = texture(ourTexture, TexCoord).rgb * baseColorFactor.rgb;
+    if (HasTextureDiffuse) {
+        albedo = texture(TextureDiffuse, TexCoord).rgb * ConstantDiffuse.rgb;
     } else {
-        albedo = baseColorFactor.rgb;
+        albedo = ConstantDiffuse.rgb;
     }
 
     // 准备向量
@@ -83,8 +90,16 @@ void main() {
     NdotL = max(NdotL, 0.0);//防止背面光照
 
     // PBR 参数，包括金属度、粗糙度等
-    float metallic = metallicFactor;
-    float roughness = max(roughnessFactor, 0.04); // 避免完全光滑导致 NaN 或过亮
+    float metallic = ConstantMetallic;
+    if (HasTextureMetallic) {
+        metallic = texture(TextureMetallic, TexCoord).r;
+    }
+
+    float roughness = ConstantRoughness;
+    if (HasTextureRoughness) {
+        roughness = texture(TextureRoughness, TexCoord).r;
+    }
+    roughness = max(roughness, 0.04); // 避免完全光滑导致 NaN 或过亮
 
     // F0: 基础反射率 —— 非金属固定为 0.04，金属则用 albedo
     vec3 F0 = mix(vec3(0.04), albedo, metallic);
@@ -137,7 +152,7 @@ void main() {
     // color = pow(color, vec3(1.0/2.2)); 
 
     // 输出，增加透明度信息
-    FragColor = vec4(color, baseColorFactor.a);
+    FragColor = vec4(color, ConstantDiffuse.a);
 
     // === 调试： ===
     // FragColor = vec4(NdotL, NdotL, NdotL, 1.0);//输出 NdotL 的灰度图

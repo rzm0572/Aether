@@ -96,10 +96,12 @@ public:
 
                 shader->setUniform("view", view);
                 shader->setUniform("projection", projection);
-                shader->setUniform("lightSpaceMatrix", light_view_matrix_);
-                glActiveTexture(GL_TEXTURE1);
+
+                // Bind shadow map texture
+                glActiveTexture(GL_TEXTURE15);
                 glBindTexture(GL_TEXTURE_2D, shadow_map_.getDepthMap());
-                shader->setUniform("shadowMap", 1);
+                shader->setUniform("shadowMap", 15);
+                shader->setUniform("lightSpaceMatrix", light_view_matrix_);
                 light.use(shader);
             }
 
@@ -108,11 +110,6 @@ public:
 
             // Update the model matrix by the global transform of the object
             shader->setUniform("model", entry.global_transform);
-            shader->setUniform("ourTexture", 0);   
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, shadow_map_.getDepthMap());
-            shader->setUniform("shadowMap", 1);         
-            shader->setUniform("lightSpaceMatrix", light_view_matrix_);
 
             // Render the object
             void* offset = (void*)(entry.rc->mesh_->getIndexOffset() * sizeof(unsigned int));

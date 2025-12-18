@@ -118,7 +118,8 @@ int main() {
     fBmGenerator fBm_generator(0.0f, 64.0f, 5, 2, 0.6f, -4, 16, 1);
     Terrain terrain(fBm_generator);
 
-    terrain.createChunks(0, 31, -2, 2, 4.0f, getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
+    unsigned int terrain_material_index = terrain.createMaterial(getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
+    terrain.createChunks(0, 31, -2, 2, 4.0f, terrain_material_index);
     GameObject* terrain_obj = GameObject::createFromModel(terrain);
 
     // std::cout << terrain.toString() << std::endl;

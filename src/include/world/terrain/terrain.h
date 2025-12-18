@@ -39,20 +39,31 @@ public:
 
     bool loadModel(const std::string& filepath) = delete;
 
-    void createChunks(int x_min, int x_max, int z_min, int z_max, float stride, const std::string& texture_path = std::string()) {
+    unsigned int createMaterial(const std::string& texture_path) {
         auto shader = ServiceLocator<ShaderManager>::get()->getShader("model");
+        auto material_manager = ServiceLocator<MaterialManager>::get();
+        if (material_manager == nullptr) {
+            return 0xffffffff;
+        }
 
         auto terrain_material = std::make_shared<Material>(shader);
+        material_manager->registerMaterial("terrain", terrain_material);
 
         if (!texture_path.empty()) {
             auto texture = ServiceLocator<TextureManager>::get()->getTexture(texture_path);
             if (texture != nullptr) {
-                terrain_material->setTexture(TextureType::kDIFFUSE, texture);
+                terrain_material->setTexture("Diffuse", texture);
             }
         }
-        terrain_material->setBaseColor(glm::vec4(1.0f));
-        unsigned int material_index = insertMaterial(terrain_material);
+        terrain_material->setConstant("Diffuse", glm::vec4(1.0f));
+        terrain_material->setConstant("Specular", glm::vec4(0.0f));
+        terrain_material->setConstant("Metallic", 0.0f);
+        terrain_material->setConstant("Roughness", 0.5f);
 
+        return insertMaterial(terrain_material);
+    }
+
+    void createChunks(int x_min, int x_max, int z_min, int z_max, float stride, unsigned int material_index) {
         std::vector<Vertex> global_vertices;
         std::vector<vIndex> global_indices;
 

@@ -17,7 +17,7 @@ class Texture {
 public:
     // 构造函数：指定纹理类型（通常是 GL_TEXTURE_2D）和文件路径
     Texture(GLenum type, const std::string& filepath)
-        : m_type(type), m_filepath(filepath), m_textureID(0), m_width(0), m_height(0), m_channels(0) {}
+        : m_type(type), m_filepath(filepath), m_textureID(0), m_width(0), m_height(0), m_channels(0), m_depth(1) {}
     
     ~Texture(){
         if (m_textureID) {
@@ -35,6 +35,7 @@ public:
         m_width = other.m_width;
         m_height = other.m_height;
         m_channels = other.m_channels;
+        m_depth = other.m_depth;
 
         other.m_textureID = 0;
     }
@@ -51,6 +52,7 @@ public:
             m_width = other.m_width;
             m_height = other.m_height;
             m_channels = other.m_channels;
+            m_depth = other.m_depth;
 
             other.m_textureID = 0;
         }
@@ -119,6 +121,7 @@ private:
     std::string m_filepath;               // 纹理文件路径
     GLuint m_textureID;                   // OpenGL 纹理 ID
     int m_width, m_height, m_channels;    // 图像宽度、高度、通道数
+    int m_depth;                          // 纹理深度
 };
 
 // Texture manager class
@@ -160,6 +163,11 @@ public:
         }
 
         return texture;
+    }
+
+    std::shared_ptr<const Texture> getTexture(const std::vector<std::string>& filepaths, const std::string name, GLenum type = GL_TEXTURE_2D_ARRAY) {
+        // TODO: Implement texture array loading
+        return nullptr;
     }
 
     // Clear texture cache
