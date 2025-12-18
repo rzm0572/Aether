@@ -62,7 +62,9 @@ public:
 
         int location = glGetUniformLocation(ID, name.c_str());
         if (location == -1) {
-            throw std::runtime_error("Cannot find uniform variable " + name);
+            // std::cerr << "Cannot find uniform variable " << name << std::endl;
+            // throw std::runtime_error("Cannot find uniform variable " + name);
+            return false;
         }
 
         if constexpr (std::is_same<T, float>::value) {
@@ -85,7 +87,7 @@ public:
             } else {
                 glUniform4d(location, x, args...);
             }
-        } else if constexpr (std::is_same<T, int>::value) {
+        } else if constexpr (std::is_same<T, int>::value || std::is_same<T, unsigned int>::value) {
             if constexpr (count == 1) {
                 glUniform1i(location, x);
             } else if constexpr (count == 2) {
@@ -177,6 +179,7 @@ public:
         ShaderProgramID id = shader.ID;
         shaders_[id] = std::move(shader);
         shader_registry_[name] = &shaders_[id];
+        std::cout << "Registered shader: " << name << ", id: " << id << std::endl;
     }
 
     void registerShader(std::string name, std::string vertex_shader_path, std::string fragment_shader_path) {
