@@ -6,20 +6,22 @@
 #include "utils/profiler.h"
 #include "shader.h"
 #include "resource/texture.h"
+#include <variant>
+#include <unordered_map>
+#include <string>
 
+// Assimp 的 aiTextureType 枚举最大值（截至 Assimp 5.x，共 17 种）
+constexpr size_t kMaxTextureTypes = 17; // 或 aiTextureType_UNKNOWN + 1，但需确认
 
-// A table mapping AssimpTextureType to its corresponding string in shader
-inline std::string kAssimpTextureTypeStr[] = {
-    [aiTextureType_DIFFUSE] = "Diffuse",
-    [aiTextureType_SPECULAR] = "Specular",
-    // [aiTextureType_AMBIENT] = "Ambient",
-    // [aiTextureType_EMISSIVE] = "Emissive",
-    // [aiTextureType_HEIGHT] = "Height",
-    // [aiTextureType_NORMALS] = "Normal",
-    // [aiTextureType_SHININESS] = "Shininess",
-    // [aiTextureType_OPACITY] = "Opacity",
-};
-
+inline const std::array<std::string, kMaxTextureTypes> kAssimpTextureTypeStr = []() {
+    std::array<std::string, kMaxTextureTypes> arr{};
+    arr[aiTextureType_DIFFUSE] = "Diffuse";
+    arr[aiTextureType_SPECULAR] = "Specular";
+    // arr[aiTextureType_AMBIENT] = "Ambient";
+    // arr[aiTextureType_EMISSIVE] = "Emissive";
+    // ... 其他按需启用
+    return arr;
+}();
 
 // Material class
 // Provide method to load material from Assimp aiMaterial, and to apply material to shader program
