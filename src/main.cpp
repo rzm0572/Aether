@@ -198,15 +198,16 @@ int main() {
         // Render frame
         // TODO: 逻辑帧与渲染帧分离，渲染采用插值算法，提高帧率
         Profiler::instance().get_timer("render").start_clock();
-        // --- Shadow Pass ---
-        renderer.beginShadowPass(light);// 开启阴影渲染，设置光源空间矩阵以及绑定阴影贴图纹理
-        renderer.submit_recursive_renderShadow(plane);
-        renderer.submit_recursive_renderShadow(terrain_obj);
-        renderer.endShadowPass(window);// 关闭阴影渲染，恢复渲染状态
-        // --- Main Render Pass ---
+        
+        // --- Submissions ---
         renderer.submit_recursive(plane);
         renderer.submit_recursive(terrain_obj);
+        renderer.finishAllSubmissions();                // Sort render queue
+        
+        // --- Render Pass ---
+        renderer.renderShadowMap(light, window);     // Shadow map creation
         renderer.render(view, projection, light);
+        renderer.finishAllRender();
 
         // 预览模型
         // model_test.render(model, view, projection, light);
@@ -232,6 +233,8 @@ int main() {
         std::cout << "Average FPS: " CYAN << 1.0f / (delta_time_sum / frame_count) << RESET << std::endl;
         Profiler::instance().report();
     }
+
+    delete engine;
 
     return 0;
 }

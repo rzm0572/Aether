@@ -171,8 +171,8 @@ private:
             u
         );
 
-        float approx_partial_x = (calculateHeight(x + 0.001f, z) - calculateHeight(x - 0.001f, z)) / 0.002f;
-        float approx_partial_z = (calculateHeight(x, z + 0.001f) - calculateHeight(x, z - 0.001f)) / 0.002f;
+        // float approx_partial_x = (calculateHeight(x + 0.001f, z) - calculateHeight(x - 0.001f, z)) / 0.002f;
+        // float approx_partial_z = (calculateHeight(x, z + 0.001f) - calculateHeight(x, z - 0.001f)) / 0.002f;
 
         // std::cout << "X: " << x << " Z: " << z << std::endl;
         // std::cout << "Height: " << height << std::endl;
