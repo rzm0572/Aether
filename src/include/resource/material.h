@@ -17,9 +17,12 @@ inline const std::array<std::string, kMaxTextureTypes> kAssimpTextureTypeStr = [
     std::array<std::string, kMaxTextureTypes> arr{};
     arr[aiTextureType_DIFFUSE] = "Diffuse";
     arr[aiTextureType_SPECULAR] = "Specular";
-    // arr[aiTextureType_AMBIENT] = "Ambient";
-    // arr[aiTextureType_EMISSIVE] = "Emissive";
-    // ... 其他按需启用
+    arr[aiTextureType_AMBIENT] = "Ambient";
+    arr[aiTextureType_EMISSIVE] = "Emissive";
+    arr[aiTextureType_HEIGHT] = "Height";
+    arr[aiTextureType_NORMALS] = "Normal";
+    arr[aiTextureType_SHININESS] = "Shininess";
+    arr[aiTextureType_OPACITY] = "Opacity";
     return arr;
 }();
 
@@ -54,7 +57,7 @@ private:
             }
 
             std::visit([&](auto&& arg) {
-                using T = std::decay_t<decltype(arg)>;
+                // using T = std::decay_t<decltype(arg)>;
                 shader->setUniform("Constant" + name, arg);
             }, texture_const);
         }

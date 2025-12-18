@@ -233,5 +233,7 @@ int main() {
         Profiler::instance().report();
     }
 
+    delete engine;
+
     return 0;
 }

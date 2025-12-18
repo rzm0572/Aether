@@ -3,7 +3,6 @@
 #include "component/render.h"
 #include "component/transform.h"
 #include "resource/model.h"
-#include "service/service_locator.h"
 
 using UUID_t = unsigned long long;
 

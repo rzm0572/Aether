@@ -35,7 +35,7 @@ public:
 // TODO: 多层纹理混合
 class Terrain : public Model {
 public:
-    Terrain(TerrainGenerator& generator) : generator_(generator), Model() {}
+    Terrain(TerrainGenerator& generator) : Model(), generator_(generator) {}
 
     bool loadModel(const std::string& filepath) = delete;
 
@@ -115,9 +115,6 @@ private:
     void createChunkData(ChunkCoord chunk_coord, float stride, std::vector<Vertex>& vertices, std::vector<vIndex>& indices) {
         int x_count = int((Chunk::length + stride + EPS) / stride);
         int z_count = int((Chunk::width + stride + EPS) / stride);
-
-        unsigned int vertex_offset = vertices.size();
-        unsigned int index_offset = indices.size();
 
         for (int z = 0; z < z_count; ++z) {
             for (int x = 0; x < x_count; ++x) {

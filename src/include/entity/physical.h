@@ -84,7 +84,7 @@ public:
         float lift_coeff = 20.0f,
         float forward_friction = 0.016f,            // forward_friction * speed_forward^2 = drag force
         float lateral_friction = 50.0f,
-        float vertical_friction = 10.0f,
+        float vertical_friction = 25.0f,
         float pitch_force = 8.0f,
         float yaw_force = 2.0f,
         float roll_force = 8.0f,
@@ -203,7 +203,7 @@ private:
         if (glm::abs(vertical_speed) < 1.0e-3f) {
             return 0.0f;
         }
-        return -lateral_friction_ * vertical_speed * glm::abs(vertical_speed);
+        return -vertical_friction_ * vertical_speed * glm::abs(vertical_speed);
     }
 
     float getLiftForce() {

@@ -11,7 +11,7 @@ ThirdPersonCamera::ThirdPersonCamera(
     float sensitivity,
     glm::vec3 offset,
     glm::quat base_rotation
-): distance_(distance), pitch_(pitch), yaw_(yaw), smooth_factor_(smooth_factor), sensitivity_(sensitivity), target_(target), offset_(offset), base_rotation_(base_rotation) {
+): distance_(distance), pitch_(pitch), yaw_(yaw), smooth_factor_(smooth_factor), sensitivity_(sensitivity), offset_(offset), base_rotation_(base_rotation), target_(target) {
     lookat_position_ = getLookAtTargetPosition();
     rotation_ = getRotation();
 }
