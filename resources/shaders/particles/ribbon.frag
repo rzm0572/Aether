@@ -4,13 +4,11 @@ in vec2 TexCoord;
 in vec4 Color;
 out vec4 fragColor;
 
-uniform sampler2D uSpriteTex; // RGBA 粒子贴图（带 alpha）
+uniform sampler2D uSpriteTex;
 
 void main() {
-    // 采样纹理并混合颜色
     vec4 texColor = texture(uSpriteTex, TexCoord);
-    fragColor = Color * texColor;
-    // fragColor = Color; // 先测试，不用纹理
-    // 透明度剔除（节省填充率）
+    // fragColor = Color * texColor;
+    fragColor = vec4(0.0,0.0,0.0,1.0);
     if (fragColor.a < 0.01) discard;
 }
