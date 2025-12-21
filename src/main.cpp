@@ -13,6 +13,7 @@
 #include "common/engine.h"
 #include "world/terrain.h"
 #include "entity/plane.h"
+#include "resource/particles.h"
 
 #include <iostream>
 #include <string>
@@ -151,7 +152,15 @@ int main() {
         input
     );
 
-
+    // GPU 粒子的粒子效果测试
+    Particle_Fireball fireball(10000,42,getAssetPath("textures/particles/particle_generated.png"));
+    fireball.start_();
+    Particle_Flareback flareback(10000, 42, getAssetPath("textures/particles/particle_generated.png"),glm::vec3(0.0f, 0.0f, 0.0f),1.0f);
+    flareback.start_();
+    Particle_Explosion explosion(100000,5000, 42, getAssetPath("textures/particles/particle_generated.png"));
+    explosion.start_();
+    Particle_Ribbon ribbon(1000, getAssetPath("textures/particles/particle_generated.png"),0.3f, 1.5f, 20.0f);
+    ribbon.start_();
 
     // 开启深度测试
     glEnable(GL_DEPTH_TEST);
@@ -212,6 +221,13 @@ int main() {
         // 预览模型
         // model_test.render(model, view, projection, light);
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 显示线框
+
+        // 绘制爆炸的粒子效果
+        // fireball.draw(plane->getTransformComponent().getPosition(),view, projection, third_person_camera.getPosition(),3.0f,3.0f,0.1f);
+        // flareback.draw(plane->getTransformComponent().getPosition()-glm::vec3(3.0f,1.0f,0.0f), view, projection, third_person_camera.getPosition(), 14.0f, 1.5f, 0.1f,velocity);
+        // explosion.draw(plane->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 3.0f,3.0f,0.1f);
+        ribbon.addParticles(plane->getTransformComponent().getPosition(), 6); // 每帧发射6个粒子
+        ribbon.draw(view, projection, third_person_camera.getPosition());
 
         // 渲染天空盒（在其他物体之后渲染以优化性能）
         skybox.changeProjection(projection);
