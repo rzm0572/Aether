@@ -81,50 +81,64 @@ void main() {
         // 纹理坐标：将 [-1,1] 映射到 [0,1] 
         TexCoord = inCorner * 0.5 + 0.5;
 
-        // 爆炸的颜色变化是先亮黄，再变橙红，最后黑
+        // 爆炸的颜色变化：只保留亮黄 -> 橙红，不进入灰烬阶段
+        // 爆炸的颜色变化：极致明亮 → 金黄 → 橙红
         vec3 baseColor;
-        if(ParticleKind >= 0.5){
-            if (t < 0.3) {
-                // 初始：明亮金黄（火星刚飞溅出）
-                float fade = t / 0.3;
-                baseColor = mix(vec3(1.0, 0.85, 0.2), vec3(1.0, 0.6, 0.1), fade);
-            } else if (t < 0.6) {
-                // 中期：橙红（快速冷却）
-                float fade = (t - 0.3) / (0.6 - 0.3);
-                baseColor = mix(vec3(1.0, 0.6, 0.1), vec3(0.7, 0.3, 0.05), fade);
-            } else if (t < 0.98) {
-                // 后期：暗红（即将熄灭）
-                float fade = (t - 0.6) / (0.98 - 0.6);
-                baseColor = mix(vec3(0.7, 0.3, 0.05), vec3(0.25, 0.12, 0.06), fade);
+        float brightness = 1.0;
+
+        if (ParticleKind >= 0.5) {
+            // 火星 / 飞溅碎片：从金黄开始，保持高亮
+            if (t < 0.4) {
+                // 初始：强烈金黄（带白光）
+                float fade = t / 0.4;
+                baseColor = mix(vec3(1.0, 0.95, 0.6), vec3(1.0, 0.8, 0.3), fade);
+                brightness = 1.5; // 提升亮度
             } else {
-                // 熄灭：接近灰黑（余烬）
-                baseColor = vec3(0.15, 0.1, 0.08);
+                // 后期：橙红火焰
+                baseColor = vec3(0.9, 0.4, 0.15);
+                brightness = 1.0;
             }
-        }
-        else{
-            if (t < 0.15) {
-                // 极早期：耀眼白光
-                float fade = t / 0.15;
+        } else {
+            // 主爆炸核心：白光 → 金黄 → 橙红（快速）
+            if (t < 0.2) {
+                // 极早期：超亮白光（模拟核爆瞬间）
+                float fade = t / 0.2;
                 baseColor = mix(vec3(1.0, 1.0, 1.0), vec3(1.0, 0.95, 0.8), fade);
+                brightness = 2.5; // 超级亮！
             } else if (t < 0.5) {
-                // 早期：明亮黄白色-->金黄
-                float fade = (t - 0.15) / (0.5 - 0.15);
+                // 0.2 ~ 0.5：金黄火焰（持续发光）
+                float fade = (t - 0.2) / 0.3;
                 baseColor = mix(vec3(1.0, 0.95, 0.8), vec3(1.0, 0.7, 0.2), fade);
-            } else if (t < 0.98) {
-                // 中期：橙红火焰
-                float fade = (t - 0.5) / (0.98 - 0.4);
-                baseColor = mix(vec3(1.0, 0.7, 0.2), vec3(0.8, 0.3, 0.05), fade);
+                brightness = 1.8;
+            } else if (t < 0.8) {
+                // 0.5 ~ 0.8：橙红火焰（逐渐减弱）
+                float fade = (t - 0.5) / 0.3;
+                baseColor = mix(vec3(1.0, 0.7, 0.2), vec3(0.8, 0.3, 0.08), fade);
+                brightness = 1.2;
             } else {
-                // 后期：暗红-->灰黑
-                float fade = (t - 0.98) / (1.0 - 0.98);
-                baseColor = mix(vec3(0.8, 0.3, 0.05), vec3(0.15, 0.1, 0.08), fade);
+                // 0.8 ~ 1.0：快速熄灭，但仍保持高温色
+                baseColor = vec3(0.8, 0.3, 0.08);
+                brightness = 0.8;
             }
         }
 
-        float alpha = 1.0 - t; // 越到后期烟雾越来越透明
+        // 强化亮度：使用 pow 或直接放大（注意不要溢出）
+        baseColor *= brightness;
 
+        // 可选：加入轻微随机闪烁（模拟能量脉冲）
+        float pulse = 1.0 + sin(RandNum * 100.0 + uTime * 10.0) * 0.1;
+        baseColor *= pulse;
 
+        // Alpha 控制：前段全亮，后段快速淡出
+        float alpha;
+        if (t > 0.9) {
+            alpha = (1.0 - t) / 0.1; // 最后 10% 快速消失
+        } else {
+            alpha = 1.0;
+        }
+        alpha = clamp(alpha, 0.0, 1.0);
 
+        // 最终输出
         Color = vec4(baseColor, alpha);
     }
     else{// 如果不需要渲染

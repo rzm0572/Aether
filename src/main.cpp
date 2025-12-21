@@ -225,8 +225,8 @@ int main() {
         // 绘制爆炸的粒子效果
         // fireball.draw(plane->getTransformComponent().getPosition(),view, projection, third_person_camera.getPosition(),3.0f,3.0f,0.1f);
         flareback.draw(plane->getTransformComponent().getPosition()-glm::vec3(3.0f,1.0f,0.0f), view, projection, third_person_camera.getPosition(), 14.0f, 1.5f, 0.1f, plane->physical_component().GetForward());
-        // explosion.draw(plane->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 3.0f,3.0f,0.1f);
-        ribbon.addParticles(plane->getTransformComponent().getPosition(),plane->physical_component().GetVelocity(), 20); // 每帧发射6个粒子
+        explosion.draw(plane->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 3.0f,3.0f,0.1f);
+        ribbon.addParticles(plane->getTransformComponent().getPosition(),plane->physical_component().GetVelocity(), 20); // 每帧发射20个粒子
         ribbon.draw(view, projection, third_person_camera.getPosition(),10.0f,0.1f,0.4f,0.3f);
 
         // 渲染天空盒（在其他物体之后渲染以优化性能）
