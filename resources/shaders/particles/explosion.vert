@@ -86,8 +86,7 @@ void main() {
         vec3 baseColor;
         float brightness = 1.0;
 
-        if (ParticleKind >= 0.5) {
-            // 火星 / 飞溅碎片：从金黄开始，保持高亮
+        if (ParticleKind >= 0.5) {// 火星 / 飞溅碎片：从金黄开始，保持高亮
             if (t < 0.4) {
                 // 初始：强烈金黄（带白光）
                 float fade = t / 0.4;
@@ -99,20 +98,20 @@ void main() {
                 brightness = 1.0;
             }
         } else {
-            // 主爆炸核心：白光 → 金黄 → 橙红（快速）
-            if (t < 0.2) {
+            // 主爆炸核心：白光 金黄 橙红
+            if (t < 0.4) {
                 // 极早期：超亮白光（模拟核爆瞬间）
-                float fade = t / 0.2;
+                float fade = t / 0.4;
                 baseColor = mix(vec3(1.0, 1.0, 1.0), vec3(1.0, 0.95, 0.8), fade);
                 brightness = 2.5; // 超级亮！
-            } else if (t < 0.5) {
+            } else if (t < 0.7) {
                 // 0.2 ~ 0.5：金黄火焰（持续发光）
-                float fade = (t - 0.2) / 0.3;
+                float fade = (t - 0.4) / 0.3;
                 baseColor = mix(vec3(1.0, 0.95, 0.8), vec3(1.0, 0.7, 0.2), fade);
                 brightness = 1.8;
-            } else if (t < 0.8) {
+            } else if (t < 0.9) {
                 // 0.5 ~ 0.8：橙红火焰（逐渐减弱）
-                float fade = (t - 0.5) / 0.3;
+                float fade = (t - 0.7) / 0.2;
                 baseColor = mix(vec3(1.0, 0.7, 0.2), vec3(0.8, 0.3, 0.08), fade);
                 brightness = 1.2;
             } else {

@@ -144,10 +144,10 @@ int main() {
     // Light settings
     auto light = Light(
         &third_person_camera,
-        glm::vec3(0.8f, 0.8f, 0.8f),     // TODO: 环境光颜色有待实现，暂时用天蓝色代替
+        glm::vec3(0.8f, 0.8f, 0.8f),
         {
-            glm::vec3(0.0f, 1.0f, 1.0f),      // TODO: 光照方向有待实现，暂时用物体指向天空
-            glm::vec3(2.5f, 2.5f, 2.5f),    // TODO:光照颜色有待实现，暂时用白色代替
+            glm::vec3(0.0f, 1.0f, 1.0f),
+            glm::vec3(2.5f, 2.5f, 2.5f),   
         },
         input
     );
@@ -224,10 +224,10 @@ int main() {
 
         // 绘制爆炸的粒子效果
         // fireball.draw(plane->getTransformComponent().getPosition(),view, projection, third_person_camera.getPosition(),3.0f,3.0f,0.1f);
-        flareback.draw(plane->getTransformComponent().getPosition()-glm::vec3(3.0f,1.0f,0.0f), view, projection, third_person_camera.getPosition(), 14.0f, 1.5f, 0.1f, plane->physical_component().GetForward());
-        explosion.draw(plane->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 3.0f,3.0f,0.1f);
-        ribbon.addParticles(plane->getTransformComponent().getPosition(),plane->physical_component().GetVelocity(), 20); // 每帧发射20个粒子
-        ribbon.draw(view, projection, third_person_camera.getPosition(),10.0f,0.1f,0.4f,0.3f);
+        // flareback.draw(plane->getTransformComponent().getPosition()-glm::vec3(3.0f,1.0f,0.0f), view, projection, third_person_camera.getPosition(), 14.0f, 1.5f, 0.1f, plane->physical_component().GetForward());
+        // explosion.draw(plane->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 3.0f,3.0f,0.1f);
+        ribbon.addParticles(plane->getTransformComponent().getPosition(),plane->physical_component().GetVelocity(), 10, 0.1f); // 每帧发射20个粒子
+        ribbon.draw(view, projection, third_person_camera.getPosition(),10.0f,0.1f,0.4f,0.1f);
 
         // 渲染天空盒（在其他物体之后渲染以优化性能）
         skybox.changeProjection(projection);

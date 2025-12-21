@@ -23,8 +23,8 @@ void main() {
 
     vec3 baseColor = mix(startColor, endColor, inTime);
 
-    // 烟雾 alpha 应该随时间平滑衰减，且整体较低（更透明）
-    float alpha = (1.0 - inTime) * 0.6;
+    // 烟雾 alpha 应该随时间平滑衰减
+    float alpha = (1.0 - inTime * inTime);
 
     // 颜色
     Color = vec4(baseColor, alpha);

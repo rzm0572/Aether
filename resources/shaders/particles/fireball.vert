@@ -53,15 +53,23 @@ void main() {
         TexCoord = inCorner * 0.5 + 0.5;
 
         // 粒子颜色：根据粒子生命周期变化，从红到黄到白色
-        vec3 baseColor;
-        if (t < 0.5) {
-            baseColor = mix(vec3(1.0, 0.3, 0.0), vec3(1.0, 0.7, 0.0), t * 2.0);
+        vec3 basecolor;
+        if (t < 0.3) {
+            basecolor = mix(vec3(1.0, 0.2, 0.0), vec3(1.0, 0.6, 0.0), t / 0.3);
+        } else if (t < 0.6) {
+            basecolor = mix(vec3(1.0, 0.6, 0.0), vec3(1.0, 1.0, 0.3), (t - 0.3) / 0.3);
+        } else if (t < 0.9) {
+            basecolor = mix(vec3(1.0, 1.0, 0.3), vec3(1.0, 1.0, 1.0), (t - 0.6) / 0.3);
         } else {
-            baseColor = mix(vec3(1.0, 0.7, 0.0), vec3(1.0, 1.0, 0.8), (t - 0.5) * 2.0);
+            // 最后阶段加入一点青蓝色辉光（模拟高温余烬）
+            basecolor = mix(vec3(1.0, 1.0, 1.0), vec3(0.8, 1.0, 1.2), (t - 0.9) / 0.1);
         }
-        float alpha = 1.0 - t * t; // 粒子的透明度非线性衰减
-        
-        Color = vec4(baseColor, alpha);
+
+        // 非线性透明度：开头亮，结尾快速淡出，但保留一点辉光尾迹
+        float alpha = smoothstep(0.0, 0.1, 1.0 - t); // 更柔和的 fade-out
+        alpha *= (1.0 - t * 0.7); // 整体衰减
+
+        Color = vec4(basecolor * (1.0 + 0.5 * (1.0 - t)), alpha); // 高光增强：越年轻越亮！
     }
     else{// 如果不需要渲染
         // 那么我们丢到一边去就行了

@@ -56,7 +56,7 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir) {
     float shadow = 0.0;
     // shadow = currentDepth > closestDepth ? 1.0 : 0.0;
     // PCF
-    // TODO: 调整PCF采样，采样范围为 [-1,1]，采样次数为 (2.0 * half_sample + 1.0) * (2.0 * half_sample + 1.0)
+    // 采样范围为 [-1,1]，采样次数为 (2.0 * half_sample + 1.0) * (2.0 * half_sample + 1.0)
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
     int half_sample = 5;
     for(int x = -half_sample; x <= half_sample; ++x) {

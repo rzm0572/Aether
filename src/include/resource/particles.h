@@ -16,7 +16,6 @@
 
 */
 // 火球效果
-// TODO: 对于不同爆炸使用不同颜色的粒子，即需要传给着色器的颜色参数不同，但是目前颜色是写死在着色器里的
 class Particle_Fireball {
     /**
      * @brief 粒子系统，就是制造大量粒子，并渲染
@@ -68,12 +67,11 @@ public:
         每个粒子实际上是一个有贴图的方块，因此我们要处理方块信息
 
         这一部分我们给每个点都设置一组参数：
-        TODO: 你可以按照以下的注释修改参数，达到不同的效果
         0~0 ：粒子序号
         1~2 ：顶点位置，因为我们通过billboard方式使得二维坐标正对眼，所以位置只要二维
-        3~5 ：预留偏移量，暂时用0 TODO: 通过偏移量增加视觉效果
+        3~5 ：预留偏移量，暂时用0
         6~6 ：延迟时间，随机分布于 [0,1] 作用是在粒子的生命周期中随机时刻发射粒子
-        7~9 ：速度，随机分布于球面上，作用是粒子的运动方向 TODO: 或许可以考虑不同初速度
+        7~9 ：速度，随机分布于球面上，作用是粒子的运动方向
         
         每个粒子实际上是一个有贴图的方块，因此索引就是方块位置
         之后我们把数据存入GPU，并绑定到VAO/VBO/EBO上
@@ -200,7 +198,7 @@ public:
             shader->setUniform("life_time", life_time);// 设定粒子能飞多长时间
             shader->setUniform("Max_size", max_size);// 设定粒子最大尺寸
 
-            // TODO:绑定纹理
+            // TODO:绑定更好看的粒子纹理
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, textureID);
             shader->setUniform("uSpriteTex", 0); 
@@ -289,12 +287,11 @@ public:
         每个粒子实际上是一个有贴图的方块，因此我们要处理方块信息
 
         这一部分我们给每个点都设置一组参数：
-        TODO: 你可以按照以下的注释修改参数，达到不同的效果
         0~0 ：粒子序号
         1~2 ：顶点位置，因为我们通过billboard方式使得二维坐标正对眼，所以位置只要二维
-        3~5 ：预留偏移量，暂时用0 TODO: 通过偏移量增加视觉效果
+        3~5 ：预留偏移量，暂时用0 
         6~6 ：延迟时间，随机分布于 [0,1] 作用是在粒子的生命周期中随机时刻发射粒子
-        7~9 ：速度，随机分布于球面上，作用是粒子的运动方向 TODO: 或许可以考虑不同初速度
+        7~9 ：速度，随机分布于球面上，作用是粒子的运动方向 
         
         每个粒子实际上是一个有贴图的方块，因此索引就是方块位置
         之后我们把数据存入GPU，并绑定到VAO/VBO/EBO上
@@ -496,7 +493,6 @@ public:
             shader->setUniform("raw_life_time", life_time);// 设定粒子能飞多长时间
             shader->setUniform("Max_size", max_size);// 设定粒子最大尺寸
 
-            // TODO:绑定纹理
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, textureID);
             shader->setUniform("uSpriteTex", 0); 
@@ -535,7 +531,6 @@ private:
 
 // 尾焰和尾迹效果，唯一的不同是构造的时候需要输入默认的相对于物体的速度，绘制时需要输入物体的速度，因为我们这里用物体相反速度+默认速度来实现尾焰和尾迹效果
 // 而且构造的时候需要输入radius_bias 表示尾迹的半径
-// TODO: 对于不同爆炸使用不同颜色的粒子，即需要传给着色器的颜色参数不同，但是目前颜色是写死在着色器里的
 /**
  * @brief 尾焰和尾迹效果，唯一的不同是构造的时候需要输入默认的相对于物体的速度，以及尾迹的半径，绘制时需要输入物体的速度，因为我们这里用物体相反速度+默认速度来实现尾焰和尾迹效果
  * @example 首先，你需要设定粒子数量，随机种子，贴图路径等参数，使用构造函数创建一个Particle_Ribbon对象
@@ -732,7 +727,6 @@ public:
             shader->setUniform("Max_size", max_size);// 设定粒子最大尺寸
             shader->setUniform("element_Velocity", element_v);// 设定粒子相对物体的速度（实际输入的就是物体的速度）
 
-            // TODO:绑定纹理
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, textureID);
             shader->setUniform("uSpriteTex", 0); 
@@ -843,44 +837,56 @@ public:
     }
 
     // 批量添加粒子
-    void addParticles(const glm::vec3& emit_pos,const glm::vec3& obj_dir, int num_particles = 8) {
+    void addParticles(const glm::vec3& emit_pos,const glm::vec3& obj_dir, int num_particles = 8,float delta_size = 0.1f) {
         srand(time(nullptr));
         float now = glfwGetTime();
-        for (int i = 0; i < num_particles; ++i) {
-            int idx = active_count;
-            active_count = (active_count + 1) % max_particles;
-            // 随机计算一个长度为 1 且和 obj_dir 即物体运动方向垂直的向量
-            glm::vec3 offset;
-            // 随机计算一个偏移量
-            if (glm::length(obj_dir) < 1e-6f) {
-                // 随机返回一个单位向量
-                float theta = rand()%10000/10000.0f * 2.0f * M_PI;
-                float phi = rand()%10000/10000.0f * M_PI;
-                offset = glm::vec3(
-                    sin(phi) * cos(theta),
-                    sin(phi) * sin(theta),
-                    cos(phi)
-                );
-            }
-            else{
-                glm::vec3 dir = glm::normalize(obj_dir);
-                glm::vec3 ref = (abs(dir.y) < 0.9f) ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(1.0f, 0.0f, 0.0f);
-                glm::vec3 perp1 = glm::normalize(glm::cross(dir, ref));
-                glm::vec3 perp2 = glm::cross(dir, perp1); // 已经是单位向量
-                float angle = rand()%10000/10000.0f * 2.0f * M_PI;
-                offset = perp1 * glm::cos(angle) + perp2 * glm::sin(angle);
-            }
+        if(is_start_emit == false){
+            is_start_emit = true;
+        }
+        // 计算需要插入的粒子次数
+        glm::vec3 emit_dir = glm::normalize(emit_pos - last_emit_pos);
+        float emit_dist = glm::length(emit_pos - last_emit_pos);
+        for (float j = 0.0f; j < emit_dist; j += delta_size){
+            for (int i = 0; i < num_particles; ++i) {
+                int idx = active_count;
+                active_count = (active_count + 1) % max_particles;
+                // 随机计算一个长度为 1 且和 obj_dir 即物体运动方向垂直的向量
+                glm::vec3 offset;
+                // 随机计算一个偏移量
+                if (glm::length(obj_dir) < 1e-6f) {
+                    // 随机返回一个单位向量
+                    float theta = rand()%10000/10000.0f * 2.0f * M_PI;
+                    float phi = rand()%10000/10000.0f * M_PI;
+                    offset = glm::vec3(
+                        sin(phi) * cos(theta),
+                        sin(phi) * sin(theta),
+                        cos(phi)
+                    );
+                }
+                else{
+                    glm::vec3 dir = glm::normalize(obj_dir);
+                    glm::vec3 ref = (abs(dir.y) < 0.9f) ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(1.0f, 0.0f, 0.0f);
+                    glm::vec3 perp1 = glm::normalize(glm::cross(dir, ref));
+                    glm::vec3 perp2 = glm::cross(dir, perp1); // 已经是单位向量
+                    float angle = rand()%10000/10000.0f * 2.0f * M_PI;
+                    offset = perp1 * glm::cos(angle) + perp2 * glm::sin(angle);
+                }
+                // 随机计算一个速度，使得扩散不是一个环
+                float V_len = static_cast<float>(rand()%10000)/12500.0f+0.6f;
+                offset *= V_len;
 
-            particles[idx] = {
-                emit_pos,
-                now,
-                offset
-            };
-            // std::cout << "Add particle with offset "<< offset.x << " " << offset.y << " " << offset.z << std::endl;
-            // std::cout << "Add particle " << idx << " at " << particles[idx].pos.x << " " << particles[idx].pos.y << " " << particles[idx].pos.z << std::endl;
+                particles[idx] = {
+                    emit_pos + emit_dir * j,
+                    now,
+                    offset
+                };
+                // std::cout << "Add particle with offset "<< offset.x << " " << offset.y << " " << offset.z << std::endl;
+                // std::cout << "Add particle " << idx << " at " << particles[idx].pos.x << " " << particles[idx].pos.y << " " << particles[idx].pos.z << std::endl;
+            }
         }
         // std::cout << "Add " << num_particles << " particles to ribbon." << std::endl;
         // std::cout << "Active count: " << active_count << std::endl;
+        last_emit_pos = emit_pos;
     }
 
     void start_() {
@@ -891,11 +897,12 @@ public:
 
     void stop() {
         is_active = false;
+        is_start_emit = false;
     }
 
     bool isActive() const { return is_active; }
 
-    void draw(glm::mat4 view, glm::mat4 proj, glm::vec3 camera_pos, float life_time,float initial_width = 0.5f,float max_width = 1.0f,float particle_size = 0.05f) {
+    void draw(glm::mat4 view, glm::mat4 proj, glm::vec3 camera_pos, float life_time,float initial_width = 0.5f,float max_width = 1.0f,float particle_size = 0.1f) {
         if (!is_active) return;
 
         glEnable(GL_BLEND);
@@ -924,6 +931,13 @@ public:
             // 计算当前扩散后的偏移
             glm::vec3 expanded_offset = p.offset * current_radius;
             glm::vec3 center = p.pos + expanded_offset;
+
+            // 应该有一些随机位移更加真实
+            center += glm::vec3(
+                (rand()%10000/10000.0f - 0.5f),
+                (rand()%10000/10000.0f - 0.5f),
+                (rand()%10000/10000.0f - 0.5f)
+            ) * particle_size * 0.5f;
 
             // Billboard 面向相机
             glm::vec3 to_camera = normalize(camera_pos - center);
@@ -991,4 +1005,7 @@ private:
 
     unsigned int VAO = 0, VBO = 0, textureID = 0;
     bool loaded_texture = true;
+
+    glm::vec3 last_emit_pos;
+    bool is_start_emit = false;
 };

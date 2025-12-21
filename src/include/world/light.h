@@ -75,7 +75,6 @@ public:
         float far_plane = config->z_far;
 
         // 计算视锥体8个角点（世界空间） 
-        // TODO: 不行，这里需要考虑摄像机外面的物体，但是如果空中空旷那么未尝不可
         float nh = near_plane * tan(fov / 2.0f); // 近平面高度的一半
         float nw = nh * aspect;                  // 近平面宽度的一半
         float fh = far_plane * tan(fov / 2.0f);  // 远平面高度的一半
