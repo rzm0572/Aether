@@ -29,6 +29,10 @@ public:
         // std::cout << physical_component_.getPosition() << " " << physical_component_.getVelocity() << std::endl;
     }
 
+    PhysicalComponent& physical_component() {
+        return physical_component_;
+    }
+
 private:
     void synchronizeTransform() {
         auto& transform = getTransformComponent();

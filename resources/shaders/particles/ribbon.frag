@@ -8,7 +8,7 @@ uniform sampler2D uSpriteTex;
 
 void main() {
     vec4 texColor = texture(uSpriteTex, TexCoord);
-    // fragColor = Color * texColor;
-    fragColor = vec4(0.0,0.0,0.0,1.0);
+    fragColor = Color * texColor;
+    // fragColor = Color;
     if (fragColor.a < 0.01) discard;
 }

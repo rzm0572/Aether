@@ -776,20 +776,13 @@ public:
     struct Particle {
         glm::vec3 pos;         // 世界位置
         float time;            // 发射时间
-        glm::vec2 offset;      // 横向偏移（在局部圆内随机）
+        glm::vec3 offset;      // 横向偏移方向（在局部圆内随机）
         float spread_rate;     // 扩散速率（可调）
-        float life_time;       // 总寿命
     };
 
     Particle_Ribbon(int max_particles,
-                    const std::string& texture_path,
-                    float initial_width = 0.5f,
-                    float max_width = 2.0f,
-                    float life_time = 3.0f)
-        : max_particles(max_particles),
-          initial_width(initial_width),
-          max_width(max_width),
-          life_time(life_time) {
+                    const std::string& texture_path)
+        : max_particles(max_particles){
 
         // 加载纹理
         int w, h, ch;
@@ -813,9 +806,7 @@ public:
         for(auto& p : particles){
             p.pos = glm::vec3(-1000.0f, -1000.0f, -1000.0f);
             p.time = 0.0f;
-            p.offset = glm::vec2(0.0f, 0.0f);
-            p.spread_rate = 0.1f;
-            p.life_time = life_time;
+            p.offset = glm::vec3(0.0f, 0.0f, 0.0f);
         }
         active_count = 0;
 
@@ -824,13 +815,15 @@ public:
         glGenBuffers(1, &VBO);
         glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, max_particles * 6 * (3 + 1) * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, max_particles * 6 * (3 + 1 + 2) * sizeof(float), nullptr, GL_DYNAMIC_DRAW);
 
         // 属性设置
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);// 位置
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(3 * sizeof(float)));
+        glVertexAttribPointer(1, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));// 度过了多少比例的生命
         glEnableVertexAttribArray(1);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(4 * sizeof(float)));// texture 角点
+        glEnableVertexAttribArray(2);
 
         glBindVertexArray(0);
 
@@ -850,22 +843,40 @@ public:
     }
 
     // 批量添加粒子
-    void addParticles(const glm::vec3& emit_pos, int num_particles = 8) {
+    void addParticles(const glm::vec3& emit_pos,const glm::vec3& obj_dir, int num_particles = 8) {
+        srand(time(nullptr));
         float now = glfwGetTime();
         for (int i = 0; i < num_particles; ++i) {
             int idx = active_count;
             active_count = (active_count + 1) % max_particles;
-            // 随机角度和半径（初始小，后期扩散）
-            float angle = static_cast<float>(rand()) / RAND_MAX * 2.0f * M_PI;
-            float r = static_cast<float>(rand()) / RAND_MAX * initial_width * 0.5f;
+            // 随机计算一个长度为 1 且和 obj_dir 即物体运动方向垂直的向量
+            glm::vec3 offset;
+            // 随机计算一个偏移量
+            if (glm::length(obj_dir) < 1e-6f) {
+                // 随机返回一个单位向量
+                float theta = rand()%10000/10000.0f * 2.0f * M_PI;
+                float phi = rand()%10000/10000.0f * M_PI;
+                offset = glm::vec3(
+                    sin(phi) * cos(theta),
+                    sin(phi) * sin(theta),
+                    cos(phi)
+                );
+            }
+            else{
+                glm::vec3 dir = glm::normalize(obj_dir);
+                glm::vec3 ref = (abs(dir.y) < 0.9f) ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(1.0f, 0.0f, 0.0f);
+                glm::vec3 perp1 = glm::normalize(glm::cross(dir, ref));
+                glm::vec3 perp2 = glm::cross(dir, perp1); // 已经是单位向量
+                float angle = rand()%10000/10000.0f * 2.0f * M_PI;
+                offset = perp1 * glm::cos(angle) + perp2 * glm::sin(angle);
+            }
 
             particles[idx] = {
                 emit_pos,
                 now,
-                glm::vec2(r * cos(angle), r * sin(angle)),
-                0.1f, // TODO:扩散速率
-                life_time
+                offset
             };
+            // std::cout << "Add particle with offset "<< offset.x << " " << offset.y << " " << offset.z << std::endl;
             // std::cout << "Add particle " << idx << " at " << particles[idx].pos.x << " " << particles[idx].pos.y << " " << particles[idx].pos.z << std::endl;
         }
         // std::cout << "Add " << num_particles << " particles to ribbon." << std::endl;
@@ -884,12 +895,11 @@ public:
 
     bool isActive() const { return is_active; }
 
-    void draw(glm::mat4 view, glm::mat4 proj, glm::vec3 camera_pos) {
+    void draw(glm::mat4 view, glm::mat4 proj, glm::vec3 camera_pos, float life_time,float initial_width = 0.5f,float max_width = 1.0f,float particle_size = 0.05f) {
         if (!is_active) return;
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glDepthMask(GL_FALSE);
 
         const Shader* shader = ServiceLocator<ShaderManager>::get()->useShader("ribbon");
         shader->setUniform("uView", view);
@@ -901,21 +911,19 @@ public:
 
         // 构建所有活跃粒子的顶点数据（每个粒子为一个 quad）
         std::vector<float> vertices;
-        vertices.reserve(max_particles * 4 * 4); // 4顶点 * 4属性（pos+time）
+        vertices.reserve(max_particles * 4 * 6); // 4顶点 * 6属性（pos+time+texcoord）
 
         for (int i = 0; i < max_particles; ++i) {
             const auto& p = particles[i];
             float age = glfwGetTime() - p.time;
-            if (age > p.life_time) continue;
+            if (age > life_time) continue;
 
-            float t = age / p.life_time; // [0,1]
-            float current_radius = initial_width * (1.0f - t) + max_width * t; // 线性插值扩展
+            float t = age / life_time; // [0,1]
+            float current_radius = initial_width * (1.0f - t) + max_width * t; // 当前扩散到的范围
 
             // 计算当前扩散后的偏移
-            glm::vec2 expanded_offset = p.offset * (1.0f + p.spread_rate * age);
-
-            // 基础位置 + 扩展偏移
-            glm::vec3 center = p.pos + glm::vec3(expanded_offset.x, expanded_offset.y, 0.0f);
+            glm::vec3 expanded_offset = p.offset * current_radius;
+            glm::vec3 center = p.pos + expanded_offset;
 
             // Billboard 面向相机
             glm::vec3 to_camera = normalize(camera_pos - center);
@@ -923,28 +931,39 @@ public:
             glm::vec3 right = normalize(cross(to_camera, world_up));
             glm::vec3 up = cross(right, to_camera);
 
-            float size = current_radius * 0.5f; // 半宽
+            float size =  particle_size * 0.5f; // 半宽
 
             // 四个角点
             std::array<glm::vec3, 4> corners = {
                 center + right * -size + up * -size,
                 center + right * size + up * -size,
-                center + right * -size + up * size,
-                center + right * size + up * size
-            };
+                center + right * size + up * size,
+                center + right * -size + up * size
 
-            // 添加四个顶点
-            glm::vec3 quad_vertices[6] = {
-                corners[0], corners[1], corners[2],
-                corners[0], corners[2], corners[3]
+            };
+            // 四个billboard顶点
+            std::array<glm::vec2, 4> billboard_vertices = {
+                glm::vec2(-1.0f, -1.0f),
+                glm::vec2(1.0f, -1.0f),
+                glm::vec2(1.0f, 1.0f),
+                glm::vec2(-1.0f, 1.0f)
+            };
+            // 四个顶点拆成三角形
+            int quad_vertices[6] = {
+                0,1,2,
+                0,2,3
             };
 
             for (int j = 0; j < 6; ++j) {
-                vertices.push_back(quad_vertices[j].x);
-                vertices.push_back(quad_vertices[j].y);
-                vertices.push_back(quad_vertices[j].z);
+                // 位置
+                vertices.push_back(corners[quad_vertices[j]].x);
+                vertices.push_back(corners[quad_vertices[j]].y);
+                vertices.push_back(corners[quad_vertices[j]].z);
+                // 生命周期，用来算颜色
                 vertices.push_back(t);
-                // std::cout<< "Add vertex: " << quad_vertices[j].x << " " << quad_vertices[j].y << " " << quad_vertices[j].z << " " << t << std::endl;
+                // 纹理坐标
+                vertices.push_back(billboard_vertices[quad_vertices[j]].x);
+                vertices.push_back(billboard_vertices[quad_vertices[j]].y);
             }
         }
         // std::cout<< "Draw " << vertices.size() / 4 << " vertices." << std::endl;
@@ -954,10 +973,9 @@ public:
 
         // 绘制（每个粒子是独立 quad，所以是 GL_TRIANGLES）
         glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices.size() / 4));
+        glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices.size() / 6));
         glBindVertexArray(0);
 
-        glDepthMask(GL_TRUE);
         glDisable(GL_BLEND);
     }
 
@@ -965,7 +983,6 @@ private:
     int max_particles;
     float initial_width;
     float max_width;
-    float life_time;
     bool is_active = false;
     float start_time = 0.0f;
 
