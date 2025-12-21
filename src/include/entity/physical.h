@@ -160,7 +160,9 @@ public:
     glm::vec3 GetVelocity(){
         return velocity_;
     }
-
+    glm::vec3 GetForward(){
+        return forward_;
+    }
     void output() {
         std::cout << "Position: " << position_ << std::endl;
         std::cout << "Rotation: " << rotation_ << std::endl;
