@@ -16,6 +16,10 @@ public:
     virtual ~TerrainGenerator() = default;
     virtual float getHeight(ChunkCoord chunk_coord, float x, float z) const = 0;
     virtual Vertex getVertex(ChunkCoord chunk_coord, float x, float z) const = 0;
+
+    virtual std::vector<float> getHeightChunk(ChunkCoord chunk_coord, int scale, int stride) {
+        
+    }
 };
 
 class Chunk {

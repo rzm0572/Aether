@@ -62,6 +62,10 @@ public:
     // Load texture from file
     // Return true if successful, false otherwise
     bool Load(){
+        if (m_type != GL_TEXTURE_2D) {
+            return false;
+        }
+
         // 加载图像数据
         stbi_set_flip_vertically_on_load(true); // OpenGL 原点在左下，需翻转
         unsigned char* data = stbi_load(m_filepath.c_str(), &m_width, &m_height, &m_channels, 0);
@@ -72,18 +76,25 @@ public:
         }
 
         // 确定格式
-        GLenum format;
-        if (m_channels == 1)
-            format = GL_RED;
-        else if (m_channels == 3)
-            format = GL_RGB;
-        else if (m_channels == 4)
-            format = GL_RGBA;
+        if (m_channels == 1) {
+            format_ = GL_RED;
+            internal_format_ = GL_RED;
+        }
+        else if (m_channels == 3) {
+            format_ = GL_RGB;
+            internal_format_ = GL_RGB;
+        }
+        else if (m_channels == 4) {
+            format_ = GL_RGBA;
+            internal_format_ = GL_RGBA;
+        }
         else {
             std::cerr << "Unsupported number of channels: " << m_channels << " in " << m_filepath << std::endl;
             stbi_image_free(data);
             return false;
         }
+
+        type_ = GL_UNSIGNED_BYTE;
 
         // 生成并配置纹理
         glGenTextures(1, &m_textureID);
@@ -94,7 +105,7 @@ public:
         glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        glTexImage2D(m_type, 0, format, m_width, m_height, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(m_type, 0, internal_format_, m_width, m_height, 0, format_, type_, data);
         glGenerateMipmap(m_type);
 
         stbi_image_free(data);
@@ -107,6 +118,94 @@ public:
     void Bind(GLenum textureUnit = GL_TEXTURE0) const {
         glActiveTexture(textureUnit);
         glBindTexture(m_type, m_textureID);
+    }
+
+    template<typename T>
+    bool Load(const T* data, int width, int height, int channel, int depth = 1) {
+        if (!data) {
+            std::cerr << "Texture data does not exist" << std::endl;
+            return false;
+        }
+
+        if (depth < 1 || (m_type == GL_TEXTURE_2D && depth > 1)) {
+            return false;
+        }
+
+        switch (channel) {
+            case 1:
+                format_ = GL_RED;
+                internal_format_ = GL_R16F;
+            break;
+            case 2:
+                format_ = GL_RG;
+                internal_format_ = GL_RG16F;
+            break;
+            case 3:
+                format_ = GL_RGB;
+                internal_format_ = GL_RGB8;
+            break;
+            case 4:
+                format_ = GL_RGBA;
+                internal_format_ = GL_RGBA8;
+            break;
+            default: {
+                std::cerr << "Unsupported number of channels: " << channel << std::endl;
+                return false;
+            }
+        }
+
+        if constexpr (std::is_same_v<T, unsigned char>) {
+            type_ = GL_UNSIGNED_BYTE;
+        } else if constexpr (std::is_same_v<T, float>) {
+            type_ = GL_FLOAT;
+        } else {
+            static_assert(false, "Unsupported texture data type");
+        }
+
+        glGenTextures(1, &m_textureID);
+        glBindTexture(m_type, m_textureID);
+
+        glTexParameteri(m_type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(m_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        int max_level = static_cast<int>(std::floor(std::log2(std::max(width, height)))) + 1;
+
+        if (data != nullptr) {
+            glTexImage3D(m_type, 0, internal_format_, width, height, depth, 0, format_, type_, data);
+            glGenerateMipmap(m_type);
+        } else {
+            for (int i = 0; i < max_level; ++i) {
+                int mip_width = std::max(1, width >> i);
+                int mip_height = std::max(1, height >> i);
+                glTexImage3D(m_type, i, internal_format_, mip_width, mip_height, depth, 0, format_, type_, nullptr);
+            }
+        }
+
+        glBindTexture(m_type, 0);
+
+        m_width = width;
+        m_height = height;
+        m_channels = channel;
+        m_depth = depth;
+
+        std::cout << "Loaded texture: " << m_filepath << " (" << m_width << "x" << m_height << ", " << m_channels << " channels)" << std::endl;
+        return true;
+    }
+
+    template<typename T>
+    bool updateTextureLayer(const T* data, int layer_index) {
+        if (m_type != GL_TEXTURE_2D_ARRAY || layer_index < 0 || layer_index >= m_depth) {
+            return false;
+        }
+
+        glBindTexture(m_type, m_textureID);
+        glTexSubImage3D(m_type, internal_format_, 0, 0, layer_index, m_width, m_height, m_depth, format_, type_, data);
+
+        // TODO: Generate Mipmaps
+
+        glBindTexture(m_type, 0);
     }
 
     // 获取 OpenGL 纹理 ID（用于调试或高级用途）
@@ -122,6 +221,9 @@ private:
     GLuint m_textureID;                   // OpenGL 纹理 ID
     int m_width, m_height, m_channels;    // 图像宽度、高度、通道数
     int m_depth;                          // 纹理深度
+    GLenum internal_format_;
+    GLenum format_;
+    GLenum type_;
 };
 
 // Texture manager class
