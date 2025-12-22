@@ -99,12 +99,12 @@ int main() {
 
     // Load models
     Model plane_model;
-    // if (!plane_model.loadModel(getAssetPath("models/j10/scene.gltf"))) {
+    // if (!plane_model.loadModel(getAssetPath("models/j10_editted/scene.gltf"))) {
     //     std::cerr << "Failed to load model!" << std::endl;
     //     return -1;
     // }
     // 测试其他模型的导入
-    if (!plane_model.loadModel(getAssetPath("models/missle/scene.gltf"),1)) {
+    if (!plane_model.loadModel(getAssetPath("models/missle1/scene.gltf"))) {
         std::cerr << "Failed to load model!" << std::endl;
         return -1;
     }
@@ -164,7 +164,7 @@ int main() {
     flareback.start_();
     Particle_Explosion explosion(100000,5000, 42, getAssetPath("textures/particles/particle_generated.png"));
     explosion.start_();
-    Particle_Ribbon ribbon(1000, getAssetPath("textures/particles/particle_generated.png"));
+    Particle_Ribbon ribbon(10000, getAssetPath("textures/particles/particle_generated.png"));
     ribbon.start_();
 
     // 开启深度测试
@@ -231,8 +231,8 @@ int main() {
         // fireball.draw(plane->getTransformComponent().getPosition(),view, projection, third_person_camera.getPosition(),3.0f,3.0f,0.1f);
         flareback.draw(plane->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 7.0f, 1.0f, 0.1f, plane->physical_component().GetForward());
         // explosion.draw(plane->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 3.0f,3.0f,0.1f);
-        // ribbon.addParticles(plane->getTransformComponent().getPosition(),plane->physical_component().GetVelocity(), 10, 0.1f); // 每帧发射20个粒子
-        // ribbon.draw(view, projection, third_person_camera.getPosition(),10.0f,0.1f,0.4f,0.1f);
+        ribbon.addParticles(plane->getTransformComponent().getPosition(),plane->physical_component().GetVelocity(), 8, 0.1f); // 每帧发射20个粒子
+        ribbon.draw(view, projection, third_person_camera.getPosition(),40.0f,0.1f,0.4f,0.1f);
 
         // 渲染天空盒（在其他物体之后渲染以优化性能）
         skybox.changeProjection(projection);
