@@ -165,7 +165,7 @@ void main() {
 
     vec3 color = directLight + ambient;
 
-    // 伽马映射和色调矫正
+    // 实现HDR+Bloom，包含了伽马映射和色调矫正
     // color = color / (color + vec3(1.0));
     // color = pow(color, vec3(1.0/2.2)); 
 

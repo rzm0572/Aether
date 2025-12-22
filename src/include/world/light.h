@@ -114,7 +114,7 @@ public:
         glm::vec3 lightPos = camPos - lightDir *(far_plane + near_plane); // 足够远
         glm::mat4 lightView = glm::lookAt(lightPos,  camPos,up); // 这个矩阵将世界坐标转换为以光源为原点观察、光线传播方向为 -z 的坐标系
 
-        // 4. 将视锥体角点变换到光源空间（即 lightView * point）
+        // 将视锥体角点变换到光源空间（即 lightView * point）
         glm::vec4 minBound(FLT_MAX);
         glm::vec4 maxBound(-FLT_MAX);
 
@@ -290,7 +290,7 @@ public:
             if (input_.getKeyPressed(InputKey::PERIOD)){
                 manual_intensity_ += intensity_step;
             }
-            manual_intensity_ = glm::clamp(manual_intensity_, 0.0f, 3.2f);// 限制光强区间
+            manual_intensity_ = glm::clamp(manual_intensity_, 0.0f, 4.0f);// 限制光强区间
 
 
 

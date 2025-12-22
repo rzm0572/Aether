@@ -3,7 +3,7 @@
 // 每个顶点代表 billboard 的一个角点
 layout (location = 0) in int inParticleID;      // 所属粒子 ID（用于随机方向）
 layout (location = 1) in vec2 inCorner;         // 局部空间角点：(-1,-1), (1,-1), (-1,1), (1,1)
-layout (location = 2) in vec3 inEmitOffset;     // 发射偏移（通常为 0）
+layout (location = 2) in vec3 inEmitOffset;     // 发射偏移
 layout (location = 3) in float startTimeFrac;      // 粒子发射时间可以有先后顺序
 layout (location = 4) in vec3 inVelocity;       // 粒子速度，这个速度的在尾迹时影响很小
 out vec2 TexCoord;
@@ -35,7 +35,7 @@ void main() {
         // 计算粒子中心世界位置：
         // - 径向飞出（dir * t * speed）
         // - 轻微上升（+ vec3(0, t*0.5, 0)）
-        vec3 center = uExplosionPos + inEmitOffset + dir * t * scale + vec3(0, t * 0.5, 0);
+        vec3 center = uExplosionPos + inEmitOffset * ( 1.0 - t * 0.4) +  dir * t * scale ;
 
         // === Billboard 构建 ===   目的是由于一个粒子是一个片，所以需要面向相机
         vec3 toCamera = normalize(uCameraPos - center);
@@ -57,10 +57,10 @@ void main() {
 
         // 粒子颜色：根据粒子生命周期变化，从红到黄到白色
         vec3 baseColor;
-        if (t < 0.5) {
-            baseColor = mix(vec3(1.0, 0.3, 0.0), vec3(1.0, 0.7, 0.0), t * 2.0);
+        if (t < 0.8) {
+            baseColor = mix(vec3(1.0, 0.3, 0.0), vec3(1.0, 0.7, 0.0), t / 0.8);
         } else {
-            baseColor = mix(vec3(1.0, 0.7, 0.0), vec3(1.0, 1.0, 0.8), (t - 0.5) * 2.0);
+            baseColor = mix(vec3(1.0, 0.7, 0.0), vec3(1.0, 1.0, 0.8), (t - 0.8) / 0.2);
         }
         float alpha = 1.0 - t * t; // 粒子的透明度非线性衰减
         

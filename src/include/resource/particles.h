@@ -623,6 +623,23 @@ public:
             V_x*=V_len;
             V_y*=V_len;
             V_z*=V_len;
+
+            // 随机一个初始发射位置
+            float x=static_cast<float>(rand()%10000)/10000.0f*2.0f-1.0f;
+            float y=static_cast<float>(rand()%10000)/10000.0f*2.0f-1.0f;
+            float z=static_cast<float>(rand()%10000)/10000.0f*2.0f-1.0f;
+            // 归一化
+            float len=glm::length(glm::vec3(x,y,z));
+            if(len>0.0000001f){
+                x/=len;
+                y/=len;
+                z/=len;
+            }
+            // 乘以半径
+            x*=radius_bias;
+            y*=radius_bias;
+            z*=radius_bias;
+
             // 四个顶点
             for(int j=0;j<4;j++){
                 // 第一位是粒子序号，粒子序号暂时用于随机种子，用随机算法标识粒子的发射方向
@@ -631,9 +648,9 @@ public:
                 vertices.push_back(corners[j*2]);
                 vertices.push_back(corners[j*2+1]);
                 // 预留三位做发射偏移量
-                vertices.push_back(static_cast<float>(rand()%100000)/100000.0f*radius_bias);
-                vertices.push_back(static_cast<float>(rand()%100000)/100000.0f*radius_bias);
-                vertices.push_back(static_cast<float>(rand()%100000)/100000.0f*radius_bias);
+                vertices.push_back(x);
+                vertices.push_back(y);
+                vertices.push_back(z);
                 // 后面颜色或许可以做不一样的
 
                 // 有一个延迟时间，即生命周期中可以等一会才出现

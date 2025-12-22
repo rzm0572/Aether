@@ -99,7 +99,12 @@ int main() {
 
     // Load models
     Model plane_model;
-    if (!plane_model.loadModel(getAssetPath("models/j10/scene.gltf"))) {
+    // if (!plane_model.loadModel(getAssetPath("models/j10/scene.gltf"))) {
+    //     std::cerr << "Failed to load model!" << std::endl;
+    //     return -1;
+    // }
+    // 测试其他模型的导入
+    if (!plane_model.loadModel(getAssetPath("models/missle/scene.gltf"),1)) {
         std::cerr << "Failed to load model!" << std::endl;
         return -1;
     }
@@ -155,7 +160,7 @@ int main() {
     // GPU 粒子的粒子效果测试
     Particle_Fireball fireball(10000,42,getAssetPath("textures/particles/particle_generated.png"));
     fireball.start_();
-    Particle_Flareback flareback(10000, 42, getAssetPath("textures/particles/particle_generated.png"),glm::vec3(0.0f, 0.0f, 0.0f),1.0f);
+    Particle_Flareback flareback(10000, 42, getAssetPath("textures/particles/particle_generated.png"),glm::vec3(0.0f, 0.0f, 0.0f),0.2f);
     flareback.start_();
     Particle_Explosion explosion(100000,5000, 42, getAssetPath("textures/particles/particle_generated.png"));
     explosion.start_();
@@ -224,10 +229,10 @@ int main() {
 
         // 绘制爆炸的粒子效果
         // fireball.draw(plane->getTransformComponent().getPosition(),view, projection, third_person_camera.getPosition(),3.0f,3.0f,0.1f);
-        // flareback.draw(plane->getTransformComponent().getPosition()-glm::vec3(3.0f,1.0f,0.0f), view, projection, third_person_camera.getPosition(), 14.0f, 1.5f, 0.1f, plane->physical_component().GetForward());
+        flareback.draw(plane->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 7.0f, 1.0f, 0.1f, plane->physical_component().GetForward());
         // explosion.draw(plane->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 3.0f,3.0f,0.1f);
-        ribbon.addParticles(plane->getTransformComponent().getPosition(),plane->physical_component().GetVelocity(), 10, 0.1f); // 每帧发射20个粒子
-        ribbon.draw(view, projection, third_person_camera.getPosition(),10.0f,0.1f,0.4f,0.1f);
+        // ribbon.addParticles(plane->getTransformComponent().getPosition(),plane->physical_component().GetVelocity(), 10, 0.1f); // 每帧发射20个粒子
+        // ribbon.draw(view, projection, third_person_camera.getPosition(),10.0f,0.1f,0.4f,0.1f);
 
         // 渲染天空盒（在其他物体之后渲染以优化性能）
         skybox.changeProjection(projection);
@@ -254,3 +259,8 @@ int main() {
 
     return 0;
 }
+
+// TODO: 有空做个HDL/Bloom 的实现
+// TODO: 有空做个不同魔法飞弹的爆炸效果
+// TODO: 火焰
+// TODO: 至少完成单一飞弹，曲线光线飞弹，火球飞弹 等效果

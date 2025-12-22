@@ -1,0 +1,11 @@
+Model Information:
+* title:	Missile
+* source:	https://sketchfab.com/3d-models/missile-81a345f9835342c989bae51a2574bd86
+* author:	martyn169 (https://sketchfab.com/martyn169)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Missile" (https://sketchfab.com/3d-models/missile-81a345f9835342c989bae51a2574bd86) by martyn169 (https://sketchfab.com/martyn169) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

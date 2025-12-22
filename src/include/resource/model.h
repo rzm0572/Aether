@@ -44,13 +44,13 @@ public:
         glDeleteVertexArrays(1, &VAO_);
     }
 
-    Model(const std::string& filename) {
+    Model(const std::string& filename,int change_kind) {
         glGenVertexArrays(1, &VAO_);
-        loadModel(filename);
+        loadModel(filename,change_kind);
     }
 
     // Load model from file
-    bool loadModel(const std::string& filepath) {
+    bool loadModel(const std::string& filepath,int change_kind) {
         destroyModel();    // If model is already loaded, destroy it first
 
         // Read file via ASSIMP
@@ -66,7 +66,7 @@ public:
 
         if (scene && scene->HasMeshes()) {
             std::filesystem::path path(filepath);
-            success = initFromScene(scene, path.parent_path());
+            success = initFromScene(scene, path.parent_path(),change_kind);
         } else {
             std::cerr << "Error parsing '" << filepath << "': '" << importer.GetErrorString() << "'" << std::endl;
         }
@@ -219,7 +219,7 @@ protected:
     }
 
 private:
-    bool initFromScene(const aiScene* scene, const std::filesystem::path& directory) {
+    bool initFromScene(const aiScene* scene, const std::filesystem::path& directory,int change_kind) {
         meshes_.resize(scene->mNumMeshes);
         default_materials_.resize(scene->mNumMaterials);
 
@@ -228,7 +228,7 @@ private:
 
         for (unsigned int i = 0; i < scene->mNumMeshes; ++i) {
             const aiMesh* mesh = scene->mMeshes[i];
-            initMesh(i, mesh, global_vertices, global_indices);
+            initMesh(i, mesh, global_vertices, global_indices,change_kind);
         }
 
         std::cout << "Loaded " << global_vertices.size() << " vertices and " << global_indices.size() << " indices" << std::endl;
@@ -246,7 +246,7 @@ private:
     }
 
     // 根据 Assimp 网格数据初始化模型中的网格
-    void initMesh(unsigned int index, const aiMesh* ai_mesh, std::vector<Vertex>& global_vertices, std::vector<vIndex>& global_indices) {
+    void initMesh(unsigned int index, const aiMesh* ai_mesh, std::vector<Vertex>& global_vertices, std::vector<vIndex>& global_indices,int change_kind) {
         unsigned int vertex_offset = (unsigned int)global_vertices.size();
         size_t index_offset = global_indices.size();
         std::string mesh_name = ai_mesh->mName.C_Str();
@@ -260,22 +260,47 @@ private:
             const aiVector3D* normal = ai_mesh->HasNormals() ? &(ai_mesh->mNormals[i]) : &Zero3D;
             const aiVector3D* tex_coord = ai_mesh->HasTextureCoords(UV_CHANNEL_DIFFUSE) ? 
                                           &(ai_mesh->mTextureCoords[UV_CHANNEL_DIFFUSE][i]) : &Zero3D;
-            
-            vertices.emplace_back(
-                glm::vec3(pos->x, pos->y, pos->z),
-                glm::vec2(tex_coord->x, tex_coord->y),
-                glm::vec3(normal->x, normal->y, normal->z)
-            );
+            /*
+            就模型坐标来说，
+            x 是向前
+            y 是向左
+            z是向上
+
+            我们可以根据模型在翻转和横转时候的相对于尾焰的坐标变化来确定与中心的偏转
+            */
+            switch(change_kind){
+                case 1:// 导弹：绕y轴将z轴正半轴旋转到x轴正半轴的变换，喷口位置等于导弹位置
+                    vertices.emplace_back(
+                        glm::vec3( (-pos->y+98.0f)/6.0f, (pos->x-200.4f)/6.0f,(pos->z-3.9f)/6.0f),
+                        glm::vec2(tex_coord->x, tex_coord->y),
+                        glm::vec3( -normal->y, normal->x,normal->z)
+                    );
+                break;
+                default:
+                    vertices.emplace_back(
+                        glm::vec3(pos->x, pos->y, pos->z),
+                        glm::vec2(tex_coord->x, tex_coord->y),
+                        glm::vec3(normal->x, normal->y, normal->z)
+                    );
+                break;
+            }
         }
 
         // 遍历 Assimp 网格中的所有面，提取顶点索引并存储到模型的索引列表中
         for (unsigned int i = 0; i < ai_mesh->mNumFaces; ++i) {
             const aiFace& face = ai_mesh->mFaces[i];
-            assert(face.mNumIndices == 3);
+//             if (face.mNumIndices != 3) {
+        //     std::cerr << "Non-triangular face found! mNumIndices = " << face.mNumIndices 
+        //               << " in mesh '" << ai_mesh->mName.C_Str() 
+        //               << "', face index: " << i << std::endl;
+        // }
+            // assert(face.mNumIndices == 3);
+            if(face.mNumIndices == 3){
+                indices.push_back(face.mIndices[0]);
+                indices.push_back(face.mIndices[1]);
+                indices.push_back(face.mIndices[2]);
+            }
 
-            indices.push_back(face.mIndices[0]);
-            indices.push_back(face.mIndices[1]);
-            indices.push_back(face.mIndices[2]);
         }
 
         global_vertices.insert(global_vertices.end(), vertices.begin(), vertices.end());
