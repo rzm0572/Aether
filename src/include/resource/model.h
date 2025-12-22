@@ -276,6 +276,13 @@ private:
                         glm::vec3( -normal->y, normal->x,normal->z)
                     );
                 break;
+                case 2:
+                    vertices.emplace_back(
+                        glm::vec3(pos->x + 100.0f, pos->y+100.0f, pos->z+100.0f),
+                        glm::vec2(tex_coord->x, tex_coord->y),
+                        glm::vec3(normal->x, normal->y, normal->z)
+                    );
+                break;
                 default:
                     vertices.emplace_back(
                         glm::vec3(pos->x, pos->y, pos->z),
