@@ -129,14 +129,16 @@ public:
     }
 
     template<typename GameObjectDerived = GameObject>
-    static void createFromModel(GameObjectDerived* wrapper, const Model& model) {
+    static void createFromModel(GameObjectDerived* wrapper, const Model& model, glm::mat4 bias_transform = glm::mat4(1.0f)) {
         // Check that GameObjectDerived is derived from GameObject
         if constexpr (!std::is_base_of_v<GameObject, GameObjectDerived>) {
             static_assert(false, "GameObjectDerived must be derived from GameObject");
         }
 
         auto* go = createFromModelTree(model.root_node_, model, nullptr);
-        go->getTransformComponent().setParent(wrapper, go);
+        auto& transform = go->getTransformComponent();
+        transform.setParent(wrapper, go);
+        transform.setlocalModelMatrix(bias_transform * transform.getLocalModelMatrix());
     }
 
     const std::vector<GameObject*>& getChildren() const {
