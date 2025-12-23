@@ -28,7 +28,23 @@
 #include <stb_image.h>
 
 
+glm::mat4 makeTransformMatrix(
+    float tx, float ty, float tz,   // 平移
+    float rx, float ry, float rz,   // 旋转（弧度，XYZ 顺序）
+    float sx, float sy, float sz    // 缩放
+) {
+    glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(tx, ty, tz));
+    rx = glm::radians(rx);
+    ry = glm::radians(ry);
+    rz = glm::radians(rz);
+    glm::mat4 rot   = glm::rotate(glm::mat4(1.0f), rx, glm::vec3(1, 0, 0))
+                    * glm::rotate(glm::mat4(1.0f), ry, glm::vec3(0, 1, 0))
+                    * glm::rotate(glm::mat4(1.0f), rz, glm::vec3(0, 0, 1));
+    glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(sx, sy, sz));
 
+    // 注意顺序：M = T * R * S
+    return trans * rot * scale;
+}
 
 // 主要参考了 一步步学OpenGL(22) -《OpenGL使用Assimp库导入3d模型》 - Kam92.J的文章 - 知乎 https://zhuanlan.zhihu.com/p/150570465
 // 修改了片段着色器的输入，使其能够接受纯色输入，否则会失去颜色，这是模型常用的做法即纯色模型加上细节贴图
@@ -99,23 +115,28 @@ int main() {
 
     // Load models
     Model plane_model;
-    // if (!plane_model.loadModel(getAssetPath("models/j10_editted/scene.gltf"))) {
-    //     std::cerr << "Failed to load model!" << std::endl;
-    //     return -1;
-    // }
-    // 测试其他模型的导入
-    if (!plane_model.loadModel(getAssetPath("models/missle1/scene.gltf"))) {
+    if (!plane_model.loadModel(getAssetPath("models/j10/scene.gltf"))) {
         std::cerr << "Failed to load model!" << std::endl;
         return -1;
     }
+    // 测试其他模型的导入
+    // if (!plane_model.loadModel(getAssetPath("models/missle1/scene.gltf"))) {
+    //     std::cerr << "Failed to load model!" << std::endl;
+    //     return -1;
+    // }
+    // if (!plane_model.loadModel(getAssetPath("models/boom/scene.gltf"))) {
+    //     std::cerr << "Failed to load model!" << std::endl;
+    //     return -1;
+    // }
 
     // GameObject* plane = GameObject::createFromModel(plane_model);
     glm::vec3 initial_position = glm::vec3(0.0f, 64.0f, 0.0f);
-    glm::quat initial_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
+    glm::quat initial_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f); 
     glm::vec3 velocity = glm::vec3(70.0f, 0.0f, 0.0f);
     glm::vec3 angular_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 
     Plane* plane = new Plane(input, plane_model, initial_position, initial_rotation, velocity, angular_velocity);
+    // Plane* boom = new Plane(input, plane_model, initial_position, initial_rotation, velocity, angular_velocity,makeTransformMatrix(0.0f,0.0f,0.0f,0.0f,90.0f,0.0f,0.1f,0.1f,0.1f));
     
 
     // Terrain generation

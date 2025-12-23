@@ -8,8 +8,8 @@
 
 class Plane : public GameObject {
 public:
-    Plane(const Input& input, const Model& model, const glm::vec3& position = glm::vec3(0.0f), const glm::quat& rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3 velocity = glm::vec3(0.0f), glm::vec3 angular_velocity = glm::vec3(0.0f), PhysicalComponent physical_component = PhysicalComponent()): translator_(input), physical_component_(physical_component) {
-        GameObject::createFromModel(this, model);
+    Plane(const Input& input, const Model& model, const glm::vec3& position = glm::vec3(0.0f), const glm::quat& rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3 velocity = glm::vec3(0.0f), glm::vec3 angular_velocity = glm::vec3(0.0f), glm::mat4 bias_transform = glm::mat4(1.0f),PhysicalComponent physical_component = PhysicalComponent()): translator_(input), physical_component_(physical_component) {
+        GameObject::createFromModel(this, model, bias_transform);
         
         auto& transform = getTransformComponent();
         auto& render = getRenderComponent();
