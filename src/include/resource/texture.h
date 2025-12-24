@@ -1,13 +1,16 @@
 #pragma once
 
 #include "utils/path_handler.h"
-#include <string>
-#include <iostream>
+
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <glad/glad.h>
 #include <stb_image.h>
+#include <glm/glm.hpp>
+
+#include <string>
+#include <iostream>
 #include <unordered_map>
 
 // Texture class
@@ -158,6 +161,8 @@ public:
             type_ = GL_UNSIGNED_BYTE;
         } else if constexpr (std::is_same_v<T, float>) {
             type_ = GL_FLOAT;
+        } else if constexpr (std::is_same_v<T, glm::vec3>) {
+            type_ = GL_FLOAT;
         } else {
             static_assert(false, "Unsupported texture data type");
         }
@@ -203,7 +208,8 @@ public:
         glBindTexture(m_type, m_textureID);
         glTexSubImage3D(m_type, internal_format_, 0, 0, layer_index, m_width, m_height, m_depth, format_, type_, data);
 
-        // TODO: Generate Mipmaps
+        // TODO: Generate Mipmaps by compute shader
+        glGenerateMipmap(m_type);
 
         glBindTexture(m_type, 0);
     }

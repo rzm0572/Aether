@@ -17,8 +17,8 @@ public:
     virtual float getHeight(ChunkCoord chunk_coord, float x, float z) const = 0;
     virtual Vertex getVertex(ChunkCoord chunk_coord, float x, float z) const = 0;
 
-    virtual std::vector<float> getHeightChunk(ChunkCoord chunk_coord, int scale, int stride) {
-        
+    virtual void getHeightNormalMap(ChunkCoord chunk_coord, int scale, int stride, std::vector<float>& height_map, std::vector<glm::vec3>& normal_map) {
+
     }
 };
 

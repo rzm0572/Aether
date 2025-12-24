@@ -15,7 +15,7 @@ public:
 template<unsigned int PoolSize = 1024, typename ReplacerType = LRUReplacer>
 class TexturePool : public TexturePoolInterface {
 public:
-    TexturePool(TerrainGenerator& generator): generator_(generator) {
+    TexturePool(TerrainGenerator& generator, int base_stride = 4): generator_(generator), base_stride_(base_stride) {
         if (!std::is_base_of_v<Replacer, ReplacerType>) {
             static_assert(false, "ReplacerType must be a subclass of Replacer");
         }
@@ -37,7 +37,9 @@ public:
     void insert(int world_x, int world_z, int scale, int& texture_index) override {
         int victim_index;
         if (replacer_->victim(victim_index)) {
-            std::vector<float> height_data = generator_.getHeightChunk({world_x - scale / 2, world_z - scale / 2}, scale, 4);
+            std::vector<float> height_data;
+            std::vector<glm::vec3> normal_data;
+            generator_.getHeightNormalMap({world_x - scale / 2, world_z - scale / 2}, scale, base_stride_, height_data, normal_data);
 
             height_map_->updateTextureLayer(height_data.data(), victim_index);
 
@@ -55,6 +57,7 @@ private:
     Texture* height_map_;
     Texture* normal_map_;
     TerrainGenerator& generator_;
+    int base_stride_ { 4 };
 };
 
 class QuadTree {
