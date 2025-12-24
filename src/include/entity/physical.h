@@ -75,6 +75,116 @@ public:
 };
 
 
+class PhysicalAITranslator{
+public:
+    PhysicalAITranslator() = default;
+    ~PhysicalAITranslator() = default;
+
+    using PhysicalInputSet = std::bitset<(size_t)PhysicalInput::_COUNT>;
+
+    PhysicalInputSet translate(int obj_kind,glm::vec3 target,glm::vec3 position,glm::vec3 velocity,glm::vec3 up,glm::vec3 forward,glm::vec3 right,glm::quat rotation) const {
+        size_t result_raw = 0;
+
+        switch (obj_kind){
+            case 1:{// 敌机逻辑
+                const float safe_distance = 40.0f;          // 最小水平保持距离
+                const float height_tolerance = 5.0f;        // 高度误差容忍
+                const float max_pitch_abs = 0.2f;           // forward.y 绝对值上限，飞机不能仰角俯角过高导致失速
+                const float roll_level_threshold = 0.95f;   // up.y > 0.95 视为水平
+                const float yaw_deadzone = 0.1f;            // 偏航对准死区
+                const float pitch_deadzone = 0.05f;         // 俯仰回平死区
+
+                glm::vec3 to_target = target - position;
+                float distance = glm::length(to_target);
+                float xz_distance = glm::length(glm::vec2(to_target.x, to_target.z));
+                float height_diff = target.y - position.y;
+
+                // === 滚转控制：只用于保持水平（无其他用途）===
+                const float roll_deadzone = 0.05f;
+                if (right.y > roll_deadzone) {// 左翼下沉，右滚
+                    result_raw |= (1 << (size_t)PhysicalInput::ROLL_RIGHT);
+                } else if (right.y < -roll_deadzone) {// 右翼下沉，左滚
+                    result_raw |= (1 << (size_t)PhysicalInput::ROLL_LEFT);
+                }
+
+                // === 2. 俯仰控制：先控高，再回平 ===
+                bool near_height = std::abs(height_diff) <= height_tolerance;
+                bool near_enough = distance < safe_distance * 1.2f; // 接近目标区域
+
+                if (!near_height) {
+                    // 远离目标高度：全力爬升/下降，但限制仰角
+                    if (height_diff > 0.0f && forward.y < max_pitch_abs) {
+                        result_raw |= (1 << (size_t)PhysicalInput::PITCH_UP);
+                    } else if (height_diff < 0.0f && forward.y > -max_pitch_abs) {
+                        result_raw |= (1 << (size_t)PhysicalInput::PITCH_DOWN);
+                    }
+                } else {
+                    // 高度已达标，尝试回平
+                    if (forward.y > pitch_deadzone) {
+                        // 当前抬头需低头回平
+                        result_raw |= (1 << (size_t)PhysicalInput::PITCH_DOWN);
+                    } else if (forward.y < -pitch_deadzone) {
+                        // 当前低头需抬头回平
+                        result_raw |= (1 << (size_t)PhysicalInput::PITCH_UP);
+                    }
+                }
+
+                // === 偏航角控制 先对准目标XZ 位置，再对准目标高度机头 ===
+                if (xz_distance > 1e-3f) {
+                    glm::vec2 current_dir(forward.x, forward.z);
+                    glm::vec2 desired_dir(to_target.x, to_target.z);
+                    
+                    float len_current = glm::length(current_dir);
+                    float len_desired = glm::length(desired_dir);
+                    
+                    if (len_current >= 1e-4f && len_desired >= 1e-4f){
+                        current_dir /= len_current;
+                        desired_dir /= len_desired;
+
+                        float dot = glm::dot(current_dir, desired_dir);   // cos(theta)
+                        float cross = current_dir.x * desired_dir.y - current_dir.y * desired_dir.x; // sin(theta)
+
+                        const float yaw_deadzone = 0.1f;
+
+                        if (dot < -0.7f) {// 飞行方向相反，转回来
+                            result_raw |= (1 << (size_t)PhysicalInput::YAW_RIGHT);
+                        } else if (dot < 0.999f) {// 飞行方向相近，调整航向
+                            if (cross > yaw_deadzone) {// 根据 sin 判断转向
+                                result_raw |= (1 << (size_t)PhysicalInput::YAW_RIGHT);
+                            } else if (cross < -yaw_deadzone) {
+                                result_raw |= (1 << (size_t)PhysicalInput::YAW_LEFT);
+                            }
+                        }
+                    }
+                }
+
+                // === 速度控制（先保持神风加速开撞的逻辑）===
+                result_raw |= (1 << (size_t)PhysicalInput::SPEEDUP);
+
+
+            break;}
+            case 2:{// 导弹逻辑
+                
+
+            break;}
+        }
+
+        size_t half_count = (size_t)PhysicalInput::_COUNT / 2;
+        
+        size_t lower_half = result_raw & ((1 << half_count) - 1);
+        size_t upper_half = result_raw >> half_count;
+        size_t mask = lower_half ^ upper_half;
+
+        size_t result = result_raw & (mask | (mask << half_count));
+
+        // std::cout << PhysicalInputSet(result_raw).to_string() << std::endl;
+        // std::cout << PhysicalInputSet(result).to_string() << std::endl;
+
+        return PhysicalInputSet(result);
+    }
+
+};
+
 class PhysicalComponent {
 public:
     PhysicalComponent(
@@ -131,10 +241,10 @@ public:
         angular_velocity_ = angular_velocity;
     }
 
-    void update(PhysicalInputTranslator translator, float dt) {
+    void update(PhysicalInputTranslator translator,PhysicalAITranslator ai_translator,int obj_kind,glm::vec3 target, float dt) {
         synchronizeVectors();
 
-        auto inputs = translator.translate();
+        auto inputs= obj_kind > 0 ? ai_translator.translate(obj_kind,target,position_,velocity_,up_,forward_,right_,rotation_) : translator.translate();
         glm::vec3 torque = getTorque(inputs);
         glm::vec3 force = getForce(inputs);
 

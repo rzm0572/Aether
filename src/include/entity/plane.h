@@ -23,8 +23,8 @@ public:
         physical_component_.initialize(position, rotation, velocity, angular_velocity);
     }
 
-    void update(float dt) {
-        physical_component_.update(translator_, dt);
+    void update(float dt,int obj_kind,glm::vec3 target) {
+        physical_component_.update(translator_,ai_translator_,obj_kind,target, dt);
         synchronizeTransform();
         // std::cout << physical_component_.getPosition() << " " << physical_component_.getVelocity() << std::endl;
     }
@@ -46,5 +46,6 @@ private:
     } controller_;
 
     PhysicalInputTranslator translator_;
+    PhysicalAITranslator ai_translator_;
     PhysicalComponent physical_component_;
 };
