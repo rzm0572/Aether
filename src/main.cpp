@@ -127,7 +127,7 @@ int main() {
     glm::vec3 velocity = glm::vec3(70.0f, 0.0f, 0.0f);
     glm::vec3 angular_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 
-    glm::vec3 initial_position2 = glm::vec3(50.0f,64.0f, 50.0f);
+    glm::vec3 initial_position2 = glm::vec3(200.0f,64.0f, 0.0f);
 
     Plane* plane = new Plane(input, plane_model, initial_position, initial_rotation, velocity, angular_velocity);
     Plane *plane_enemy = new Plane(input, plane_model, initial_position2, initial_rotation, velocity, angular_velocity);
@@ -172,6 +172,7 @@ int main() {
     );
 
     Weapons weapons_player(0,input,renderer);//玩家武器系统
+    Weapons weapons_enemy(1,input,renderer);//敌人武器系统
 
     // 开启深度测试
     glEnable(GL_DEPTH_TEST);
@@ -222,6 +223,7 @@ int main() {
         
         // --- weapons update and submit ---
         weapons_player.use(dt,plane->getTransformComponent().getPosition(),plane->physical_component().getVelocity(),plane->physical_component().getUp(),plane->physical_component().getRight(),plane->physical_component().GetForward(),plane->physical_component().getRotation(),plane_enemy->getTransformComponent().getPosition(),view,projection,third_person_camera);
+        weapons_enemy.use(dt,plane_enemy->getTransformComponent().getPosition(),plane_enemy->physical_component().getVelocity(),plane_enemy->physical_component().getUp(),plane_enemy->physical_component().getRight(),plane_enemy->physical_component().GetForward(),plane_enemy->physical_component().getRotation(),plane->getTransformComponent().getPosition(),view,projection,third_person_camera);
         // --- Submissions ---
         renderer.submit_recursive(plane);
         renderer.submit_recursive(plane_enemy);

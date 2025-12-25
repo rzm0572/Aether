@@ -83,7 +83,6 @@ public:
 
     // After all logic which uses the input state in the gameloop has been executed, call this function to update the previous state
     void endUpdate() {
-        std::cout << key_[(size_t)InputKey::MOUSE_LEFT] << std::endl;
         prev_key_ = key_;
         prev_mouse_pos_ += mouse_movement_;
         mouse_movement_ = glm::vec2(0.0f);
