@@ -270,11 +270,6 @@ private:
         // 遍历 Assimp 网格中的所有面，提取顶点索引并存储到模型的索引列表中
         for (unsigned int i = 0; i < ai_mesh->mNumFaces; ++i) {
             const aiFace& face = ai_mesh->mFaces[i];
-//             if (face.mNumIndices != 3) {
-        //     std::cerr << "Non-triangular face found! mNumIndices = " << face.mNumIndices 
-        //               << " in mesh '" << ai_mesh->mName.C_Str() 
-        //               << "', face index: " << i << std::endl;
-        // }
             // assert(face.mNumIndices == 3);
             if(face.mNumIndices == 3){
                 indices.push_back(face.mIndices[0]);
