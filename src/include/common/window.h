@@ -89,6 +89,10 @@ public:
         glfwSetCursorPosCallback(m_window_, callback);
     }
 
+    void setMouseButtonCallback(GLFWmousebuttonfun callback) {
+        glfwSetMouseButtonCallback(m_window_, callback);
+    }
+
     void setFramebufferSizeCallback(GLFWframebuffersizefun callback) {
         glfwSetFramebufferSizeCallback(m_window_, callback);
     }
