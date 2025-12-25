@@ -14,7 +14,7 @@
 #include "world/terrain.h"
 #include "entity/plane.h"
 // #include "resource/particles.h"
-#include "resource/weapons.h"
+#include "system/weapons.h"
 
 #include <iostream>
 #include <string>
