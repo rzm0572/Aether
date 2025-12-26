@@ -32,6 +32,13 @@ public:
         );
     }
 
+    void update(float dt) {
+        for (auto& bullet : bullets_) {
+            bullet.position = bullet.position + bullet.velocity * dt;
+            bullet.velocity = (bullet.velocity + gravity * dt) * velocity_damping;
+        }
+    }
+
     std::vector<Bullet>& getBullets() {
         return bullets_;
     }
@@ -56,6 +63,8 @@ public:
 private:
     static constexpr size_t MAX_BULLETS = 16384;
     static constexpr float MAX_LIFE_TIME = 20.0f;
+    static constexpr glm::vec3 gravity = glm::vec3(0.0f, -9.8f, 0.0f);
+    static constexpr float velocity_damping = 0.99f;
 
     std::vector<Bullet> bullets_;
 };
