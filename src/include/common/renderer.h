@@ -164,7 +164,12 @@ public:
 
         unsigned int key = (rc->material_->getShader()->getShaderID() << 16) | rc->VAO_;
         glm::mat4 global_transform = obj->getTransformComponent().getGlobalModelMatrix();
-        render_queue_.push_back({ key, rc, global_transform, .custom_data_i32 = 0 });
+        render_queue_.push_back({
+            .key = key,
+            .rc = rc,
+            .global_transform = global_transform,
+            .custom_data_i32 = 0
+        });
     }
 
     template<typename T>
