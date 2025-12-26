@@ -55,6 +55,7 @@ set(
     interaction/camera.cpp
     resource/shader.cpp
     resource/material.cpp
+    resource/explosion.cpp
     world/skybox.cpp
 )
 

@@ -27,6 +27,11 @@ struct Timer {
         duration += end - start;
         count++;
     }
+
+    double get_clock() {
+        end = std::chrono::high_resolution_clock::now();
+        return std::chrono::duration<double>(end - start).count();
+    }
 };
 
 class Profiler {

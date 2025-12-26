@@ -34,6 +34,7 @@ struct ModelNode {
 */
 class Model {
     friend class GameObject;
+    friend class ExplodedModel;
 
 public:
     Model() {
@@ -136,7 +137,7 @@ public:
 
 protected:
     // Allocate GPU resources for rendering
-    void allocGPU(std::vector<Vertex>& vertices, std::vector<vIndex>& indices) {
+    void allocGPU(const std::vector<Vertex>& vertices, const std::vector<vIndex>& indices) {
         releaseGPU();
 
         glBindVertexArray(VAO_);

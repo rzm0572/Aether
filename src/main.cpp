@@ -15,6 +15,7 @@
 #include "entity/plane.h"
 // #include "resource/particles.h"
 #include "system/weapons.h"
+#include "system/explosion.h"
 
 #include <iostream>
 #include <string>
@@ -86,6 +87,9 @@ int main() {
     // Engine initialization
     // Service initialized and provided to ServiceLocator
     GameEngine* engine = new GameEngine(config);
+
+    ExplosionSystem explosion_system;
+    explosion_system.init();
 
     // Input initialization
     Input input;
@@ -175,6 +179,7 @@ int main() {
     // Light settings
     auto light = Light(
         &third_person_camera,
+        // &free_camera,
         glm::vec3(0.8f, 0.8f, 0.8f),
         {
             glm::vec3(0.0f, 1.0f, 1.0f),
@@ -222,8 +227,13 @@ int main() {
 
         // Logical frame
         Profiler::instance().get_timer("logical").start_clock();
+        if (input.getKeyPressedDown(InputKey::RIGHT_BRACKET)) {
+            explosion_system.addExplosion(plane_model, plane, curr_frame, 5.0f);
+        }
+
         plane->update(dt,0,glm::vec3(0.0f));
         plane2->update(dt,1,plane->getTransformComponent().getPosition());
+        explosion_system.update(renderer, curr_frame);
 
         // free_camera.update(translator, curr_frame - last_frame);
         third_person_camera.update(input.getMouseMovement(), dt);

@@ -40,6 +40,10 @@ public:
                 continue;
             }
 
+            if (entry.rc->type_ != RenderType::MESH) {
+                continue;
+            }
+
             if (current_VAO_ != entry.rc->VAO_) {
                 glBindVertexArray(entry.rc->VAO_);
                 current_VAO_ = entry.rc->VAO_;
@@ -108,15 +112,27 @@ public:
                 light.use(shader);
             }
 
-            // Use the material and update OpenGL state
-            entry.rc->material_->apply();
+            if (entry.rc->type_ == RenderType::MESH) {
+                // Use the material and update OpenGL state
+                entry.rc->material_->apply();
 
-            // Update the model matrix by the global transform of the object
-            shader->setUniform("model", entry.global_transform);
+                // Update the model matrix by the global transform of the object
+                shader->setUniform("model", entry.global_transform);
 
-            // Render the object
-            void* offset = (void*)(entry.rc->mesh_->getIndexOffset() * sizeof(unsigned int));
-            glDrawElements(GL_TRIANGLES, entry.rc->mesh_->getNumIndices(), GL_UNSIGNED_INT, offset);
+                // Render the object
+                void* offset = (void*)(entry.rc->mesh_->getIndexOffset() * sizeof(unsigned int));
+                glDrawElements(GL_TRIANGLES, entry.rc->mesh_->getNumIndices(), GL_UNSIGNED_INT, offset);
+            } else if (entry.rc->type_ == RenderType::EXPLODED_MODEL) {
+                const auto* model = entry.rc->exploded_model_;
+                for (auto& mesh : model->getMeshes()) {
+                    auto material = model->getMaterials()[mesh.material_index_];
+
+                    material->apply();
+                    shader->setUniform("model", entry.global_transform);
+                    shader->setUniform("uTime", entry.custom_data_f32);
+                    glDrawArrays(GL_TRIANGLES, mesh.vertex_offset_, mesh.vertex_count_);
+                }
+            }
         }
 
         // Unbind VAO
@@ -148,7 +164,20 @@ public:
 
         unsigned int key = (rc->material_->getShader()->getShaderID() << 16) | rc->VAO_;
         glm::mat4 global_transform = obj->getTransformComponent().getGlobalModelMatrix();
-        render_queue_.push_back({ key, rc, global_transform });
+        render_queue_.push_back({ key, rc, global_transform, .custom_data_i32 = 0 });
+    }
+
+    template<typename T>
+    void submit(GameObject* obj, T custom_data) {
+        const auto* rc = &obj->getRenderComponent();
+        if (!rc->renderable_) {
+            return;
+        }
+
+        unsigned int key = (rc->material_->getShader()->getShaderID() << 16) | rc->VAO_;
+        glm::mat4 global_transform = obj->getTransformComponent().getGlobalModelMatrix();
+        // std::cout << "Add (key = " << key << ", type = " << (size_t)rc->type_ << ", global_transform = " << global_transform << ", custom_data = " << custom_data << ")" << std::endl;
+        render_queue_.push_back({ key, rc, global_transform, custom_data });
     }
 
     /**
@@ -224,6 +253,12 @@ private:
         unsigned int key;
         const RenderComponent* rc;
         glm::mat4 global_transform;
+
+        union {
+            float custom_data_f32;
+            int32_t custom_data_i32;
+            uint32_t custom_data_u32;
+        };
 
         bool operator<(const RenderQueueEntry& other) const {
             return key < other.key;

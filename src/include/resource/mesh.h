@@ -22,6 +22,7 @@ using vIndex = unsigned int;
 // It also holds GPU resources for rendering, such as VBO and EBO
 class Mesh {
     friend class Model;
+    friend class ExplodedModel;
 
 public:
     Mesh() = default;
@@ -71,6 +72,10 @@ public:
     // Setters and getters
     void setMaterialIndex(unsigned int material_index) {
         material_index_ = material_index;
+    }
+
+    size_t getNumVertices() const {
+        return vertices_.size();
     }
 
     size_t getNumIndices() const {
