@@ -87,7 +87,7 @@ public:
 
         switch (obj_kind){
             case 1:{// 敌机逻辑
-                const float safe_distance = 40.0f;          // 最小水平保持距离
+                const float safe_distance = 20.0f;          // 最小水平保持距离
                 const float height_tolerance = 5.0f;        // 高度误差容忍
                 const float max_pitch_abs = 0.1f;           // forward.y 绝对值上限，飞机不能仰角俯角过高导致失速
 
@@ -173,7 +173,6 @@ public:
                 const float max_pitch_abs = 0.05f;           // forward.y 绝对值上限，飞机不能仰角俯角过高导致失速
 
                 glm::vec3 to_target = target - position;
-                float distance = glm::length(to_target);
                 float xz_distance = glm::length(glm::vec2(to_target.x, to_target.z));
                 float height_diff = target.y - position.y;
 

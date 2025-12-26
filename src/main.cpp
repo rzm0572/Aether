@@ -122,12 +122,12 @@ int main() {
     }
 
     // GameObject* plane = GameObject::createFromModel(plane_model);
-    glm::vec3 initial_position = glm::vec3(0.0f, 64.0f, 0.0f);
+    glm::vec3 initial_position = glm::vec3(0.0f, 128.0f, 0.0f);
     glm::quat initial_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f); 
     glm::vec3 velocity = glm::vec3(70.0f, 0.0f, 0.0f);
     glm::vec3 angular_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 
-    glm::vec3 initial_position2 = glm::vec3(200.0f,64.0f, 0.0f);
+    glm::vec3 initial_position2 = glm::vec3(200.0f,128.0f, 0.0f);
 
     Plane* plane = new Plane(input, plane_model, initial_position, initial_rotation, velocity, angular_velocity);
     Plane *plane_enemy = new Plane(input, plane_model, initial_position2, initial_rotation, velocity, angular_velocity);
@@ -173,7 +173,14 @@ int main() {
 
     Weapons weapons_player(0,input,renderer);//玩家武器系统
     Weapons weapons_enemy(1,input,renderer);//敌人武器系统
-
+    Particle_Ribbon ribbon1  = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
+    ribbon1.start_();
+    Particle_Ribbon ribbon2 = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
+    ribbon2.start_();
+    // Particle_Ribbon ribbon3 = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
+    // ribbon3.start_();
+    // Particle_Ribbon ribbon4 = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
+    // ribbon4.start_();
     // 开启深度测试
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
@@ -220,7 +227,14 @@ int main() {
         // Render frame
         // TODO: 逻辑帧与渲染帧分离，渲染采用插值算法，提高帧率
         Profiler::instance().get_timer("render").start_clock();
-        
+        ribbon1.addParticles(plane->getTransformComponent().getPosition()+plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
+        ribbon2.addParticles(plane->getTransformComponent().getPosition()-plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
+        // ribbon3.addParticles(plane_enemy->getTransformComponent().getPosition()+plane_enemy->physical_component().getRight()*2.0f,plane_enemy->physical_component().getVelocity(), 8, 0.1f);
+        // ribbon4.addParticles(plane_enemy->getTransformComponent().getPosition()-plane_enemy->physical_component().getRight()*2.0f,plane_enemy->physical_component().getVelocity(), 8, 0.1f);
+        ribbon1.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+        ribbon2.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+        // ribbon3.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+        // ribbon4.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
         // --- weapons update and submit ---
         weapons_player.use(dt,plane->getTransformComponent().getPosition(),plane->physical_component().getVelocity(),plane->physical_component().getUp(),plane->physical_component().getRight(),plane->physical_component().GetForward(),plane->physical_component().getRotation(),plane_enemy->getTransformComponent().getPosition(),view,projection,third_person_camera);
         weapons_enemy.use(dt,plane_enemy->getTransformComponent().getPosition(),plane_enemy->physical_component().getVelocity(),plane_enemy->physical_component().getUp(),plane_enemy->physical_component().getRight(),plane_enemy->physical_component().GetForward(),plane_enemy->physical_component().getRotation(),plane->getTransformComponent().getPosition(),view,projection,third_person_camera);
