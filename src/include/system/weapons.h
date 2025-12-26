@@ -197,14 +197,14 @@ public:
                     if(_last_time_fire + 0.1f < glfwGetTime()){
                         _last_time_fire = glfwGetTime();
                         // 机炮+魔法
-                        if(weapon_kind == 0){
+                        if(weapon_kind == 0){// 火球
                             bullet_manager.fire(BulletType::FireBall, pos- up * 2.0f, Velocity + 120.0f * forward, glfwGetTime());
                         }
-                        else if(weapon_kind == 1){
+                        else if(weapon_kind == 1){// 机炮
                             bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f + right * 1.0f + forward * 2.0f, Velocity + 120.0f * forward, glfwGetTime());
                             bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f - right * 1.0f + forward * 2.0f, Velocity + 120.0f * forward, glfwGetTime());
                         }
-                        else{
+                        else{// 魔法激光
 
                         }
                     }
@@ -263,10 +263,10 @@ public:
                 break;
                 case 3:
                     // 主动防御
-                    if(weapon_kind == 0){
+                    if(weapon_kind == 0){// 箔条
 
                     }
-                    else{
+                    else{// 信号弹
 
                     }
                 break;
@@ -285,7 +285,7 @@ public:
                 }
                 else{
                     missle_is_active[i] = false;
-                    add_fireball_explode(missles[i]->getTransformComponent().getPosition());
+                    add_explode(missles[i]->getTransformComponent().getPosition());
                 }
             }
         }
@@ -298,7 +298,7 @@ public:
                 }
                 else{
                     boom_is_active[i] = false;
-                    add_fireball_explode(booms[i]->getTransformComponent().getPosition());
+                    add_explode(booms[i]->getTransformComponent().getPosition());
                     // std::cout<<"boom explode! at "<< booms[i]->getTransformComponent().getPosition()<<std::endl;
                 }
             }
@@ -313,7 +313,7 @@ public:
                 }
                 else{
                     missle_earth_is_active[i] = false;
-                    add_fireball_explode(missles_earth[i]->getTransformComponent().getPosition());
+                    add_explode(missles_earth[i]->getTransformComponent().getPosition());
                 }
             }
         }
@@ -391,7 +391,7 @@ private:
                 return;
             }
         }
-        explosions.push_back(new Particle_Explosion(2000,100, 42, getAssetPath("textures/particles/particle_generated.png")));
+        explosions.push_back(new Particle_Explosion(20000,1000, 42, getAssetPath("textures/particles/particle_generated.png")));
         explosion_positions.push_back(pos);
         explosions.back()->start_();
     }

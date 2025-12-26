@@ -498,11 +498,12 @@ public:
         每个粒子实际上是一个有贴图的方块，因此我们要处理方块信息
 
         这一部分我们给每个点都设置一组参数：
+        TODO: 你可以按照以下的注释修改参数，达到不同的效果
         0~0 ：粒子序号
         1~2 ：顶点位置，因为我们通过billboard方式使得二维坐标正对眼，所以位置只要二维
-        3~5 ：预留偏移量，暂时用0 
+        3~5 ：预留偏移量，暂时用0 TODO: 通过偏移量增加视觉效果
         6~6 ：延迟时间，随机分布于 [0,1] 作用是在粒子的生命周期中随机时刻发射粒子
-        7~9 ：速度，随机分布于球面上，作用是粒子的运动方向 
+        7~9 ：速度，随机分布于球面上，作用是粒子的运动方向 TODO: 或许可以考虑不同初速度
         
         每个粒子实际上是一个有贴图的方块，因此索引就是方块位置
         之后我们把数据存入GPU，并绑定到VAO/VBO/EBO上
@@ -659,8 +660,8 @@ public:
         glEnableVertexAttribArray(5);
 
         // 着色器
-        if (!ServiceLocator<ShaderManager>::get()->isShaderRegistered("explosion")) {
-            ServiceLocator<ShaderManager>::get()->registerShader("explosion", getShaderPath("particles/explosion.vert"), getShaderPath("particles/explosion.frag"));
+        if(!ServiceLocator<ShaderManager>::get()->isShaderRegistered("explosion_fireball")){
+            ServiceLocator<ShaderManager>::get()->registerShader("explosion_fireball", getShaderPath("particles/explosion_fireball.vert"), getShaderPath("particles/explosion_fireball.frag"));
         }
         // 解绑
         glBindVertexArray(0);
@@ -692,7 +693,7 @@ public:
             // glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // 标准透明混合
             glBlendFunc(GL_SRC_ALPHA, GL_ONE); // 加深透明度混合，这是为了实现爆炸的亮度变化
             // 启动着色器
-            const Shader* shader = ServiceLocator<ShaderManager>::get()->useShader("explosion");
+            const Shader* shader = ServiceLocator<ShaderManager>::get()->useShader("explosion_fireball");
 
             // 设置uniform变量
 
@@ -706,6 +707,7 @@ public:
             shader->setUniform("raw_life_time", life_time);// 设定粒子能飞多长时间
             shader->setUniform("Max_size", max_size);// 设定粒子最大尺寸
 
+            // TODO:绑定纹理
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, textureID);
             shader->setUniform("uSpriteTex", 0); 
