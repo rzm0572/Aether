@@ -34,6 +34,7 @@ public:
         
         flareback.start_();
         flareback_missle.start_();
+        fireball.start_();
         // 空对空导弹模型导入
         if (!missle_model.loadModel(getAssetPath("models/missle1/scene.gltf"))) {
             std::cerr << "Failed to load model missle1!" << std::endl;
@@ -50,14 +51,6 @@ public:
         // Plane* missle = new Plane(input, missle_model, initial_position2, initial_rotation, velocity, angular_velocity);
         // Plane* boom = new Plane(input, plane_model, initial_position, initial_rotation, velocity, angular_velocity,makeTransformMatrix(0.0f,0.0f,0.0f,0.0f,90.0f,0.0f,0.1f,0.1f,0.1f));
     
-        // 
-
-        // GPU 粒子的粒子效果测试
-        // Particle_Fireball fireball(10000,42,getAssetPath("textures/particles/particle_generated.png"));
-        // fireball.start_();
-
-
-
         // Particle_Flareback_Missle flareback_missle(100000, 42, getAssetPath("textures/particles/particle_generated.png"), glm::vec3(0.0f, 0.0f, 0.0f), 0.2f);
         // flareback_missle.start_();
 
@@ -207,7 +200,7 @@ public:
                 case 1:
                     // 机炮+魔法
                     if(weapon_kind == 0){
-
+                        bullet_manager.fire(BulletType::FireBall, pos- up * 2.0f, Velocity + 120.0f * forward, glfwGetTime());
                     }
                     else if(weapon_kind == 1){
 
@@ -321,6 +314,16 @@ public:
             }
         }
         // std::cout<<"missles size:"<<missles.size()<<" booms size:"<<booms.size()<<" missles_earth size:"<<missles_earth.size()<<std::endl;
+        // ++ 各种子弹 ++
+        bullet_manager.update(dt);
+        bullet_manager.cleanBullets(glfwGetTime());
+        std::vector<Bullet>& bullets = bullet_manager.getBullets();
+        for(size_t i=0;i<bullets.size();i++){
+            if(bullets[i].type == BulletType::FireBall){
+                // 火球
+                fireball.draw(bullets[i].position, view, projection, third_person_camera.getPosition(), 0.8f, 0.5f, 0.05f);
+            }
+        }
 
     }
 private:
@@ -343,7 +346,8 @@ private:
     // 尾焰
     Particle_Flareback flareback=Particle_Flareback(1000, 42, getAssetPath("textures/particles/particle_generated.png"),glm::vec3(0.0f, 0.0f, 0.0f),0.2f);
     Particle_Flareback flareback_missle=Particle_Flareback(400, 42, getAssetPath("textures/particles/particle_generated.png"),glm::vec3(0.0f, 0.0f, 0.0f),0.1f);
-
+    // 火球
+    Particle_Fireball fireball=Particle_Fireball(1000,42,getAssetPath("textures/particles/particle_generated.png"));
     // 爆炸
     // Particle_Explosion explosion(100000,5000, 42, getAssetPath("textures/particles/particle_generated.png"));
     // explosion.start_();

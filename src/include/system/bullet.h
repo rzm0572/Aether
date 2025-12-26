@@ -4,7 +4,7 @@
 
 enum class BulletType {
     COMMON,
-    MAGIC,
+    FireBall,
 };
 
 struct Bullet {
@@ -45,7 +45,7 @@ public:
 
     void cleanBullets(float now) {
         size_t alive_bullets = 0;
-        for (int i = 0; i < bullets_.size(); ++i) {
+        for (size_t i = 0; i < bullets_.size(); ++i) {
             if (now - bullets_[i].shoot_time > MAX_LIFE_TIME) {
                 continue;
             }
@@ -64,7 +64,7 @@ private:
     static constexpr size_t MAX_BULLETS = 16384;
     static constexpr float MAX_LIFE_TIME = 20.0f;
     static constexpr glm::vec3 gravity = glm::vec3(0.0f, -9.8f, 0.0f);
-    static constexpr float velocity_damping = 0.99f;
+    static constexpr float velocity_damping = 0.9999f;
 
     std::vector<Bullet> bullets_;
 };

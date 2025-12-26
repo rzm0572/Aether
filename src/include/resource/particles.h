@@ -155,7 +155,10 @@ public:
         glEnableVertexAttribArray(4);
 
         // 着色器
-        ServiceLocator<ShaderManager>::get()->registerShader("fireball", getShaderPath("particles/fireball.vert"), getShaderPath("particles/fireball.frag"));
+        if (!ServiceLocator<ShaderManager>::get()->isShaderRegistered("fireball")) {
+            // 注册着色器
+            ServiceLocator<ShaderManager>::get()->registerShader("fireball", getShaderPath("particles/fireball.vert"), getShaderPath("particles/fireball.frag"));
+        }
         // 解绑
         glBindVertexArray(0);
     }
@@ -448,7 +451,9 @@ public:
         glEnableVertexAttribArray(5);
 
         // 着色器
-        ServiceLocator<ShaderManager>::get()->registerShader("explosion", getShaderPath("particles/explosion.vert"), getShaderPath("particles/explosion.frag"));
+        if (!ServiceLocator<ShaderManager>::get()->isShaderRegistered("explosion")) {
+            ServiceLocator<ShaderManager>::get()->registerShader("explosion", getShaderPath("particles/explosion.vert"), getShaderPath("particles/explosion.frag"));
+        }
         // 解绑
         glBindVertexArray(0);
     }
@@ -697,7 +702,9 @@ public:
         glEnableVertexAttribArray(4);
 
         // 着色器
-        ServiceLocator<ShaderManager>::get()->registerShader("flareback", getShaderPath("particles/flareback.vert"), getShaderPath("particles/flareback.frag"));
+        if (!ServiceLocator<ShaderManager>::get()->isShaderRegistered("flareback")) {
+            ServiceLocator<ShaderManager>::get()->registerShader("flareback", getShaderPath("particles/flareback.vert"), getShaderPath("particles/flareback.frag"));
+        }
         // 解绑
         glBindVertexArray(0);
     }
@@ -837,12 +844,13 @@ public:
         glEnableVertexAttribArray(2);
 
         glBindVertexArray(0);
-
-        ServiceLocator<ShaderManager>::get()->registerShader(
-            "ribbon", 
-            getShaderPath("particles/ribbon.vert"), 
-            getShaderPath("particles/ribbon.frag")
-        );
+        if (!ServiceLocator<ShaderManager>::get()->isShaderRegistered("ribbon")) {
+            ServiceLocator<ShaderManager>::get()->registerShader(
+                "ribbon", 
+                getShaderPath("particles/ribbon.vert"), 
+                getShaderPath("particles/ribbon.frag")
+            );
+        }
     }
 
     ~Particle_Ribbon() {
@@ -1026,6 +1034,10 @@ private:
     glm::vec3 last_emit_pos;
     bool is_start_emit = false;
 };
+
+
+
+
 
 
 // class Particle_Flareback_Missle {
