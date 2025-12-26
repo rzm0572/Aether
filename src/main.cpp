@@ -124,29 +124,17 @@ int main() {
         std::cerr << "Failed to load model!" << std::endl;
         return -1;
     }
-    Model missle_model;
-    // 测试其他模型的导入
-    if (!missle_model.loadModel(getAssetPath("models/missle1/scene.gltf"))) {
-        std::cerr << "Failed to load model!" << std::endl;
-        return -1;
-    }
-    // if (!plane_model.loadModel(getAssetPath("models/boom/scene.gltf"))) {
-    //     std::cerr << "Failed to load model!" << std::endl;
-    //     return -1;
-    // }
 
     // GameObject* plane = GameObject::createFromModel(plane_model);
-    glm::vec3 initial_position = glm::vec3(0.0f, 64.0f, 0.0f);
+    glm::vec3 initial_position = glm::vec3(0.0f, 128.0f, 0.0f);
     glm::quat initial_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f); 
     glm::vec3 velocity = glm::vec3(70.0f, 0.0f, 0.0f);
     glm::vec3 angular_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 
-    glm::vec3 initial_position2 = glm::vec3(50.0f,64.0f, 50.0f);
+    glm::vec3 initial_position2 = glm::vec3(200.0f,128.0f, 0.0f);
 
     Plane* plane = new Plane(input, plane_model, initial_position, initial_rotation, velocity, angular_velocity);
-    Plane* plane2= new Plane(input, missle_model, initial_position2, initial_rotation, velocity, angular_velocity);
-    // Plane* boom = new Plane(input, plane_model, initial_position, initial_rotation, velocity, angular_velocity,makeTransformMatrix(0.0f,0.0f,0.0f,0.0f,90.0f,0.0f,0.1f,0.1f,0.1f));
-    
+    Plane *plane_enemy = new Plane(input, plane_model, initial_position2, initial_rotation, velocity, angular_velocity);
 
     // Terrain generation
     // PerlinGenerator perlin_generator(-10.0f, 10.0f, 16, 1);
@@ -188,18 +176,16 @@ int main() {
         input
     );
 
-    // GPU 粒子的粒子效果测试
-    // Particle_Fireball fireball(10000,42,getAssetPath("textures/particles/particle_generated.png"));
-    // fireball.start_();
-    // Particle_Flareback flareback(1000000, 42, getAssetPath("textures/particles/particle_generated.png"),glm::vec3(0.0f, 0.0f, 0.0f),0.2f);
-    // flareback.start_();
-    // Particle_Explosion explosion(100000,5000, 42, getAssetPath("textures/particles/particle_generated.png"));
-    // explosion.start_();
-    // Particle_Ribbon ribbon(50000, getAssetPath("textures/particles/particle_generated.png"));
-    // ribbon.start_();
-    // Particle_Flareback_Missle flareback_missle(100000, 42, getAssetPath("textures/particles/particle_generated.png"), glm::vec3(0.0f, 0.0f, 0.0f), 0.2f);
-    // flareback_missle.start_();
-
+    Weapons weapons_player(0,input,renderer);//玩家武器系统
+    Weapons weapons_enemy(1,input,renderer);//敌人武器系统
+    Particle_Ribbon ribbon1  = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
+    ribbon1.start_();
+    Particle_Ribbon ribbon2 = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
+    ribbon2.start_();
+    // Particle_Ribbon ribbon3 = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
+    // ribbon3.start_();
+    // Particle_Ribbon ribbon4 = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
+    // ribbon4.start_();
     // 开启深度测试
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
@@ -232,7 +218,7 @@ int main() {
         }
 
         plane->update(dt,0,glm::vec3(0.0f));
-        plane2->update(dt,1,plane->getTransformComponent().getPosition());
+        plane_enemy->update(dt,1,glm::vec3(0.0f));
         explosion_system.update(renderer, curr_frame);
 
         // free_camera.update(translator, curr_frame - last_frame);
@@ -251,10 +237,20 @@ int main() {
         // Render frame
         // TODO: 逻辑帧与渲染帧分离，渲染采用插值算法，提高帧率
         Profiler::instance().get_timer("render").start_clock();
-        
+        ribbon1.addParticles(plane->getTransformComponent().getPosition()+plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
+        ribbon2.addParticles(plane->getTransformComponent().getPosition()-plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
+        // ribbon3.addParticles(plane_enemy->getTransformComponent().getPosition()+plane_enemy->physical_component().getRight()*2.0f,plane_enemy->physical_component().getVelocity(), 8, 0.1f);
+        // ribbon4.addParticles(plane_enemy->getTransformComponent().getPosition()-plane_enemy->physical_component().getRight()*2.0f,plane_enemy->physical_component().getVelocity(), 8, 0.1f);
+        ribbon1.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+        ribbon2.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+        // ribbon3.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+        // ribbon4.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+        // --- weapons update and submit ---
+        weapons_player.use(dt,plane->getTransformComponent().getPosition(),plane->physical_component().getVelocity(),plane->physical_component().getUp(),plane->physical_component().getRight(),plane->physical_component().GetForward(),plane->physical_component().getRotation(),plane_enemy->getTransformComponent().getPosition(),view,projection,third_person_camera);
+        weapons_enemy.use(dt,plane_enemy->getTransformComponent().getPosition(),plane_enemy->physical_component().getVelocity(),plane_enemy->physical_component().getUp(),plane_enemy->physical_component().getRight(),plane_enemy->physical_component().GetForward(),plane_enemy->physical_component().getRotation(),plane->getTransformComponent().getPosition(),view,projection,third_person_camera);
         // --- Submissions ---
         renderer.submit_recursive(plane);
-        renderer.submit_recursive(plane2);
+        renderer.submit_recursive(plane_enemy);
         renderer.submit_recursive(terrain_obj);
         renderer.finishAllSubmissions();                // Sort render queue
         
@@ -267,13 +263,6 @@ int main() {
         // model_test.render(model, view, projection, light);
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 显示线框
 
-        // 绘制爆炸的粒子效果
-        // fireball.draw(plane->getTransformComponent().getPosition(),view, projection, third_person_camera.getPosition(),3.0f,3.0f,0.1f);
-        // flareback.draw(plane->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 30.0f, 1.0f, 0.1f, plane->physical_component().GetForward());
-        // explosion.draw(plane->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 3.0f,3.0f,0.1f);
-        // ribbon.addParticles(plane->getTransformComponent().getPosition(),plane->physical_component().GetVelocity(), 15, 0.1f); // 每帧发射20个粒子
-        // ribbon.draw(view, projection, third_person_camera.getPosition(),40.0f,0.1f,0.4f,0.1f);
-        // flareback_missle.draw(plane->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 60.0f, 5.0f, 1.0f, 0.01f, plane->physical_component().GetForward());
 
         // 渲染天空盒（在其他物体之后渲染以优化性能）
         skybox.changeProjection(projection);

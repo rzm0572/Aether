@@ -10,7 +10,7 @@
 // Keyboard keys
 enum class InputKey {
     W, A, S, D,
-    H, J, K, L,
+    H, J, K, L, MOUSE_LEFT, MOUSE_RIGHT,Y,U,// 武器控制
     Q, E,
     B, N, M, COMMA, PERIOD,// 控制光照，分别为 RGB，增加亮度，减少亮度
     LEFT_BRACKET, RIGHT_BRACKET, BACKSLASH,// 控制光线方向  [ ] 控制y方向太阳高度角，\\ 符号可以控制昼夜变换
@@ -32,12 +32,17 @@ public:
         {GLFW_KEY_A, InputKey::A},
         {GLFW_KEY_S, InputKey::S},
         {GLFW_KEY_D, InputKey::D},
-        {GLFW_KEY_H, InputKey::H},
-        {GLFW_KEY_J, InputKey::J},
-        {GLFW_KEY_K, InputKey::K},
-        {GLFW_KEY_L, InputKey::L},
         {GLFW_KEY_Q, InputKey::Q},
         {GLFW_KEY_E, InputKey::E},
+        // 武器控制
+        {GLFW_KEY_H, InputKey::H},// 空射导弹
+        {GLFW_KEY_J, InputKey::J},// 机炮+魔法
+        {GLFW_KEY_K, InputKey::K},// 火力支援
+        {GLFW_KEY_L, InputKey::L},// 主动防御
+        {GLFW_MOUSE_BUTTON_LEFT, InputKey::MOUSE_LEFT},// 开火
+        {GLFW_MOUSE_BUTTON_RIGHT, InputKey::MOUSE_RIGHT},// 切换武器
+        {GLFW_KEY_Y, InputKey::Y},// 开火
+        {GLFW_KEY_U, InputKey::U},// 切换武器
         // 光照控制
         {GLFW_KEY_B, InputKey::B},// B增加红色光照
         {GLFW_KEY_N, InputKey::N},// N增加绿色光照
@@ -121,6 +126,25 @@ public:
         input->setMouseMovement(xpos, ypos);
     }
 
+    static void mouseButtonCallback(GLFWwindow* window, int button, int action) {
+        Input* input = static_cast<Input*>(glfwGetWindowUserPointer(window));
+        if (!input) {
+            return;
+        }
+
+        if (action == GLFW_REPEAT) {
+            return;
+        }
+
+        bool pressed = action == GLFW_PRESS;
+        InputKey button_enum = Input::glfwKeyToInputKey(button);
+        if (button_enum == InputKey::_COUNT) {
+            return;
+        }
+
+        input->setMouseButtonCallback(button_enum, pressed);
+    }
+
 private:
     // Set the state of a key
     // Used in keyboard callback function
@@ -139,6 +163,10 @@ private:
         if (std::abs(mouse_movement_.x) > 1.0e4f || std::abs(mouse_movement_.y) > 1.0e4f) {
             mouse_movement_ = glm::vec2(0.0f);
         }
+    }
+
+    void setMouseButtonCallback(InputKey button, bool is_pressed) {
+        key_[(size_t)button] = is_pressed;
     }
 
 private:
