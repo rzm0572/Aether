@@ -11,6 +11,7 @@
 #include "common/engine.h"
 #include "entity/plane.h"
 #include "resource/particles.h"
+#include "system/bullet.h"
 
 #include <iostream>
 #include <string>
@@ -271,6 +272,7 @@ private:
     Model missle_model;
     Model boom_model;
     std::vector<Plane*> missles,booms,missles_earth;
+    BulletManager bullet_manager;
     std::vector<bool> missle_is_active,boom_is_active,missle_earth_is_active;
     std::vector<float> missle_start_time,boom_start_time,missle_earth_start_time;
     int _kind;// 是可以手动操纵-0/还是自动操纵-1
