@@ -34,12 +34,16 @@ public:
         flareback.start_();
         flareback_missle.start_();
         // 空对空导弹模型导入
-        if (!missle_model.loadModel(getAssetPath("models/missle1_2/scene.gltf"))) {
+        if (!missle_model.loadModel(getAssetPath("models/missle1/scene.gltf"))) {
             std::cerr << "Failed to load model missle1!" << std::endl;
         }
         // 对地导弹模型导入
         if (!boom_model.loadModel(getAssetPath("models/boom/scene.gltf"))) {
             std::cerr << "Failed to load boom model!" << std::endl;
+        }
+        // 地对空导弹模型导入
+        if (!missle_earth_model.loadModel(getAssetPath("models/missle2/scene.gltf"))) {
+            std::cerr << "Failed to load surface to air missle model!" << std::endl;
         }
         
         // Plane* missle = new Plane(input, missle_model, initial_position2, initial_rotation, velocity, angular_velocity);
@@ -96,18 +100,22 @@ public:
                 if(_input.getKeyPressed(InputKey::H)){
                     // 空射导弹
                     weapon_set = 0;
+                    weapon_kind = 0;
                 }
                 if(_input.getKeyPressed(InputKey::J)){
                     // 机炮+魔法
                     weapon_set = 1;
+                    weapon_kind = 0;
                 }
                 if(_input.getKeyPressed(InputKey::K)){
                     // 火力支援
                     weapon_set = 2;
+                    weapon_kind = 0;
                 }
                 if(_input.getKeyPressed(InputKey::L)){
                     // 主动防御
                     weapon_set = 3;
+                    weapon_kind = 0;
                 }
                 if(_input.getKeyPressed(InputKey::U)){
                     switch(weapon_set){
@@ -168,14 +176,11 @@ public:
                             (missles[slot])->physical_component().initialize(pos - up * 1.0f, rotation, Velocity - up * 4.0f, glm::vec3(0.0f,0.0f,0.0f));
                             missle_is_active[slot] = true;
                             missle_start_time[slot] = glfwGetTime();
-                            // missle_flarebacks[slot].start_();
                         }
                         else{
                             missles.push_back(new Plane(_input, missle_model, pos - up * 1.0f, rotation, Velocity - up * 4.0f, glm::vec3(0.0f,0.0f,0.0f)));
                             missle_is_active.push_back(true);
                             missle_start_time.push_back(glfwGetTime());
-                            // missle_flarebacks.push_back(Particle_Flareback(1000, 42, getAssetPath("textures/particles/particle_generated.png"), glm::vec3(0.0f, 0.0f, 0.0f), 0.2f));
-                            // missle_flarebacks.back().start_();
                         }
                     }
                     else{// 航弹
@@ -190,14 +195,11 @@ public:
                             (booms[slot])->physical_component().initialize(pos - up * 2.0f, rotation, Velocity - up * 4.0f, glm::vec3(0.0f,0.0f,0.0f));
                             boom_is_active[slot] = true;
                             boom_start_time[slot] = glfwGetTime();
-                            // boom_flarebacks[slot].start_();
                         }
                         else{
                             booms.push_back(new Plane(_input, boom_model, pos - up * 2.0f, rotation, Velocity - up * 4.0f, glm::vec3(0.0f,0.0f,0.0f)));
                             boom_is_active.push_back(true);
                             boom_start_time.push_back(glfwGetTime());
-                            // boom_flarebacks.push_back(Particle_Flareback(1000, 42, getAssetPath("textures/particle_generated.png"), glm::vec3(0.0f, 0.0f, 0.0f), 0.2f));
-                            // boom_flarebacks.back().start_();
                         }
                     }
                 break;
@@ -216,11 +218,50 @@ public:
                 case 2:
                     // 火力支援
                     if(weapon_kind == 0){// 地对空导弹
+                        int slot = -1;
+                        for(size_t i=0;i<missles_earth.size();i++){
+                            if(!missle_earth_is_active[i]){
+                                slot = i;
+                                break;
+                            }
+                        }
+                        glm::vec3 my_pos = glm::vec3(pos.x,100.0f,pos.z);
+                        glm::vec3 my_velocity = target - my_pos;
+                        my_velocity = glm::normalize(my_velocity);
+                        my_velocity *= 20.0f;
+                        glm::vec3 my_forward = glm::normalize(target - my_pos);
+                        glm::vec3 defaultForward = glm::vec3(1.0f, 0.0f, 0.0f);
+                        float dot = glm::dot(defaultForward, my_forward);
+                        glm::quat my_quat;
+                        // 处理同向情况（无需旋转）
+                        if (dot > 0.99999f) {
+                            my_quat=glm::quat(1.0f, 0.0f, 0.0f, 0.0f); // 单位四元数
+                        }
+                        else if(dot < -0.99999f){
+                            my_quat=glm::quat(0.0f, 0.0f, 1.0f, 0.0f);
+                        }
+                        else{
+                            glm::vec3 axis = glm::cross(defaultForward, my_forward);
+                            my_quat.w = 1.0f + dot;
+                            my_quat.x = axis.x;
+                            my_quat.y = axis.y;
+                            my_quat.z = axis.z;
+                        }
 
+                        if(slot != -1){
+                            (missles_earth[slot])->physical_component().initialize(my_pos,my_quat, my_velocity, glm::vec3(0.0f,0.0f,0.0f));
+                            missle_earth_is_active[slot] = true;
+                            missle_earth_start_time[slot] = glfwGetTime();
+                        }
+                        else{
+                            missles_earth.push_back(new Plane(_input, missle_earth_model, my_pos,my_quat,my_velocity , glm::vec3(0.0f,0.0f,0.0f)));
+                            missle_earth_is_active.push_back(true);
+                            missle_earth_start_time.push_back(glfwGetTime());
+                        }
                     }
                     else{// 空中魔法
 
-                    
+
                     }
                 break;
                 case 3:
@@ -265,11 +306,26 @@ public:
                 }
             }
         }
+        // ++ 地对空导弹 ++
+        for(size_t i=0;i<missles_earth.size();i++){
+            if(missle_earth_is_active[i]){
+                if(missle_earth_start_time[i] + _last_time_boom >= glfwGetTime()){
+                    missles_earth[i]->update(dt,2,target);
+                    _renderer.submit_recursive(missles_earth[i]);
+                    flareback_missle.draw(missles_earth[i]->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 3.0f, 0.5f, 0.05f, missles_earth[i]->physical_component().GetForward());
+                }
+                else{
+                    missle_earth_is_active[i] = false;
+                }
+            }
+        }
+        // std::cout<<"missles size:"<<missles.size()<<" booms size:"<<booms.size()<<" missles_earth size:"<<missles_earth.size()<<std::endl;
 
     }
 private:
     Model missle_model;
     Model boom_model;
+    Model missle_earth_model;
     std::vector<Plane*> missles,booms,missles_earth;
     std::vector<bool> missle_is_active,boom_is_active,missle_earth_is_active;
     std::vector<float> missle_start_time,boom_start_time,missle_earth_start_time;
@@ -289,4 +345,7 @@ private:
     // 爆炸
     // Particle_Explosion explosion(100000,5000, 42, getAssetPath("textures/particles/particle_generated.png"));
     // explosion.start_();
+
+    // 碰撞单元
+    std::vector<Plane *> collider_planes;
 };
