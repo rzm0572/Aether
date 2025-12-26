@@ -5,6 +5,7 @@
 enum class BulletType {
     COMMON,
     FireBall,
+    Autocannon,
 };
 
 struct Bullet {
@@ -43,13 +44,16 @@ public:
         return bullets_;
     }
 
-    void cleanBullets(float now) {
+    std::vector<glm::vec3> cleanBullets(float now) {
+        std::vector<glm::vec3> explode_poses;
         size_t alive_bullets = 0;
         for (size_t i = 0; i < bullets_.size(); ++i) {
             if (now - bullets_[i].shoot_time > MAX_LIFE_TIME) {
+                explode_poses.push_back(bullets_[i].position);
                 continue;
             }
             if (bullets_[i].collided) {
+                explode_poses.push_back(bullets_[i].position);
                 continue;
             }
 
@@ -58,11 +62,12 @@ public:
         }
 
         bullets_.resize(alive_bullets);
+        return explode_poses;
     }
 
 private:
     static constexpr size_t MAX_BULLETS = 16384;
-    static constexpr float MAX_LIFE_TIME = 20.0f;
+    static constexpr float MAX_LIFE_TIME = 2.0f;
     static constexpr glm::vec3 gravity = glm::vec3(0.0f, -9.8f, 0.0f);
     static constexpr float velocity_damping = 0.9999f;
 
