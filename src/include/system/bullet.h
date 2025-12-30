@@ -13,6 +13,8 @@ enum class BulletType {
     FireBall,
     Autocannon,
     kCount,
+    Tergeo,
+    Kendavra
 };
 
 struct Bullet {
@@ -39,7 +41,13 @@ public:
         for (auto& bullet : bullets_) {
             bullet.prev_position = bullet.position;
             bullet.position = bullet.position + bullet.velocity * dt;
-            bullet.velocity = (bullet.velocity + gravity * dt) * velocity_damping;
+            if(bullet.type == BulletType::Tergeo||bullet.type == BulletType::Kendavra){
+                bullet.velocity = (bullet.velocity) * velocity_damping;
+            }
+            else{
+                bullet.velocity = (bullet.velocity + gravity * dt) * velocity_damping;
+            }
+            
             
             bullet.collider.point_1 = bullet.prev_position;
             bullet.collider.point_2 = bullet.position;

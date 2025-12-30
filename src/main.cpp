@@ -276,21 +276,29 @@ int main() {
         // Render frame
         // TODO: 逻辑帧与渲染帧分离，渲染采用插值算法，提高帧率
         Profiler::instance().get_timer("render").start_clock();
-        // ribbon1.addParticles(plane->getTransformComponent().getPosition()+plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
-        // ribbon2.addParticles(plane->getTransformComponent().getPosition()-plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
-        // ribbon3.addParticles(plane_enemy->getTransformComponent().getPosition()+plane_enemy->physical_component().getRight()*2.0f,plane_enemy->physical_component().getVelocity(), 8, 0.1f);
-        // ribbon4.addParticles(plane_enemy->getTransformComponent().getPosition()-plane_enemy->physical_component().getRight()*2.0f,plane_enemy->physical_component().getVelocity(), 8, 0.1f);
-        // ribbon1.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
-        // ribbon2.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+
+        if(!plane->getHealthComponent().isDead()){
+            // ribbon1.addParticles(plane->getTransformComponent().getPosition()+plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
+            // ribbon2.addParticles(plane->getTransformComponent().getPosition()-plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
+            // // ribbon3.addParticles(plane_enemy->getTransformComponent().getPosition()+plane_enemy->physical_component().getRight()*2.0f,plane_enemy->physical_component().getVelocity(), 8, 0.1f);
+            // // ribbon4.addParticles(plane_enemy->getTransformComponent().getPosition()-plane_enemy->physical_component().getRight()*2.0f,plane_enemy->physical_component().getVelocity(), 8, 0.1f);
+            // ribbon1.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+            // ribbon2.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+        }
         // ribbon3.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
         // ribbon4.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
         // --- weapons update and submit ---
         glm::vec3 camera_pos = third_person_camera.getPosition();
-        weapons_player.postProcess(dt, curr_frame, player_transform.getPosition(), enemy_tranform.getPosition(), view, projection, camera_pos, player_physical.GetForward());
-        weapons_enemy.postProcess(dt, curr_frame, enemy_tranform.getPosition(), player_transform.getPosition(), view, projection, camera_pos, enemy_physical.GetForward());
+        weapons_player.postProcess(dt, curr_frame, player_transform.getPosition(), enemy_tranform.getPosition(),
+            player_physical.getUp(), player_physical.getRight(), player_physical.GetForward(), player_physical.getRotation(),
+            camera_pos, view, projection, plane->getHealthComponent().isDead()
+        );
+        weapons_enemy.postProcess(dt, curr_frame, enemy_tranform.getPosition(), player_transform.getPosition(),
+            enemy_physical.getUp(), enemy_physical.getRight(), enemy_physical.GetForward(), enemy_physical.getRotation(),
+            camera_pos, view, projection, plane_enemy->getHealthComponent().isDead()
+        );
 
         renderCollisionBox(render_lines, view, projection);
-
         // --- Submissions ---
         renderer.submit_recursive(plane);
         renderer.submit_recursive(plane_enemy);

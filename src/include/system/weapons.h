@@ -36,9 +36,12 @@ public:
         // 尾焰必须渲染
         
         flareback.start_();
+        // ribbon1.start_();    ribbon2.start_();
         flareback_missle.start_();
         fireball.start_();
         autocannon.start_();
+        tergeo.start_();
+        kendavra.start_();
 
         // 空对空导弹模型导入
         if (!missle_model.loadModel(getAssetPath("models/missle1/scene.gltf"))) {
@@ -74,10 +77,9 @@ public:
 
     }
     void use(float dt, float now, glm::vec3 pos,glm::vec3 Velocity,glm::vec3 up,glm::vec3 right,glm::vec3 forward,glm::quat rotation ,glm::vec3 target){
-        // == 飞机自身的粒子 ==
-        // 尾焰        
         auto& collision_configs = CollisionConfigRegistry::getInstance();
-
+        // == 飞机自身的粒子 ==
+        
         // 拉烟
         // ribbon1.addParticles(pos + right * 1.5f,Velocity, 10, 0.1f); // 每帧发射10个粒子
         // ribbon2.addParticles(pos - right * 1.5f,Velocity, 10, 0.1f); // 每帧发射10个粒子
@@ -212,14 +214,28 @@ public:
 
                         // 机炮+魔法
                         if(weapon_kind == 0){// 火球
-                            bullet_manager.fire(BulletType::FireBall, pos- up * 2.0f, Velocity + 120.0f * forward, now, layer);
+                            bullet_manager.fire(BulletType::FireBall, pos- up * 2.0f + forward * 6.0f, Velocity + 120.0f * forward, now, layer);
                         }
                         else if(weapon_kind == 1){// 机炮
-                            bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f + right * 1.0f + forward * 2.0f, Velocity + 120.0f * forward, now, layer);
-                            bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f - right * 1.0f + forward * 2.0f, Velocity + 120.0f * forward, now, layer);
+                            bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f + right * 1.0f + forward * 6.0f, Velocity + 120.0f * forward, now, layer);
+                            bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f - right * 1.0f + forward * 6.0f, Velocity + 120.0f * forward, now, layer);
                         }
-                        else{// 魔法激光
-
+                        else if(weapon_kind == 2){// 旋风
+                            bullet_manager.fire(BulletType::Tergeo, pos- up * 1.0f + forward * 8.0f, Velocity + 120.0f * forward, now, layer);
+                        }
+                    }
+                    if(_last_time_fire + 0.02f < now){
+                        CollisionLayer layer = CollisionLayer::LAYER_NEUTRAL;
+                        if (owner_ == Owner::PLAYER) {
+                            layer = CollisionLayer::LAYER_PLAYER;
+                        } else if (owner_ == Owner::ENEMY) {
+                            layer = CollisionLayer::LAYER_ENEMY;
+                        }
+                        _last_time_fire = now;
+                        if(weapon_kind == 3){// 啃大瓜
+                            float theta1 = static_cast<float>((rand()%20000-10000))/100000.0f;
+                            float theta2 = static_cast<float>((rand()%20000-10000))/20000.0f*glm::pi<float>();
+                            bullet_manager.fire(BulletType::Kendavra, pos- up * 2.0f + forward * 6.0f + right * (static_cast<float>((rand()%20000-10000)))/2500.0f, Velocity + 120.0f * forward * glm::cos(theta1) + 120.0f * right * glm::sin(theta1) * glm::cos(theta2) + 120.0f * up * glm::sin(theta1) * glm::sin(theta2), now, layer);
                         }
                     }
                 break;
@@ -288,8 +304,27 @@ public:
         }
     }
 
-    void postProcess(float dt, float now, glm::vec3 pos, glm::vec3 target, glm::mat4 view, glm::mat4 projection, glm::vec3 camera_pos, glm::vec3 forward) {
-        flareback.draw(pos, view, projection, camera_pos, 6.0f, 1.0f, 0.1f, forward);
+    void postProcess(float dt, float now, glm::vec3 pos, glm::vec3 target,glm::vec3 up, glm::vec3 right, glm::vec3 forward, glm::quat rotation, glm::vec3 camera_pos, glm::mat4 view, glm::mat4 projection, bool is_dead) {
+        // 尾焰
+        if(is_dead){
+            flareback.end_();
+            if(last_time_not_dead){
+                explosion_plane.start_();
+            }
+            last_time_not_dead &= !is_dead;
+            // ribbon1.end_();
+            // ribbon2.end_();
+        }
+        else{
+            flareback.draw(pos, view, projection, camera_pos, 6.0f, 1.0f, 0.1f, forward);
+            
+            // ribbon1.addParticles(pos+right*3.5f + forward * 2.0f - up*0.5f,Velocity, 4, 0.2f);
+            // ribbon2.addParticles(pos-right*3.5f + forward * 2.0f - up*0.5f,Velocity, 4, 0.2f);
+
+            // ribbon1.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+            // ribbon2.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+        
+        }
         // == 绘制武器 ==
         // ++ 空空导弹 ++
         for(size_t i=0;i<missles.size();i++){
@@ -350,6 +385,17 @@ public:
                 // 机炮
                 autocannon.draw(bullets[i].position,bullets[i].velocity, view, projection, camera_pos, 8.0f, 0.4f, 0.03f,0.2f);
             }
+            else if(bullets[i].type == BulletType::Tergeo){
+                // 旋风
+                // 随机一点转轴
+                float theta1 = static_cast<float>((rand()%20000-10000))/100000.0f;
+                float theta2 = static_cast<float>((rand()%20000-10000))/20000.0f*glm::pi<float>();
+                tergeo.draw(bullets[i].position,up * glm::cos(theta1) + right * glm::sin(theta1) * glm::cos(theta2) + up * glm::sin(theta1) * glm::sin(theta2), view, projection, camera_pos, 8.0f, 7.0f, 0.1f,3.0f,18.0f,glm::vec3(0.63f,0.81f,0.9f));
+            }
+            else if(bullets[i].type == BulletType::Kendavra){
+                // 啃大瓜
+                kendavra.draw(bullets[i].position,bullets[i].velocity, view, projection, camera_pos, 0.0f, 0.4f, 0.5f,0.2f,9.0f,glm::vec3(0.33f,1.0f,0.5f));
+            }
         }
 
         // == 爆炸 ==
@@ -362,6 +408,9 @@ public:
                 // explosions[i]->draw(pos,view, projection, third_person_camera.getPosition(),15.0f,2.0f,0.05f);
                 explosions[i]->draw(explosion_positions[i],view, projection, camera_pos,15.0f,2.0f,0.1f);
             }
+        }
+        if(explosion_plane.exists_now()){
+            explosion_plane.draw(pos+forward*3.0f,view, projection, camera_pos,3.5f,2.0f,0.05f);
         }
         for(size_t i=0;i<fireball_explosions.size();i++){
             if(fireball_explosions[i]->exists_now()){
@@ -422,7 +471,7 @@ private:
     Owner owner_;
     int _kind;// 是可以手动操纵-0/还是自动操纵-1
     int weapon_set = 0;// 0-空射导弹 1-机炮+魔法 2-火力支援 3-主动防御 
-    int weapon_num[4] = {2,3,2,2};
+    int weapon_num[4] = {2,4,2,2};
     int weapon_kind = 0;
     Input& _input;
     float _last_time;
@@ -430,6 +479,11 @@ private:
     float _last_time_boom = 7.0f;
     float _last_time_fire = 0.0f;
     float _last_time_help = 0.0f;
+    // // 拉烟
+    // Particle_Ribbon ribbon1  = Particle_Ribbon(500, getAssetPath("textures/particles/particle_generated.png"));
+
+    // Particle_Ribbon ribbon2 = Particle_Ribbon(500, getAssetPath("textures/particles/particle_generated.png"));
+
     // 尾焰
     Particle_Flareback flareback=Particle_Flareback(1000, 42, getAssetPath("textures/particles/particle_generated.png"),glm::vec3(0.0f, 0.0f, 0.0f),0.2f);
     Particle_Flareback flareback_missle=Particle_Flareback(400, 42, getAssetPath("textures/particles/particle_generated.png"),glm::vec3(0.0f, 0.0f, 0.0f),0.1f);
@@ -437,13 +491,15 @@ private:
     Particle_Fireball fireball=Particle_Fireball(1000,42,getAssetPath("textures/particles/particle_generated.png"));
     // 子弹
     Particle_Bullet autocannon=Particle_Bullet(100,42,getAssetPath("textures/particles/particle_generated.png"));
+    // 魔法1
+    Tergeo tergeo=Tergeo(10000,42,6.0f,getAssetPath("textures/particles/particle_generated2.png"));
+    Kendavra kendavra=Kendavra(1,42,getAssetPath("textures/particles/particle_generated2.png"));
     // 爆炸
     std::vector<Particle_Explosion*> explosions;
     std::vector<glm::vec3> explosion_positions;
     std::vector<Particle_Fireball_explosioin*> fireball_explosions;
     std::vector<glm::vec3> fireball_explosion_positions;
-    // Particle_Explosion explosion(100000,5000, 42, getAssetPath("textures/particles/particle_generated.png"));
-    // explosion.start_();
+    Particle_Explosion explosion_plane = Particle_Explosion(100000,5000, 42, getAssetPath("textures/particles/particle_generated.png"));
 
     void add_explode(glm::vec3 pos){
         for(size_t i=0;i<explosions.size();i++){
@@ -474,4 +530,5 @@ private:
 
     // 碰撞单元
     std::vector<Plane *> collider_planes;
+    bool last_time_not_dead=true;
 };
