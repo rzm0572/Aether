@@ -209,29 +209,28 @@ public:
 
                         // 机炮+魔法
                         if(weapon_kind == 0){// 火球
-<<<<<<< HEAD
                             bullet_manager.fire(BulletType::FireBall, pos- up * 2.0f + forward * 6.0f, Velocity + 120.0f * forward, now, layer);
                         }
                         else if(weapon_kind == 1){// 机炮
                             bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f + right * 1.0f + forward * 6.0f, Velocity + 120.0f * forward, now, layer);
                             bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f - right * 1.0f + forward * 6.0f, Velocity + 120.0f * forward, now, layer);
-=======
-                        }
-                        else if(weapon_kind == 1){// 机炮
-                            bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f + right * 1.0f + forward * 2.0f, Velocity + 120.0f * forward, now, layer);
-                            bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f - right * 1.0f + forward * 2.0f, Velocity + 120.0f * forward, now, layer);
->>>>>>> upstream/plane_model
                         }
                         else if(weapon_kind == 2){// 旋风
                             bullet_manager.fire(BulletType::Tergeo, pos- up * 1.0f + forward * 8.0f, Velocity + 120.0f * forward, now, layer);
                         }
                     }
-                    if(_last_time_fire + 0.02f < glfwGetTime()){
-                        _last_time_fire = glfwGetTime();
+                    if(_last_time_fire + 0.02f < now){
+                        CollisionLayer layer = CollisionLayer::LAYER_NEUTRAL;
+                        if (owner_ == Owner::PLAYER) {
+                            layer = CollisionLayer::LAYER_PLAYER;
+                        } else if (owner_ == Owner::ENEMY) {
+                            layer = CollisionLayer::LAYER_ENEMY;
+                        }
+                        _last_time_fire = now;
                         if(weapon_kind == 3){// 啃大瓜
                             float theta1 = static_cast<float>((rand()%20000-10000))/100000.0f;
                             float theta2 = static_cast<float>((rand()%20000-10000))/20000.0f*glm::pi<float>();
-                            bullet_manager.fire(BulletType::Kendavra, pos- up * 2.0f + forward * 6.0f + right * (static_cast<float>((rand()%20000-10000)))/2500.0f, Velocity + 120.0f * forward * glm::cos(theta1) + 120.0f * right * glm::sin(theta1) * glm::cos(theta2) + 120.0f * up * glm::sin(theta1) * glm::sin(theta2), glfwGetTime());
+                            bullet_manager.fire(BulletType::Kendavra, pos- up * 2.0f + forward * 6.0f + right * (static_cast<float>((rand()%20000-10000)))/2500.0f, Velocity + 120.0f * forward * glm::cos(theta1) + 120.0f * right * glm::sin(theta1) * glm::cos(theta2) + 120.0f * up * glm::sin(theta1) * glm::sin(theta2), now, layer);
                         }
                     }
                 break;

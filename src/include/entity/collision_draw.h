@@ -109,8 +109,8 @@ private:
             float angle1 = i * step;
             float angle2 = (i + 1) * step;
 
-            glm::vec3 p1 = center + (axisX * cos(angle1) + axisY * sin(angle1)) * radius;
-            glm::vec3 p2 = center + (axisX * cos(angle2) + axisY * sin(angle2)) * radius;
+            glm::vec3 p1 = center + (axisX * glm::cos(angle1) + axisY * glm::sin(angle1)) * radius;
+            glm::vec3 p2 = center + (axisX * glm::cos(angle2) + axisY * glm::sin(angle2)) * radius;
 
             out_lines.push_back({p1, p2, color});
         }
@@ -128,8 +128,8 @@ private:
             float angle2 = (i+1) * step + base_angle;
             
             // 这里的数学逻辑是为了画出从端点向外延伸的弧
-            glm::vec3 p1 = center - axisUp * radius * cos(angle1) + axisRight * radius * sin(angle1);
-            glm::vec3 p2 = center - axisUp * radius * cos(angle2) + axisRight * radius * sin(angle2);
+            glm::vec3 p1 = center - axisUp * radius * glm::cos(angle1) + axisRight * radius * glm::sin(angle1);
+            glm::vec3 p2 = center - axisUp * radius * glm::cos(angle2) + axisRight * radius * glm::sin(angle2);
             
             // 实际上调试用的 Capsule 画两端的全圆和侧面的线通常就足够看清了，
             // 上面的 drawCircle 已经提供了主要的轮廓。

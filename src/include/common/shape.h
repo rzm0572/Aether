@@ -1,5 +1,6 @@
 #pragma once
 
+#include <variant>
 #include <glm/glm.hpp>
 #include "utils/profiler.h"
 
