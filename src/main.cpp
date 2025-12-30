@@ -18,6 +18,7 @@
 // #include "resource/particles.h"
 #include "system/weapons.h"
 #include "system/explosion.h"
+#include "resource/healthbar.h"
 
 #include <iostream>
 #include <string>
@@ -192,6 +193,8 @@ int main() {
     // ribbon3.start_();
     // Particle_Ribbon ribbon4 = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
     // ribbon4.start_();
+    HealthBar health_bar_plane;
+    HealthBar health_bar_enemy;
 
     auto* collision_system = ServiceLocator<CollisionSystem>::get();
     collision_system->setTerrainGenerator(&fBm_generator);
@@ -276,7 +279,8 @@ int main() {
         // --- weapons update and submit ---
         weapons_player.use(dt, curr_frame, plane->getTransformComponent().getPosition(),plane->physical_component().getVelocity(),plane->physical_component().getUp(),plane->physical_component().getRight(),plane->physical_component().GetForward(),plane->physical_component().getRotation(),plane_enemy->getTransformComponent().getPosition(),view,projection,third_person_camera,plane->getHealthComponent().isDead());
         weapons_enemy.use(dt, curr_frame, plane_enemy->getTransformComponent().getPosition(),plane_enemy->physical_component().getVelocity(),plane_enemy->physical_component().getUp(),plane_enemy->physical_component().getRight(),plane_enemy->physical_component().GetForward(),plane_enemy->physical_component().getRotation(),plane->getTransformComponent().getPosition(),view,projection,third_person_camera,plane_enemy->getHealthComponent().isDead());
-
+        health_bar_plane.draw(plane->getTransformComponent().getPosition() + glm::vec3(0.0f, 2.5f, 0.0f),view,projection,third_person_camera.getPosition(),5.0f,0.25f,plane->getHealthComponent().getHealth());
+        health_bar_enemy.draw(plane_enemy->getTransformComponent().getPosition() + glm::vec3(0.0f, 2.5f, 0.0f),view,projection,third_person_camera.getPosition(),5.0f,0.25f,plane_enemy->getHealthComponent().getHealth());
         renderCollisionBox(render_lines, view, projection);
         // --- Submissions ---
         renderer.submit_recursive(plane);

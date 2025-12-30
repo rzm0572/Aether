@@ -34,6 +34,10 @@ public:
         isDeadPrev_ = isDead_;
     }
 
+    float getHealth() const {
+        return health_/100.0f;
+    }
+
 private:
     float health_ { 100.0f };
     bool isDead_ { false };
