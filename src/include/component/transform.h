@@ -188,6 +188,14 @@ public:
         return children_;
     }
 
+    void copyLocalTransform(const TransformComponent& other) {
+        position_ = other.position_;
+        rotation_ = other.rotation_;
+        scale_ = other.scale_;
+        local_dirty_ = true;
+        markGlobalDirty();
+    }
+
 private:
     /**
      * @brief Update the cached local transformation matrix

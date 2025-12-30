@@ -19,14 +19,14 @@ public:
     }
 
     float getHeight(ChunkCoord chunk_coord, float x, float z) const override {
-        float global_x = chunk_coord.x + x / Chunk::length;
-        float global_z = chunk_coord.z + z / Chunk::width;
+        float global_x = chunk_coord.x + x / Chunk::X_LENGTH;
+        float global_z = chunk_coord.z + z / Chunk::Z_LENGTH;
         return calculateHeight(global_x, global_z);
     }
 
     Vertex getVertex(ChunkCoord chunk_coord, float x, float z) const override {
-        float global_x = chunk_coord.x + x / Chunk::length;
-        float global_z = chunk_coord.z + z / Chunk::width;
+        float global_x = chunk_coord.x + x / Chunk::X_LENGTH;
+        float global_z = chunk_coord.z + z / Chunk::Z_LENGTH;
         TerrainData data = calculateTerrainData(global_x, global_z);
         glm::vec3 normal = glm::normalize(glm::vec3(-data.dx, 1.0f, -data.dz));
         
@@ -38,8 +38,8 @@ public:
     }
 
     void printChunk(ChunkCoord chunk_coord) const {
-        for (int x = 0; x < Chunk::length; ++x) {
-            for (int z = 0; z < Chunk::width; ++z) {
+        for (int x = 0; x < Chunk::X_LENGTH; ++x) {
+            for (int z = 0; z < Chunk::Z_LENGTH; ++z) {
                 std::cout << getHeight(chunk_coord, x, z) << " ";
             }
             std::cout << std::endl;
@@ -247,8 +247,8 @@ public:
 
     float getHeight(ChunkCoord chunk_coord, float x, float z) const override {
         float height = y_base_;
-        float global_x = chunk_coord.x + x / Chunk::length;
-        float global_z = chunk_coord.z + z / Chunk::width;
+        float global_x = chunk_coord.x + x / Chunk::X_LENGTH;
+        float global_z = chunk_coord.z + z / Chunk::Z_LENGTH;
         float freq = glm::pow(lacunarity_, fundamental_freq_log_);
 
         for (const auto& layer : perlin_layers_) {
@@ -268,8 +268,8 @@ public:
         
         float freq = glm::pow(lacunarity_, fundamental_freq_log_);
 
-        float global_x = chunk_coord.x + x / Chunk::length;
-        float global_z = chunk_coord.z + z / Chunk::width;
+        float global_x = chunk_coord.x + x / Chunk::X_LENGTH;
+        float global_z = chunk_coord.z + z / Chunk::Z_LENGTH;
 
         for (const auto& layer : perlin_layers_) {
             float x_perl = global_x * freq;

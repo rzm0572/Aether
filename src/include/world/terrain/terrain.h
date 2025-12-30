@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/shape.h"
 #include "resource/mesh.h"
 #include "resource/model.h"
 #include "resource/shader.h"
@@ -11,24 +12,62 @@ struct ChunkCoord {
     int z;
 };
 
+
+class Chunk {
+public:
+    static constexpr int X_LENGTH = 32;
+    static constexpr int Z_LENGTH = 32;
+
+    static glm::vec3 getChunkOrigin(ChunkCoord chunk_coord) {
+        return glm::vec3(chunk_coord.x * X_LENGTH, 0.0f, chunk_coord.z * Z_LENGTH);
+    }
+
+    static ChunkCoord getChunkCoord(float x, float z) {
+        return {
+            mod(static_cast<int>(x), X_LENGTH),
+            mod(static_cast<int>(z), Z_LENGTH)
+        };
+    }
+
+private:
+    static int mod(int x, int m) {
+        int p = x % m;
+        return p < 0 ? p + m : p;
+    }
+};
+
+
 class TerrainGenerator {
 public:
     virtual ~TerrainGenerator() = default;
     virtual float getHeight(ChunkCoord chunk_coord, float x, float z) const = 0;
     virtual Vertex getVertex(ChunkCoord chunk_coord, float x, float z) const = 0;
-};
 
-class Chunk {
-public:
-    static constexpr int length = 32;
-    static constexpr int width = 32;
-
-    static glm::vec3 getChunkOrigin(ChunkCoord chunk_coord) {
-        return glm::vec3(chunk_coord.x * length, 0.0f, chunk_coord.z * width);
+    float getHeight(float x, float z) const {
+        ChunkCoord c = Chunk::getChunkCoord(x, z);
+        return getHeight(c, x - c.x * Chunk::X_LENGTH, z - c.z * Chunk::Z_LENGTH);
     }
 
-};
+    Vertex getVertex(float x, float z) const {
+        ChunkCoord c = Chunk::getChunkCoord(x, z);
+        return getVertex(c, x - c.x * Chunk::X_LENGTH, z - c.z * Chunk::Z_LENGTH);
+    }
 
+    virtual AABB getChunkAABB(ChunkCoord chunk_coord) const {
+        float min_h, max_h;
+        min_h = max_h = getHeight(chunk_coord, 0, 0);
+        for (int i = 0; i < Chunk::X_LENGTH; ++i) {
+            for (int j = 0; j < Chunk::Z_LENGTH; ++j) {
+                float height = getHeight(chunk_coord, i, j);
+                min_h = std::min(min_h, height);
+                max_h = std::max(max_h, height);
+            }
+        }
+        glm::vec3 min_vec = Chunk::getChunkOrigin(chunk_coord) + glm::vec3(0.0f, min_h, 0.0f);
+        glm::vec3 max_vec = Chunk::getChunkOrigin({chunk_coord.x + 1, chunk_coord.z + 1}) + glm::vec3(0.0f, max_h, 0.0f);
+        return AABB(min_vec, max_vec);
+    }
+};
 
 
 // TODO: 四叉树动态加载
@@ -113,8 +152,8 @@ private:
     }
 
     void createChunkData(ChunkCoord chunk_coord, float stride, std::vector<Vertex>& vertices, std::vector<vIndex>& indices) {
-        int x_count = int((Chunk::length + stride + EPS) / stride);
-        int z_count = int((Chunk::width + stride + EPS) / stride);
+        int x_count = int((Chunk::X_LENGTH + stride + EPS) / stride);
+        int z_count = int((Chunk::Z_LENGTH + stride + EPS) / stride);
 
         for (int z = 0; z < z_count; ++z) {
             for (int x = 0; x < x_count; ++x) {

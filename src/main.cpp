@@ -1,7 +1,9 @@
 #include "common/game_object.h"
 #include "common/renderer.h"
+#include "entity/collision_config.h"
 #include "resource/shader.h"
 #include "service/service_locator.h"
+#include "system/collision.h"
 #include "utils/config.h"
 #include "utils/macros.h"
 #include "utils/path_handler.h"
@@ -28,7 +30,6 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <stb_image.h>
-
 
 glm::mat4 makeTransformMatrix(
     float tx, float ty, float tz,   // 平移
@@ -88,8 +89,9 @@ int main() {
     // Service initialized and provided to ServiceLocator
     GameEngine* engine = new GameEngine(config);
 
-    ExplosionSystem explosion_system;
-    explosion_system.init();
+    // ExplosionSystem explosion_system;
+    auto* explosion_system = ServiceLocator<ExplosionSystem>::get();
+    explosion_system->init();
 
     // Input initialization
     Input input;
@@ -118,6 +120,10 @@ int main() {
 
     Renderer renderer;
 
+    CollisionConfigRegistry collision_configs;
+    collision_configs.initialize();
+    // collision_configs.output();
+
     // Load models
     Model plane_model;
     if (!plane_model.loadModel(getAssetPath("models/j10/scene.gltf"))) {
@@ -133,8 +139,8 @@ int main() {
 
     glm::vec3 initial_position2 = glm::vec3(200.0f,128.0f, 0.0f);
 
-    Plane* plane = new Plane(input, plane_model, initial_position, initial_rotation, velocity, angular_velocity);
-    Plane *plane_enemy = new Plane(input, plane_model, initial_position2, initial_rotation, velocity, angular_velocity);
+    Plane* plane = new Plane(Owner::PLAYER, input, plane_model, initial_position, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"]);
+    Plane *plane_enemy = new Plane(Owner::ENEMY, input, plane_model, initial_position2, initial_rotation, velocity, angular_velocity);
 
     // Terrain generation
     // PerlinGenerator perlin_generator(-10.0f, 10.0f, 16, 1);
@@ -176,16 +182,20 @@ int main() {
         input
     );
 
-    Weapons weapons_player(0,input,renderer);//玩家武器系统
-    Weapons weapons_enemy(1,input,renderer);//敌人武器系统
-    // Particle_Ribbon ribbon1  = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
-    // ribbon1.start_();
-    // Particle_Ribbon ribbon2 = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
-    // ribbon2.start_();
+    Weapons weapons_player(0, Owner::PLAYER, input,renderer);//玩家武器系统
+    Weapons weapons_enemy(1, Owner::ENEMY, input,renderer);//敌人武器系统
+    Particle_Ribbon ribbon1  = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
+    ribbon1.start_();
+    Particle_Ribbon ribbon2 = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
+    ribbon2.start_();
     // Particle_Ribbon ribbon3 = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
     // ribbon3.start_();
     // Particle_Ribbon ribbon4 = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
     // ribbon4.start_();
+
+    auto* collision_system = ServiceLocator<CollisionSystem>::get();
+    collision_system->setTerrainGenerator(&fBm_generator);
+
     // 开启深度测试
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_CULL_FACE);
@@ -215,13 +225,27 @@ int main() {
         // Logical frame
         Profiler::instance().get_timer("logical").start_clock();
         if (input.getKeyPressedDown(InputKey::RIGHT_BRACKET)) {
-            explosion_system.addExplosion(plane_model, plane, curr_frame, 5.0f);
+            explosion_system->addExplosion(plane_model, plane, curr_frame, 5.0f);
         }
 
+        // Entity logical update
         plane->update(dt,0,glm::vec3(0.0f));
         plane_enemy->update(dt,1,glm::vec3(0.0f));
-        explosion_system.update(renderer, curr_frame);
+        collision_system->submit(plane);
 
+        // Collision detection
+        std::vector<DebugLine> render_lines;
+        collision_system->generateDebugLines(render_lines);
+        collision_system->update(curr_frame);
+
+        // Collision handling
+        plane->handleCollision();
+        plane_enemy->handleCollision();
+
+        // Explosion handling
+        explosion_system->update(renderer, curr_frame);
+
+        // Camera and light update
         // free_camera.update(translator, curr_frame - last_frame);
         third_person_camera.update(input.getMouseMovement(), dt);
         light.update(dt);
@@ -247,8 +271,11 @@ int main() {
         // ribbon3.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
         // ribbon4.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
         // --- weapons update and submit ---
-        weapons_player.use(dt,plane->getTransformComponent().getPosition(),plane->physical_component().getVelocity(),plane->physical_component().getUp(),plane->physical_component().getRight(),plane->physical_component().GetForward(),plane->physical_component().getRotation(),plane_enemy->getTransformComponent().getPosition(),view,projection,third_person_camera);
-        weapons_enemy.use(dt,plane_enemy->getTransformComponent().getPosition(),plane_enemy->physical_component().getVelocity(),plane_enemy->physical_component().getUp(),plane_enemy->physical_component().getRight(),plane_enemy->physical_component().GetForward(),plane_enemy->physical_component().getRotation(),plane->getTransformComponent().getPosition(),view,projection,third_person_camera);
+        weapons_player.use(dt, curr_frame, plane->getTransformComponent().getPosition(),plane->physical_component().getVelocity(),plane->physical_component().getUp(),plane->physical_component().getRight(),plane->physical_component().GetForward(),plane->physical_component().getRotation(),plane_enemy->getTransformComponent().getPosition(),view,projection,third_person_camera);
+        weapons_enemy.use(dt, curr_frame, plane_enemy->getTransformComponent().getPosition(),plane_enemy->physical_component().getVelocity(),plane_enemy->physical_component().getUp(),plane_enemy->physical_component().getRight(),plane_enemy->physical_component().GetForward(),plane_enemy->physical_component().getRotation(),plane->getTransformComponent().getPosition(),view,projection,third_person_camera);
+
+        renderCollisionBox(render_lines, view, projection);
+
         // --- Submissions ---
         renderer.submit_recursive(plane);
         renderer.submit_recursive(plane_enemy);

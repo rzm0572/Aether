@@ -32,7 +32,7 @@ public:
      */
     GameObject(UUID_t uuid, TransformComponent transform = TransformComponent(), RenderComponent render = RenderComponent()): uuid_(uuid), transform_(transform), render_(render) {}
 
-    UUID_t GetUUID() const { return uuid_; }
+    UUID_t getUUID() const { return uuid_; }
 
     TransformComponent& getTransformComponent() { return transform_; }
 
@@ -143,6 +143,13 @@ public:
 
     const std::vector<GameObject*>& getChildren() const {
         return transform_.getChildren();
+    }
+
+    void disableRendering() {
+        render_.renderable_ = false;
+        for (auto& child : getChildren()) {
+            child->disableRendering();
+        }
     }
 
 private:
