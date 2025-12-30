@@ -77,6 +77,7 @@ public:
 
     }
     void use(float dt, float now, glm::vec3 pos,glm::vec3 Velocity,glm::vec3 up,glm::vec3 right,glm::vec3 forward,glm::quat rotation ,glm::vec3 target,glm::mat4 view,glm::mat4 projection,ThirdPersonCamera third_person_camera,bool is_dead){
+        auto& collision_configs = CollisionConfigRegistry::getInstance();
         // == 飞机自身的粒子 ==
         // 尾焰
         if(is_dead){
@@ -322,7 +323,7 @@ public:
         }
     }
 
-    void postProcess(float dt, float now, glm::vec3 pos, glm::vec3 target, glm::mat4 view, glm::mat4 projection, glm::vec3 camera_pos, glm::vec3 forward) {
+    void postProcess(float dt, float now, glm::vec3 pos, glm::vec3 target,glm::vec3 up, glm::vec3 right, glm::vec3 forward, glm::quat rotation, ThirdPersonCamera third_person_camera, glm::mat4 view, glm::mat4 projection, glm::vec3 camera_pos) {
         flareback.draw(pos, view, projection, camera_pos, 6.0f, 1.0f, 0.1f, forward);
         // == 绘制武器 ==
         // ++ 空空导弹 ++
