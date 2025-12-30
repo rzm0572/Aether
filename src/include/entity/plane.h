@@ -79,6 +79,7 @@ public:
     virtual void handleCollision() override {
         auto& collision = getCollisionComponent();
         const auto& collision_events = collision.getCollisionEvents();
+        CollisionObjectType this_type = collision.getType();
 
         for (const auto& event : collision_events) {
             if (event.layer == CollisionLayer::LAYER_PLAYER && owner_ == Owner::PLAYER) {
@@ -90,7 +91,9 @@ public:
 
             switch (event.type) {
                 case CollisionObjectType::BULLET: {
-                    health_component_.doDamage(event.custom_data);
+                    if (this_type == CollisionObjectType::PLANE) {
+                        health_component_.doDamage(event.custom_data);
+                    }
                     break;
                 }
                 case CollisionObjectType::TERRAIN:

@@ -80,9 +80,12 @@ public:
                 continue;
             }
 
-            explosions_[remaining_size++] = std::move(explosion);
-            renderer.submit(explosion.go.get(), now - explosion.start_time);
+            explosions_[remaining_size] = std::move(explosion);
+            renderer.submit(explosions_[remaining_size].go.get(), now - explosion.start_time);
+            remaining_size++;
         }
+
+        explosions_.resize(remaining_size);
     }
 
 private:

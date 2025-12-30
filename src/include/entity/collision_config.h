@@ -51,4 +51,9 @@ struct CollisionConfigRegistry {
             std::cout << "CollisionConfig " << name << ":\n" << config.toString() << std::endl;
         }
     }
+
+    static CollisionConfigRegistry& getInstance() {
+        static CollisionConfigRegistry registry;
+        return registry;
+    }
 };
