@@ -40,11 +40,16 @@ public:
         auto& tc = obj->getTransformComponent();
         glm::mat4 global_transform = tc.getGlobalModelMatrix();
 
+        CollisionLayer layer = cc.getLayer();
+        uint8_t collisionable_mask = 0xFF ^ (1 << static_cast<uint8_t>(layer));
+
         instances_.emplace_back(
             &cc,
             cc.getType(),
             global_transform,
-            cc.getAABB(global_transform)
+            cc.getAABB(global_transform),
+            layer,
+            collisionable_mask
         );
     }
 
@@ -93,6 +98,19 @@ public:
         }
 
         instances_.clear();
+    }
+
+    void debugOutput() {
+        for (auto instance : instances_) {
+            std::cout << "type: " << static_cast<int>(instance.cc->getType())
+                      << ", layer: " << static_cast<int>(instance.cc->getLayer()) << std::endl;
+            auto shapes = instance.cc->getShapes();
+            ShapeToStringVisitor visitor_;
+            for (auto shape: shapes) {
+                std::cout << std::visit(visitor_, shape) << std::endl;
+            }
+            std::cout << "mask: " << static_cast<int>(instance.collisionable_mask) << std::endl << std::endl;
+        }
     }
 
     void generateDebugLines(std::vector<DebugLine>& render_lines) {

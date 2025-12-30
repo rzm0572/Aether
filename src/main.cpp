@@ -137,10 +137,10 @@ int main() {
     glm::vec3 velocity = glm::vec3(70.0f, 0.0f, 0.0f);
     glm::vec3 angular_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 
-    glm::vec3 initial_position2 = glm::vec3(200.0f,128.0f, 0.0f);
+    glm::vec3 initial_position2 = glm::vec3(400.0f,128.0f, 0.0f);
 
     Plane* plane = new Plane(Owner::PLAYER, input, plane_model, initial_position, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"]);
-    Plane *plane_enemy = new Plane(Owner::ENEMY, input, plane_model, initial_position2, initial_rotation, velocity, angular_velocity);
+    Plane *plane_enemy = new Plane(Owner::ENEMY, input, plane_model, initial_position2, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"]);
 
     // Terrain generation
     // PerlinGenerator perlin_generator(-10.0f, 10.0f, 16, 1);
@@ -233,6 +233,7 @@ int main() {
         plane->update(dt,0,glm::vec3(0.0f));
         plane_enemy->update(dt,1,glm::vec3(0.0f));
         collision_system->submit(plane);
+        collision_system->submit(plane_enemy);
 
         auto& player_transform = plane->getTransformComponent();
         auto& player_physical = plane->physical_component();
@@ -244,6 +245,8 @@ int main() {
         
         weapons_player.submitCollision();
         weapons_enemy.submitCollision();
+
+        // collision_system->debugOutput();
 
         // Collision detection
         std::vector<DebugLine> render_lines;

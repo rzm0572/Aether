@@ -30,8 +30,8 @@ enum class CollisionLayer {
 struct CollisionVisitor {
     static constexpr float kEpsilon = 1e-5f;
 
-    const glm::mat4& global_transform_1;
-    const glm::mat4& global_transform_2;
+    const glm::mat4 global_transform_1;
+    const glm::mat4 global_transform_2;
 
     CollisionVisitor(const glm::mat4& global_transform_1, const glm::mat4& global_transform_2): global_transform_1(global_transform_1), global_transform_2(global_transform_2) {}
 
@@ -209,7 +209,25 @@ struct CollisionVisitor {
         glm::vec3 P2 = get_global_position(c2.point_1, global_transform_2);
         glm::vec3 Q2 = get_global_position(c2.point_2, global_transform_2);
 
-        return distSqrSegmentSegment(P1, Q1, P2, Q2) <= (c1.radius + c2.radius) * (c1.radius + c2.radius);
+        bool c1_is_sphere = glm::dot(P1 - Q1, P1 - Q1) <= kEpsilon;
+        bool c2_is_sphere = glm::dot(P2 - Q2, P2 - Q2) <= kEpsilon;
+        float dist_sqr = (c1.radius + c2.radius) * (c1.radius + c2.radius);
+
+        if (c1_is_sphere && c2_is_sphere) {
+            return glm::dot(P1 - P2, P1 - P2) <= dist_sqr;
+        }
+
+        if (c1_is_sphere) {
+            return distSqrPointSegment(P1, P2, Q2) <= dist_sqr;
+        }
+
+        if (c2_is_sphere) {
+            std::cout << distSqrPointSegment(P2, P1, Q1) << std::endl;
+            std::cout << P1 << " " << Q1 << " " << P2 << " " << Q2 << std::endl;
+            return distSqrPointSegment(P2, P1, Q1) <= dist_sqr;
+        }
+
+        return distSqrSegmentSegment(P1, Q1, P2, Q2) <= dist_sqr;
     }
 
     bool operator()(const Sphere& s, const Triangle& t) const {

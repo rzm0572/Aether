@@ -31,4 +31,11 @@ void CollisionConfigRegistry::initialize() {
             Sphere(5.0f, glm::vec3(2.7f, 0.0f, 0.0f)),
         }
     };
+
+    registry["huge"] = {
+        CollisionObjectType::PLANE,
+        {
+            Sphere(25.0f, glm::vec3(0.0f, 0.0f, 0.0f)),
+        }
+    };
 }
