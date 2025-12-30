@@ -6,6 +6,8 @@ enum class BulletType {
     COMMON,
     FireBall,
     Autocannon,
+    Tergeo,
+    Kendavra
 };
 
 struct Bullet {
@@ -36,7 +38,13 @@ public:
     void update(float dt) {
         for (auto& bullet : bullets_) {
             bullet.position = bullet.position + bullet.velocity * dt;
-            bullet.velocity = (bullet.velocity + gravity * dt) * velocity_damping;
+            if(bullet.type == BulletType::Tergeo||bullet.type == BulletType::Kendavra){
+                bullet.velocity = (bullet.velocity) * velocity_damping;
+            }
+            else{
+                bullet.velocity = (bullet.velocity + gravity * dt) * velocity_damping;
+            }
+            
         }
     }
 

@@ -36,6 +36,8 @@ public:
         flareback_missle.start_();
         fireball.start_();
         autocannon.start_();
+        tergeo.start_();
+        kendavra.start_();
 
         // 空对空导弹模型导入
         if (!missle_model.loadModel(getAssetPath("models/missle1/scene.gltf"))) {
@@ -198,14 +200,22 @@ public:
                         _last_time_fire = glfwGetTime();
                         // 机炮+魔法
                         if(weapon_kind == 0){// 火球
-                            bullet_manager.fire(BulletType::FireBall, pos- up * 2.0f, Velocity + 120.0f * forward, glfwGetTime());
+                            bullet_manager.fire(BulletType::FireBall, pos- up * 2.0f + forward * 6.0f, Velocity + 120.0f * forward, glfwGetTime());
                         }
                         else if(weapon_kind == 1){// 机炮
-                            bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f + right * 1.0f + forward * 2.0f, Velocity + 120.0f * forward, glfwGetTime());
-                            bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f - right * 1.0f + forward * 2.0f, Velocity + 120.0f * forward, glfwGetTime());
+                            bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f + right * 1.0f + forward * 6.0f, Velocity + 120.0f * forward, glfwGetTime());
+                            bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f - right * 1.0f + forward * 6.0f, Velocity + 120.0f * forward, glfwGetTime());
                         }
-                        else{// 魔法激光
-
+                        else if(weapon_kind == 2){// 旋风
+                            bullet_manager.fire(BulletType::Tergeo, pos- up * 1.0f + forward * 8.0f, Velocity + 120.0f * forward, glfwGetTime());
+                        }
+                    }
+                    if(_last_time_fire + 0.02f < glfwGetTime()){
+                        _last_time_fire = glfwGetTime();
+                        if(weapon_kind == 3){// 啃大瓜
+                            float theta1 = static_cast<float>((rand()%20000-10000))/100000.0f;
+                            float theta2 = static_cast<float>((rand()%20000-10000))/20000.0f*glm::pi<float>();
+                            bullet_manager.fire(BulletType::Kendavra, pos- up * 2.0f + forward * 6.0f + right * (static_cast<float>((rand()%20000-10000)))/2500.0f, Velocity + 120.0f * forward * glm::cos(theta1) + 120.0f * right * glm::sin(theta1) * glm::cos(theta2) + 120.0f * up * glm::sin(theta1) * glm::sin(theta2), glfwGetTime());
                         }
                     }
                 break;
@@ -331,6 +341,17 @@ public:
                 // 机炮
                 autocannon.draw(bullets[i].position,bullets[i].velocity, view, projection, third_person_camera.getPosition(), 8.0f, 0.4f, 0.03f,0.2f);
             }
+            else if(bullets[i].type == BulletType::Tergeo){
+                // 旋风
+                // 随机一点转轴
+                float theta1 = static_cast<float>((rand()%20000-10000))/100000.0f;
+                float theta2 = static_cast<float>((rand()%20000-10000))/20000.0f*glm::pi<float>();
+                tergeo.draw(bullets[i].position,up * glm::cos(theta1) + right * glm::sin(theta1) * glm::cos(theta2) + up * glm::sin(theta1) * glm::sin(theta2), view, projection, third_person_camera.getPosition(), 8.0f, 7.0f, 0.1f,3.0f,18.0f,glm::vec3(0.63f,0.81f,0.9f));
+            }
+            else if(bullets[i].type == BulletType::Kendavra){
+                // 啃大瓜
+                kendavra.draw(bullets[i].position,bullets[i].velocity, view, projection, third_person_camera.getPosition(), 0.0f, 0.4f, 0.5f,0.2f,9.0f,glm::vec3(0.33f,1.0f,0.5f));
+            }
         }
 
         // == 爆炸 ==
@@ -360,7 +381,7 @@ private:
     std::vector<float> missle_start_time,boom_start_time,missle_earth_start_time;
     int _kind;// 是可以手动操纵-0/还是自动操纵-1
     int weapon_set = 0;// 0-空射导弹 1-机炮+魔法 2-火力支援 3-主动防御 
-    int weapon_num[4] = {2,3,2,2};
+    int weapon_num[4] = {2,4,2,2};
     int weapon_kind = 0;
     Input& _input;
     float _last_time;
@@ -375,6 +396,9 @@ private:
     Particle_Fireball fireball=Particle_Fireball(1000,42,getAssetPath("textures/particles/particle_generated.png"));
     // 子弹
     Particle_Bullet autocannon=Particle_Bullet(100,42,getAssetPath("textures/particles/particle_generated.png"));
+    // 魔法1
+    Tergeo tergeo=Tergeo(10000,42,6.0f,getAssetPath("textures/particles/particle_generated2.png"));
+    Kendavra kendavra=Kendavra(1,42,getAssetPath("textures/particles/particle_generated2.png"));
     // 爆炸
     std::vector<Particle_Explosion*> explosions;
     std::vector<glm::vec3> explosion_positions;
