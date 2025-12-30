@@ -28,7 +28,7 @@
 
 class Weapons{
 public:    
-    Weapons(int kind,Input& input,Renderer& renderer): _kind(kind), _input(input), _last_time(glfwGetTime()), _renderer(renderer){
+    Weapons(int kind, Owner owner, Input& input,Renderer& renderer): owner_(owner), _kind(kind), _input(input), _last_time(glfwGetTime()), _renderer(renderer){
         srand(time(NULL));
         // 尾焰必须渲染
         
@@ -172,7 +172,7 @@ public:
                             // missle_flarebacks[slot].start_();
                         }
                         else{
-                            missles.push_back(new Plane(_input, missle_model, pos - up * 1.0f, rotation, Velocity - up * 4.0f, glm::vec3(0.0f,0.0f,0.0f)));
+                            missles.push_back(new Plane(owner_, _input, missle_model, pos - up * 1.0f, rotation, Velocity - up * 4.0f, glm::vec3(0.0f,0.0f,0.0f)));
                             missle_is_active.push_back(true);
                             missle_start_time.push_back(glfwGetTime());
                             // missle_flarebacks.push_back(Particle_Flareback(1000, 42, getAssetPath("textures/particles/particle_generated.png"), glm::vec3(0.0f, 0.0f, 0.0f), 0.2f));
@@ -194,7 +194,7 @@ public:
                             // boom_flarebacks[slot].start_();
                         }
                         else{
-                            booms.push_back(new Plane(_input, boom_model, pos - up * 2.0f, rotation, Velocity - up * 4.0f, glm::vec3(0.0f,0.0f,0.0f)));
+                            booms.push_back(new Plane(owner_, _input, boom_model, pos - up * 2.0f, rotation, Velocity - up * 4.0f, glm::vec3(0.0f,0.0f,0.0f)));
                             boom_is_active.push_back(true);
                             boom_start_time.push_back(glfwGetTime());
                             // boom_flarebacks.push_back(Particle_Flareback(1000, 42, getAssetPath("textures/particle_generated.png"), glm::vec3(0.0f, 0.0f, 0.0f), 0.2f));
@@ -275,6 +275,7 @@ private:
     BulletManager bullet_manager;
     std::vector<bool> missle_is_active,boom_is_active,missle_earth_is_active;
     std::vector<float> missle_start_time,boom_start_time,missle_earth_start_time;
+    Owner owner_;
     int _kind;// 是可以手动操纵-0/还是自动操纵-1
     int weapon_set = 0;// 0-空射导弹 1-机炮+魔法 2-火力支援 3-主动防御 
     int weapon_num[4] = {2,3,2,2};

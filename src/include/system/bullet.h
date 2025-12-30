@@ -1,16 +1,26 @@
 #pragma once
 
+#include "common/shape.h"
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+struct CollisionInstance;
+struct TerrainGenerator;
+enum class CollisionLayer;
 
 enum class BulletType {
     COMMON,
     MAGIC,
+    kCount,
 };
 
 struct Bullet {
     BulletType type;
     glm::vec3 position;
+    glm::vec3 prev_position;
     glm::vec3 velocity;
+    Capsule collider;
+    CollisionLayer layer;
 
     bool collided { false };
     float shoot_time { 0.0f };
@@ -22,26 +32,27 @@ public:
         bullets_.reserve(MAX_BULLETS);
     }
     
-    void fire(BulletType type, glm::vec3 position, glm::vec3 velocity, float now) {
-        if (bullets_.size() >= MAX_BULLETS) {
-            return;
-        }
-
-        bullets_.emplace_back(
-            type, position, velocity, false, now
-        );
-    }
+    void fire(BulletType type, glm::vec3 position, glm::vec3 velocity, float now, CollisionLayer layer);
 
     void update(float dt) {
         for (auto& bullet : bullets_) {
+            bullet.prev_position = bullet.position;
             bullet.position = bullet.position + bullet.velocity * dt;
             bullet.velocity = (bullet.velocity + gravity * dt) * velocity_damping;
+            
+            bullet.collider.point_1 = bullet.prev_position;
+            bullet.collider.point_2 = bullet.position;
+            bullet.collider.radius = 0.05f;
         }
     }
 
     std::vector<Bullet>& getBullets() {
         return bullets_;
     }
+
+    void detectCollisions(const CollisionInstance& instance, float& damage);
+
+    void detectCollisionsTerrain(const TerrainGenerator& tg);
 
     void cleanBullets(float now) {
         size_t alive_bullets = 0;
@@ -61,7 +72,7 @@ public:
     }
 
 private:
-    static constexpr size_t MAX_BULLETS = 16384;
+    static constexpr size_t MAX_BULLETS = 2048;
     static constexpr float MAX_LIFE_TIME = 20.0f;
     static constexpr glm::vec3 gravity = glm::vec3(0.0f, -9.8f, 0.0f);
     static constexpr float velocity_damping = 0.99f;

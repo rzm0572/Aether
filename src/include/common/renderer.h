@@ -234,7 +234,7 @@ private:
      */
     void debug_output(GameObject* obj) {
         const auto* rc = &obj->getRenderComponent();
-        std::cout << "Submitting " << obj->GetUUID() << std::endl;
+        std::cout << "Submitting " << obj->getUUID() << std::endl;
 
         if (rc->renderable_) {
             std::cout << "Mesh: " << rc->mesh_->toString() << std::endl;

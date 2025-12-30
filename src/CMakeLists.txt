@@ -56,6 +56,10 @@ set(
     resource/shader.cpp
     resource/material.cpp
     resource/explosion.cpp
+    system/bullet.cpp
+    system/explosion.cpp
+    entity/collision_config.cpp
+    entity/collision_draw.cpp
     world/skybox.cpp
 )
 

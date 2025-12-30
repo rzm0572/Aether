@@ -78,7 +78,7 @@ void ExplodedModel::reconstructModel(const Model& model) {
 
 GameObject* ExplodedModel::createExplosion(GameObject* origin) const {
     GameObject* explosion = new GameObject();
-    explosion->getTransformComponent() = origin->getTransformComponent();
+    explosion->getTransformComponent().copyLocalTransform(origin->getTransformComponent());
 
     auto& rc = explosion->getRenderComponent();
     rc.renderable_ = true;

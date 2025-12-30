@@ -8,10 +8,18 @@
 #include "resource/material.h"
 #include "resource/explosion.h"
 
+class Plane;
+
+struct ExplosionMonitor {
+    const Model& model;
+    Plane* go;
+    float duration;
+};
+
 class ExplosionSystem {
     struct ExplosionInstance {
-        ExplodedModel* model;
-        GameObject* go;
+        std::unique_ptr<ExplodedModel> model;
+        std::unique_ptr<GameObject> go;
         float start_time;
         float duration;
     };
@@ -20,11 +28,6 @@ public:
     ExplosionSystem() = default;
 
     ~ExplosionSystem() {
-        for (auto& explosion : explosions_) {
-            delete explosion.go;
-            delete explosion.model;
-        }
-
         explosions_.clear();
     }
 
@@ -46,35 +49,45 @@ public:
         );
     }
 
+    void clear() {
+        explosions_.clear();
+    }
+
     void addExplosion(const Model& model, GameObject* go, float now, float duration) {
-        ExplodedModel* exploded_model = new ExplodedModel(model, 256);
-        GameObject* exploded_go = exploded_model->createExplosion(go);
+        auto exploded_model = std::make_unique<ExplodedModel>(model, 256);
+        auto exploded_go = std::unique_ptr<GameObject>(exploded_model->createExplosion(go));
         
         explosions_.emplace_back(
-            exploded_model, exploded_go, now, duration
+            std::move(exploded_model), std::move(exploded_go), now, duration
         );
     }
 
+    void addMonitor(const Model& model, Plane* go, float duration);
+
+    void removeMonitor(UUID_t uuid) {
+        monitors_.erase(uuid);
+    }
+
     void update(Renderer& renderer, float now) {
-        std::vector<ExplosionInstance> remaining_explosions;
+        handleMonitor(now);
+
+        size_t remaining_size = 0;
         std::vector<ExplosionInstance> to_remove;
-        for (auto& explosion : explosions_) {
+        for (size_t i = 0; i < explosions_.size(); ++i) {
+            auto& explosion = explosions_[i];
             if (now - explosion.start_time >= explosion.duration) {
-                to_remove.push_back(explosion);
+                to_remove.emplace_back(std::move(explosion));
                 continue;
             }
 
-            remaining_explosions.push_back(explosion);
-            renderer.submit(explosion.go, now - explosion.start_time);
-        }
-
-        explosions_.swap(remaining_explosions);
-        for (auto& explosion : to_remove) {
-            delete explosion.go;
-            delete explosion.model;
+            explosions_[remaining_size++] = std::move(explosion);
+            renderer.submit(explosion.go.get(), now - explosion.start_time);
         }
     }
 
 private:
+    void handleMonitor(float now);
+
     std::vector<ExplosionInstance> explosions_;
+    std::unordered_map<UUID_t, ExplosionMonitor> monitors_;
 };

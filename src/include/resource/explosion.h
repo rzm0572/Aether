@@ -1,5 +1,6 @@
 #pragma once
 
+#include "entity/collision_draw.h"
 #include "glm/fwd.hpp"
 #include "resource/mesh.h"
 #include "resource/model.h"
@@ -56,7 +57,9 @@ public:
     }
 
     ~ExplodedModel() {
-        glDeleteVertexArrays(1, &VAO_);
+        if (glIsVertexArray(VAO_)) {
+            glDeleteVertexArrays(1, &VAO_);
+        }
     }
 
     void reconstructModel(const Model& model);
