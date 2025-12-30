@@ -1,5 +1,6 @@
 #include "common/game_object.h"
 #include "common/renderer.h"
+#include "entity/collision.h"
 #include "resource/shader.h"
 #include "service/service_locator.h"
 #include "utils/config.h"
@@ -28,7 +29,7 @@
 
 class Weapons{
 public:    
-    Weapons(int kind, Owner owner, Input& input,Renderer& renderer): owner_(owner), _kind(kind), _input(input), _last_time(glfwGetTime()), _renderer(renderer){
+    Weapons(int kind, Owner owner, Input& input, Renderer& renderer, float now = 0.0f): owner_(owner), _kind(kind), _input(input), _last_time(now), _renderer(renderer){
         srand(time(NULL));
         // 尾焰必须渲染
         
@@ -67,7 +68,7 @@ public:
         missles_earth.clear();
 
     }
-    void use(float dt,glm::vec3 pos,glm::vec3 Velocity,glm::vec3 up,glm::vec3 right,glm::vec3 forward,glm::quat rotation ,glm::vec3 target,glm::mat4 view,glm::mat4 projection,ThirdPersonCamera third_person_camera){
+    void use(float dt, float now, glm::vec3 pos,glm::vec3 Velocity,glm::vec3 up,glm::vec3 right,glm::vec3 forward,glm::quat rotation ,glm::vec3 target,glm::mat4 view,glm::mat4 projection,ThirdPersonCamera third_person_camera){
         // == 飞机自身的粒子 ==
         // 尾焰
         flareback.draw(pos, view, projection, third_person_camera.getPosition(), 6.0f, 1.0f, 0.1f, forward);
@@ -80,7 +81,7 @@ public:
         // == 根据输入发射武器或者根据计时器自动发射 ==
         bool Fire = false;
         if(_kind == 0){// 手动发射
-            if(glfwGetTime() - _last_time > 0.001f){// 间隔时间
+            if(now - _last_time > 0.001f){// 间隔时间
                 // std::cout<<"check time right "<<_last_time<<std::endl;
                 // ++ 武器切换 ++
                 if(_input.getKeyPressed(InputKey::H)){
@@ -128,19 +129,19 @@ public:
                     // std::cout<<"fire"<<std::endl;
                     Fire = true;
                 }
-                _last_time = glfwGetTime();
+                _last_time = now;
             }
             
 
         }
         else{ // 自动发射
-            // if(glfwGetTime() - _last_time > 10.0f){
+            // if(now - _last_time > 10.0f){
             //     // ++ 武器切换 ++
             //     weapon_set = rand()%4;
             //     weapon_kind = rand()%weapon_num[weapon_set];
-            //     _last_time = glfwGetTime();
+            //     _last_time = now;
             // }
-            // if(glfwGetTime() - _last_time_fire > 5.0f){
+            // if(now - _last_time_fire > 5.0f){
                 // Fire = true;
             // }
         }
@@ -149,8 +150,8 @@ public:
         if(Fire){            
             switch(weapon_set){
                 case 0:
-                    if(_last_time_fire + 0.7f < glfwGetTime()){
-                        _last_time_fire = glfwGetTime();
+                    if(_last_time_fire + 0.7f < now){
+                        _last_time_fire = now;
                     // 空射导弹
                         if(weapon_kind == 0){
 
@@ -164,12 +165,12 @@ public:
                             if(slot != -1){
                                 (missles[slot])->physical_component().initialize(pos - up * 1.5f, rotation, Velocity - up * 5.0f + 2.0f * forward, glm::vec3(0.0f,0.0f,0.0f));
                                 missle_is_active[slot] = true;
-                                missle_start_time[slot] = glfwGetTime();
+                                missle_start_time[slot] = now;
                             }
                             else{
                                 missles.push_back(new Plane(owner_, _input, missle_model, pos - up * 1.5f, rotation, Velocity - up * 5.0f + 2.0f * forward, glm::vec3(0.0f,0.0f,0.0f)));
                                 missle_is_active.push_back(true);
-                                missle_start_time.push_back(glfwGetTime());
+                                missle_start_time.push_back(now);
                             }
                         }
                         else{// 航弹
@@ -183,26 +184,34 @@ public:
                             if(slot != -1){
                                 (booms[slot])->physical_component().initialize(pos - up * 2.0f, rotation, Velocity - up * 5.0f, glm::vec3(0.0f,0.0f,0.0f));
                                 boom_is_active[slot] = true;
-                                boom_start_time[slot] = glfwGetTime();
+                                boom_start_time[slot] = now;
                             }
                             else{
                                 booms.push_back(new Plane(owner_, _input, boom_model, pos - up * 2.0f, rotation, Velocity - up * 5.0f, glm::vec3(0.0f,0.0f,0.0f)));
                                 boom_is_active.push_back(true);
-                                boom_start_time.push_back(glfwGetTime());
+                                boom_start_time.push_back(now);
                             }
                         }
                     }
                 break;
                 case 1:
-                    if(_last_time_fire + 0.1f < glfwGetTime()){
-                        _last_time_fire = glfwGetTime();
+                    if(_last_time_fire + 0.1f < now){
+                        _last_time_fire = now;
+
+                        CollisionLayer layer = CollisionLayer::LAYER_NEUTRAL;
+                        if (owner_ == Owner::PLAYER) {
+                            layer = CollisionLayer::LAYER_PLAYER;
+                        } else if (owner_ == Owner::ENEMY) {
+                            layer = CollisionLayer::LAYER_ENEMY;
+                        }
+
                         // 机炮+魔法
                         if(weapon_kind == 0){// 火球
-                            bullet_manager.fire(BulletType::FireBall, pos- up * 2.0f, Velocity + 120.0f * forward, glfwGetTime());
+                            bullet_manager.fire(BulletType::FireBall, pos- up * 2.0f, Velocity + 120.0f * forward, now, layer);
                         }
                         else if(weapon_kind == 1){// 机炮
-                            bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f + right * 1.0f + forward * 2.0f, Velocity + 120.0f * forward, glfwGetTime());
-                            bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f - right * 1.0f + forward * 2.0f, Velocity + 120.0f * forward, glfwGetTime());
+                            bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f + right * 1.0f + forward * 2.0f, Velocity + 120.0f * forward, now, layer);
+                            bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f - right * 1.0f + forward * 2.0f, Velocity + 120.0f * forward, now, layer);
                         }
                         else{// 魔法激光
 
@@ -211,8 +220,8 @@ public:
                 break;
                 case 2:
                     // 火力支援
-                    if(_last_time_help + 1.0f < glfwGetTime()){
-                        _last_time_help = glfwGetTime();
+                    if(_last_time_help + 1.0f < now){
+                        _last_time_help = now;
                         if(weapon_kind == 0){// 地对空导弹
                             int slot = -1;
                             for(size_t i=0;i<missles_earth.size();i++){
@@ -247,12 +256,12 @@ public:
                             if(slot != -1){
                                 (missles_earth[slot])->physical_component().initialize(my_pos,my_quat, my_velocity, glm::vec3(0.0f,0.0f,0.0f));
                                 missle_earth_is_active[slot] = true;
-                                missle_earth_start_time[slot] = glfwGetTime();
+                                missle_earth_start_time[slot] = now;
                             }
                             else{
-                                missles_earth.push_back(new Plane(_input, missle_earth_model, my_pos,my_quat,my_velocity , glm::vec3(0.0f,0.0f,0.0f)));
+                                missles_earth.push_back(new Plane(owner_, _input, missle_earth_model, my_pos,my_quat,my_velocity , glm::vec3(0.0f,0.0f,0.0f)));
                                 missle_earth_is_active.push_back(true);
-                                missle_earth_start_time.push_back(glfwGetTime());
+                                missle_earth_start_time.push_back(now);
                             }
                         }
                         else{// 空中魔法
@@ -278,7 +287,7 @@ public:
         // ++ 空空导弹 ++
         for(size_t i=0;i<missles.size();i++){
             if(missle_is_active[i]){
-                if(missle_start_time[i] + _last_time_boom >= glfwGetTime()){
+                if(missle_start_time[i] + _last_time_boom >= now){
                     missles[i]->update(dt,2,target);
                     _renderer.submit_recursive(missles[i]);
                     flareback_missle.draw(missles[i]->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 3.0f, 0.5f, 0.05f, missles[i]->physical_component().GetForward());
@@ -292,7 +301,7 @@ public:
         // ++ 航弹 ++
         for(size_t i=0;i<booms.size();i++){
             if(boom_is_active[i]){
-                if(boom_start_time[i] + _last_time_boom >= glfwGetTime()){
+                if(boom_start_time[i] + _last_time_boom >= now){
                     booms[i]->update(dt,3,target);
                     _renderer.submit_recursive(booms[i]);
                 }
@@ -306,7 +315,7 @@ public:
         // ++ 地对空导弹 ++
         for(size_t i=0;i<missles_earth.size();i++){
             if(missle_earth_is_active[i]){
-                if(missle_earth_start_time[i] + _last_time_boom >= glfwGetTime()){
+                if(missle_earth_start_time[i] + _last_time_boom >= now){
                     missles_earth[i]->update(dt,2,target);
                     _renderer.submit_recursive(missles_earth[i]);
                     flareback_missle.draw(missles_earth[i]->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 3.0f, 0.5f, 0.05f, missles_earth[i]->physical_component().GetForward());
@@ -320,7 +329,7 @@ public:
         // std::cout<<"missles size:"<<missles.size()<<" booms size:"<<booms.size()<<" missles_earth size:"<<missles_earth.size()<<std::endl;
         // ++ 各种子弹 ++
         bullet_manager.update(dt);
-        std::vector<glm::vec3> bullet_explod_positions = bullet_manager.cleanBullets(glfwGetTime());
+        std::vector<glm::vec3> bullet_explod_positions = bullet_manager.cleanBullets(now);
         std::vector<Bullet>& bullets = bullet_manager.getBullets();
         for(size_t i=0;i<bullets.size();i++){
             if(bullets[i].type == BulletType::FireBall){
