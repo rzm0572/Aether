@@ -1130,7 +1130,7 @@ public:
         active_count = 0;
     }
 
-    void stop() {
+    void end_() {
         is_active = false;
         is_start_emit = false;
     }
@@ -1217,9 +1217,11 @@ public:
         }
         // std::cout<< "Draw " << vertices.size() / 4 << " vertices." << std::endl;
         // 更新 VBO
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(float), vertices.data());
-
+        if(send_in == 0){
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(float), vertices.data());
+        }
+        send_in = (send_in+1)%4;
         // 绘制（每个粒子是独立 quad，所以是 GL_TRIANGLES）
         glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, static_cast<GLsizei>(vertices.size() / 6));
@@ -1243,6 +1245,7 @@ private:
 
     glm::vec3 last_emit_pos;
     bool is_start_emit = false;
+    uint16_t send_in = 0;
 };
 
 

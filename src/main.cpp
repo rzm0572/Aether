@@ -262,20 +262,22 @@ int main() {
         // Render frame
         // TODO: 逻辑帧与渲染帧分离，渲染采用插值算法，提高帧率
         Profiler::instance().get_timer("render").start_clock();
-        // ribbon1.addParticles(plane->getTransformComponent().getPosition()+plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
-        // ribbon2.addParticles(plane->getTransformComponent().getPosition()-plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
-        // ribbon3.addParticles(plane_enemy->getTransformComponent().getPosition()+plane_enemy->physical_component().getRight()*2.0f,plane_enemy->physical_component().getVelocity(), 8, 0.1f);
-        // ribbon4.addParticles(plane_enemy->getTransformComponent().getPosition()-plane_enemy->physical_component().getRight()*2.0f,plane_enemy->physical_component().getVelocity(), 8, 0.1f);
-        // ribbon1.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
-        // ribbon2.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+
+        if(!plane->getHealthComponent().isDead()){
+            ribbon1.addParticles(plane->getTransformComponent().getPosition()+plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
+            ribbon2.addParticles(plane->getTransformComponent().getPosition()-plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
+            // ribbon3.addParticles(plane_enemy->getTransformComponent().getPosition()+plane_enemy->physical_component().getRight()*2.0f,plane_enemy->physical_component().getVelocity(), 8, 0.1f);
+            // ribbon4.addParticles(plane_enemy->getTransformComponent().getPosition()-plane_enemy->physical_component().getRight()*2.0f,plane_enemy->physical_component().getVelocity(), 8, 0.1f);
+            ribbon1.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+            ribbon2.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+        }
         // ribbon3.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
         // ribbon4.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
         // --- weapons update and submit ---
-        weapons_player.use(dt, curr_frame, plane->getTransformComponent().getPosition(),plane->physical_component().getVelocity(),plane->physical_component().getUp(),plane->physical_component().getRight(),plane->physical_component().GetForward(),plane->physical_component().getRotation(),plane_enemy->getTransformComponent().getPosition(),view,projection,third_person_camera);
-        weapons_enemy.use(dt, curr_frame, plane_enemy->getTransformComponent().getPosition(),plane_enemy->physical_component().getVelocity(),plane_enemy->physical_component().getUp(),plane_enemy->physical_component().getRight(),plane_enemy->physical_component().GetForward(),plane_enemy->physical_component().getRotation(),plane->getTransformComponent().getPosition(),view,projection,third_person_camera);
+        weapons_player.use(dt, curr_frame, plane->getTransformComponent().getPosition(),plane->physical_component().getVelocity(),plane->physical_component().getUp(),plane->physical_component().getRight(),plane->physical_component().GetForward(),plane->physical_component().getRotation(),plane_enemy->getTransformComponent().getPosition(),view,projection,third_person_camera,plane->getHealthComponent().isDead());
+        weapons_enemy.use(dt, curr_frame, plane_enemy->getTransformComponent().getPosition(),plane_enemy->physical_component().getVelocity(),plane_enemy->physical_component().getUp(),plane_enemy->physical_component().getRight(),plane_enemy->physical_component().GetForward(),plane_enemy->physical_component().getRotation(),plane->getTransformComponent().getPosition(),view,projection,third_person_camera,plane_enemy->getHealthComponent().isDead());
 
         renderCollisionBox(render_lines, view, projection);
-
         // --- Submissions ---
         renderer.submit_recursive(plane);
         renderer.submit_recursive(plane_enemy);

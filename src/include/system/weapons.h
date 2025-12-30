@@ -34,6 +34,7 @@ public:
         // 尾焰必须渲染
         
         flareback.start_();
+        // ribbon1.start_();    ribbon2.start_();
         flareback_missle.start_();
         fireball.start_();
         autocannon.start_();
@@ -70,11 +71,28 @@ public:
         missles_earth.clear();
 
     }
-    void use(float dt, float now, glm::vec3 pos,glm::vec3 Velocity,glm::vec3 up,glm::vec3 right,glm::vec3 forward,glm::quat rotation ,glm::vec3 target,glm::mat4 view,glm::mat4 projection,ThirdPersonCamera third_person_camera){
+    void use(float dt, float now, glm::vec3 pos,glm::vec3 Velocity,glm::vec3 up,glm::vec3 right,glm::vec3 forward,glm::quat rotation ,glm::vec3 target,glm::mat4 view,glm::mat4 projection,ThirdPersonCamera third_person_camera,bool is_dead){
         // == 飞机自身的粒子 ==
         // 尾焰
-        flareback.draw(pos, view, projection, third_person_camera.getPosition(), 6.0f, 1.0f, 0.1f, forward);
+        if(is_dead){
+            flareback.end_();
+            if(last_time_not_dead){
+                explosion_plane.start_();
+            }
+            last_time_not_dead &= !is_dead;
+            // ribbon1.end_();
+            // ribbon2.end_();
+        }
+        else{
+            flareback.draw(pos, view, projection, third_person_camera.getPosition(), 6.0f, 1.0f, 0.1f, forward);
+            
+            // ribbon1.addParticles(pos+right*3.5f + forward * 2.0f - up*0.5f,Velocity, 4, 0.2f);
+            // ribbon2.addParticles(pos-right*3.5f + forward * 2.0f - up*0.5f,Velocity, 4, 0.2f);
 
+            // ribbon1.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+            // ribbon2.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+        
+        }
         // 拉烟
         // ribbon1.addParticles(pos + right * 1.5f,Velocity, 10, 0.1f); // 每帧发射10个粒子
         // ribbon2.addParticles(pos - right * 1.5f,Velocity, 10, 0.1f); // 每帧发射10个粒子
@@ -380,6 +398,9 @@ public:
                 explosions[i]->draw(explosion_positions[i],view, projection, third_person_camera.getPosition(),15.0f,2.0f,0.1f);
             }
         }
+        if(explosion_plane.exists_now()){
+            explosion_plane.draw(pos+forward*3.0f,view, projection, third_person_camera.getPosition(),3.5f,2.0f,0.05f);
+        }
         for(size_t i=0;i<fireball_explosions.size();i++){
             if(fireball_explosions[i]->exists_now()){
                 fireball_explosions[i]->draw(fireball_explosion_positions[i],view, projection, third_person_camera.getPosition(),15.0f,2.0f,0.05f);
@@ -405,6 +426,11 @@ private:
     float _last_time_boom = 7.0f;
     float _last_time_fire = 0.0f;
     float _last_time_help = 0.0f;
+    // // 拉烟
+    // Particle_Ribbon ribbon1  = Particle_Ribbon(500, getAssetPath("textures/particles/particle_generated.png"));
+
+    // Particle_Ribbon ribbon2 = Particle_Ribbon(500, getAssetPath("textures/particles/particle_generated.png"));
+
     // 尾焰
     Particle_Flareback flareback=Particle_Flareback(1000, 42, getAssetPath("textures/particles/particle_generated.png"),glm::vec3(0.0f, 0.0f, 0.0f),0.2f);
     Particle_Flareback flareback_missle=Particle_Flareback(400, 42, getAssetPath("textures/particles/particle_generated.png"),glm::vec3(0.0f, 0.0f, 0.0f),0.1f);
@@ -420,8 +446,7 @@ private:
     std::vector<glm::vec3> explosion_positions;
     std::vector<Particle_Fireball_explosioin*> fireball_explosions;
     std::vector<glm::vec3> fireball_explosion_positions;
-    // Particle_Explosion explosion(100000,5000, 42, getAssetPath("textures/particles/particle_generated.png"));
-    // explosion.start_();
+    Particle_Explosion explosion_plane = Particle_Explosion(100000,5000, 42, getAssetPath("textures/particles/particle_generated.png"));
 
     void add_explode(glm::vec3 pos){
         for(size_t i=0;i<explosions.size();i++){
@@ -452,4 +477,5 @@ private:
 
     // 碰撞单元
     std::vector<Plane *> collider_planes;
+    bool last_time_not_dead=true;
 };
