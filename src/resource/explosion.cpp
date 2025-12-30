@@ -71,7 +71,14 @@ void ExplodedModel::reconstructModel(const Model& model) {
     //     std::cout << "Fragment " << i << " has " << explosion_center_count[i] << " triangles" << std::endl;
     // }
 
-    materials_ = model.default_materials_;
+    auto* shader_manager = ServiceLocator<ShaderManager>::get();
+    const auto* exploded_shader = shader_manager->getShader("explosion");
+    for (auto source_material : model.default_materials_) {
+        auto material = std::make_shared<Material>(*source_material);
+        material->setShader(exploded_shader);
+        material->multConstant("Diffuse", 0.4);
+        materials_.push_back(material);
+    }
 
     allocGPU(global_vertices);
 }

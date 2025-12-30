@@ -61,6 +61,12 @@ private:
                 shader->setUniform("Constant" + name, arg);
             }, texture_const);
         }
+
+        void mult(float constant) {
+            std::visit([&](auto&& arg) {
+                arg *= constant;
+            }, texture_const);
+        }
     };
 
 public:
@@ -71,9 +77,6 @@ public:
             std::cerr << "Failed to load material" << std::endl;
         }
     }
-
-    Material(const Material&) = delete;
-    Material& operator=(const Material&) = delete;
 
     // Load material from Assimp aiMaterial
     // Return true if success, false otherwise
@@ -98,6 +101,12 @@ public:
             texture_slots_[name].texture_const = constant;
         } else {
             texture_slots_[name] = TextureSlot(constant);
+        }
+    }
+
+    void multConstant(std::string name, float constant) {
+        if (texture_slots_.find(name) != texture_slots_.end()) {
+            texture_slots_[name].mult(constant);
         }
     }
 

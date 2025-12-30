@@ -120,7 +120,7 @@ int main() {
 
     Renderer renderer;
 
-    CollisionConfigRegistry collision_configs;
+    auto& collision_configs = CollisionConfigRegistry::getInstance();
     collision_configs.initialize();
     // collision_configs.output();
 
@@ -217,7 +217,8 @@ int main() {
             window.setWindowShouldClose();
         }
 
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        // glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); 
 
         float dt = curr_frame - last_frame;
@@ -233,6 +234,17 @@ int main() {
         plane_enemy->update(dt,1,glm::vec3(0.0f));
         collision_system->submit(plane);
 
+        auto& player_transform = plane->getTransformComponent();
+        auto& player_physical = plane->physical_component();
+        auto& enemy_tranform = plane_enemy->getTransformComponent();
+        auto& enemy_physical = plane_enemy->physical_component();
+
+        weapons_player.use(dt, curr_frame, player_transform.getPosition(),player_physical.getVelocity(),player_physical.getUp(),player_physical.getRight(),player_physical.GetForward(),player_physical.getRotation(),enemy_tranform.getPosition());
+        weapons_enemy.use(dt, curr_frame, enemy_tranform.getPosition(),enemy_physical.getVelocity(),enemy_physical.getUp(),enemy_physical.getRight(),enemy_physical.GetForward(),enemy_physical.getRotation(),player_transform.getPosition());
+        
+        weapons_player.submitCollision();
+        weapons_enemy.submitCollision();
+
         // Collision detection
         std::vector<DebugLine> render_lines;
         collision_system->generateDebugLines(render_lines);
@@ -241,6 +253,8 @@ int main() {
         // Collision handling
         plane->handleCollision();
         plane_enemy->handleCollision();
+        weapons_player.handleCollision();
+        weapons_enemy.handleCollision();
 
         // Explosion handling
         explosion_system->update(renderer, curr_frame);
@@ -271,8 +285,9 @@ int main() {
         // ribbon3.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
         // ribbon4.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
         // --- weapons update and submit ---
-        weapons_player.use(dt, curr_frame, plane->getTransformComponent().getPosition(),plane->physical_component().getVelocity(),plane->physical_component().getUp(),plane->physical_component().getRight(),plane->physical_component().GetForward(),plane->physical_component().getRotation(),plane_enemy->getTransformComponent().getPosition(),view,projection,third_person_camera);
-        weapons_enemy.use(dt, curr_frame, plane_enemy->getTransformComponent().getPosition(),plane_enemy->physical_component().getVelocity(),plane_enemy->physical_component().getUp(),plane_enemy->physical_component().getRight(),plane_enemy->physical_component().GetForward(),plane_enemy->physical_component().getRotation(),plane->getTransformComponent().getPosition(),view,projection,third_person_camera);
+        glm::vec3 camera_pos = third_person_camera.getPosition();
+        weapons_player.postProcess(dt, curr_frame, player_transform.getPosition(), enemy_tranform.getPosition(), view, projection, camera_pos, player_physical.GetForward());
+        weapons_enemy.postProcess(dt, curr_frame, enemy_tranform.getPosition(), player_transform.getPosition(), view, projection, camera_pos, enemy_physical.GetForward());
 
         renderCollisionBox(render_lines, view, projection);
 
