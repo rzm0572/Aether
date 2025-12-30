@@ -10,9 +10,11 @@
 #include "interaction/input.h"
 #include "interaction/camera.h"
 #include "common/engine.h"
+#include "service/service_locator.h"
 #include "entity/plane.h"
 #include "resource/particles.h"
 #include "system/bullet.h"
+#include "system/collision.h"
 
 #include <iostream>
 #include <string>
@@ -51,7 +53,10 @@ public:
             std::cerr << "Failed to load surface to air missle model!" << std::endl;
         }
 
-
+        auto* collision_system = ServiceLocator<CollisionSystem>::get();
+        if (collision_system) {
+            collision_system->registerBulletManager(&bullet_manager);
+        }
     }
     ~Weapons(){
         for(size_t i=0;i<missles.size();i++){
@@ -68,10 +73,10 @@ public:
         missles_earth.clear();
 
     }
-    void use(float dt, float now, glm::vec3 pos,glm::vec3 Velocity,glm::vec3 up,glm::vec3 right,glm::vec3 forward,glm::quat rotation ,glm::vec3 target,glm::mat4 view,glm::mat4 projection,ThirdPersonCamera third_person_camera){
+    void use(float dt, float now, glm::vec3 pos,glm::vec3 Velocity,glm::vec3 up,glm::vec3 right,glm::vec3 forward,glm::quat rotation ,glm::vec3 target){
         // == 飞机自身的粒子 ==
-        // 尾焰
-        flareback.draw(pos, view, projection, third_person_camera.getPosition(), 6.0f, 1.0f, 0.1f, forward);
+        // 尾焰        
+        auto& collision_configs = CollisionConfigRegistry::getInstance();
 
         // 拉烟
         // ribbon1.addParticles(pos + right * 1.5f,Velocity, 10, 0.1f); // 每帧发射10个粒子
@@ -168,7 +173,7 @@ public:
                                 missle_start_time[slot] = now;
                             }
                             else{
-                                missles.push_back(new Plane(owner_, _input, missle_model, pos - up * 1.5f, rotation, Velocity - up * 5.0f + 2.0f * forward, glm::vec3(0.0f,0.0f,0.0f)));
+                                missles.push_back(new Plane(owner_, _input, missle_model, pos - up * 1.5f, rotation, Velocity - up * 5.0f + 2.0f * forward, glm::vec3(0.0f,0.0f,0.0f), collision_configs.registry["missile"]));
                                 missle_is_active.push_back(true);
                                 missle_start_time.push_back(now);
                             }
@@ -187,7 +192,7 @@ public:
                                 boom_start_time[slot] = now;
                             }
                             else{
-                                booms.push_back(new Plane(owner_, _input, boom_model, pos - up * 2.0f, rotation, Velocity - up * 5.0f, glm::vec3(0.0f,0.0f,0.0f)));
+                                booms.push_back(new Plane(owner_, _input, boom_model, pos - up * 2.0f, rotation, Velocity - up * 5.0f, glm::vec3(0.0f,0.0f,0.0f), collision_configs.registry["bomb"]));
                                 boom_is_active.push_back(true);
                                 boom_start_time.push_back(now);
                             }
@@ -259,7 +264,7 @@ public:
                                 missle_earth_start_time[slot] = now;
                             }
                             else{
-                                missles_earth.push_back(new Plane(owner_, _input, missle_earth_model, my_pos,my_quat,my_velocity , glm::vec3(0.0f,0.0f,0.0f)));
+                                missles_earth.push_back(new Plane(owner_, _input, missle_earth_model, my_pos,my_quat,my_velocity , glm::vec3(0.0f,0.0f,0.0f), collision_configs.registry["missile"]));
                                 missle_earth_is_active.push_back(true);
                                 missle_earth_start_time.push_back(now);
                             }
@@ -280,17 +285,20 @@ public:
                     }
                 break;
             }
-            
         }
+    }
 
+    void postProcess(float dt, float now, glm::vec3 pos, glm::vec3 target, glm::mat4 view, glm::mat4 projection, glm::vec3 camera_pos, glm::vec3 forward) {
+        flareback.draw(pos, view, projection, camera_pos, 6.0f, 1.0f, 0.1f, forward);
         // == 绘制武器 ==
         // ++ 空空导弹 ++
         for(size_t i=0;i<missles.size();i++){
             if(missle_is_active[i]){
-                if(missle_start_time[i] + _last_time_boom >= now){
+                const auto& health = missles[i]->getHealthComponent();
+                if(missle_start_time[i] + _last_time_boom >= now && health.isAlive()){
                     missles[i]->update(dt,2,target);
                     _renderer.submit_recursive(missles[i]);
-                    flareback_missle.draw(missles[i]->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 3.0f, 0.5f, 0.05f, missles[i]->physical_component().GetForward());
+                    flareback_missle.draw(missles[i]->getTransformComponent().getPosition(), view, projection, camera_pos, 3.0f, 0.5f, 0.05f, missles[i]->physical_component().GetForward());
                 }
                 else{
                     missle_is_active[i] = false;
@@ -301,7 +309,8 @@ public:
         // ++ 航弹 ++
         for(size_t i=0;i<booms.size();i++){
             if(boom_is_active[i]){
-                if(boom_start_time[i] + _last_time_boom >= now){
+                const auto& health = booms[i]->getHealthComponent();
+                if(boom_start_time[i] + _last_time_boom >= now && health.isAlive()){
                     booms[i]->update(dt,3,target);
                     _renderer.submit_recursive(booms[i]);
                 }
@@ -315,10 +324,11 @@ public:
         // ++ 地对空导弹 ++
         for(size_t i=0;i<missles_earth.size();i++){
             if(missle_earth_is_active[i]){
-                if(missle_earth_start_time[i] + _last_time_boom >= now){
+                const auto& health = missles_earth[i]->getHealthComponent();
+                if(missle_earth_start_time[i] + _last_time_boom >= now && health.isAlive()){
                     missles_earth[i]->update(dt,2,target);
                     _renderer.submit_recursive(missles_earth[i]);
-                    flareback_missle.draw(missles_earth[i]->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 3.0f, 0.5f, 0.05f, missles_earth[i]->physical_component().GetForward());
+                    flareback_missle.draw(missles_earth[i]->getTransformComponent().getPosition(), view, projection, camera_pos, 3.0f, 0.5f, 0.05f, missles_earth[i]->physical_component().GetForward());
                 }
                 else{
                     missle_earth_is_active[i] = false;
@@ -334,11 +344,11 @@ public:
         for(size_t i=0;i<bullets.size();i++){
             if(bullets[i].type == BulletType::FireBall){
                 // 火球
-                fireball.draw(bullets[i].position, view, projection, third_person_camera.getPosition(), 0.8f, 0.5f, 0.05f);
+                fireball.draw(bullets[i].position, view, projection, camera_pos, 0.8f, 0.5f, 0.05f);
             }
             else if(bullets[i].type == BulletType::Autocannon){
                 // 机炮
-                autocannon.draw(bullets[i].position,bullets[i].velocity, view, projection, third_person_camera.getPosition(), 8.0f, 0.4f, 0.03f,0.2f);
+                autocannon.draw(bullets[i].position,bullets[i].velocity, view, projection, camera_pos, 8.0f, 0.4f, 0.03f,0.2f);
             }
         }
 
@@ -350,15 +360,57 @@ public:
             if(explosions[i]->exists_now()){
                 // std::cout<<"explosions position "<<explosion_positions[i] << "  pos "<<pos<<std::endl;
                 // explosions[i]->draw(pos,view, projection, third_person_camera.getPosition(),15.0f,2.0f,0.05f);
-                explosions[i]->draw(explosion_positions[i],view, projection, third_person_camera.getPosition(),15.0f,2.0f,0.1f);
+                explosions[i]->draw(explosion_positions[i],view, projection, camera_pos,15.0f,2.0f,0.1f);
             }
         }
         for(size_t i=0;i<fireball_explosions.size();i++){
             if(fireball_explosions[i]->exists_now()){
-                fireball_explosions[i]->draw(fireball_explosion_positions[i],view, projection, third_person_camera.getPosition(),15.0f,2.0f,0.05f);
+                fireball_explosions[i]->draw(fireball_explosion_positions[i],view, projection, camera_pos,15.0f,2.0f,0.05f);
             }
         }
     }
+
+    void submitCollision() {
+        auto* collision_system = ServiceLocator<CollisionSystem>::get();
+        for (size_t i = 0; i < missles.size(); ++i) {
+            if (missle_is_active[i]) {
+                collision_system->submit(missles[i]);
+            }
+        }
+
+        for (size_t i = 0; i < booms.size(); ++i) {
+            if (boom_is_active[i]) {
+                collision_system->submit(booms[i]);
+            }
+        }
+
+        for (size_t i = 0; i < missles_earth.size(); ++i) {
+            if (missle_earth_is_active[i]) {
+                collision_system->submit(missles_earth[i]);
+            }
+        }
+    }
+
+    void handleCollision() {
+        for (size_t i = 0; i < missles.size(); ++i) {
+            if (missle_is_active[i]) {
+                missles[i]->handleCollision();
+            }
+        }
+
+        for (size_t i = 0; i < booms.size(); ++i) {
+            if (boom_is_active[i]) {
+                booms[i]->handleCollision();
+            }
+        }
+
+        for (size_t i = 0; i < missles_earth.size(); ++i) {
+            if (missle_earth_is_active[i]) {
+                missles_earth[i]->handleCollision();
+            }
+        }
+    }
+
 private:
     Model missle_model;
     Model boom_model;
