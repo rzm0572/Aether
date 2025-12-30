@@ -185,6 +185,9 @@ public:
         registerShader(name.c_str(), vertex_shader_path.c_str(), fragment_shader_path.c_str());
     }
 
+    bool isShaderRegistered(const std::string& name) const {
+        return shader_registry_.find(name) != shader_registry_.end();
+    }
 private:
     std::unordered_map<ShaderProgramID, Shader> shaders_;
     std::unordered_map<std::string, const Shader*> shader_registry_;
