@@ -18,6 +18,7 @@
 // #include "resource/particles.h"
 #include "system/weapons.h"
 #include "system/explosion.h"
+#include "resource/healthbar.h"
 
 #include <iostream>
 #include <string>
@@ -192,6 +193,8 @@ int main() {
     // ribbon3.start_();
     // Particle_Ribbon ribbon4 = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
     // ribbon4.start_();
+    HealthBar health_bar_plane;
+    HealthBar health_bar_enemy;
 
     auto* collision_system = ServiceLocator<CollisionSystem>::get();
     collision_system->setTerrainGenerator(&fBm_generator);
@@ -300,7 +303,8 @@ int main() {
             enemy_physical.getUp(), enemy_physical.getRight(), enemy_physical.GetForward(), enemy_physical.getRotation(),
             camera_pos, view, projection, plane_enemy->getHealthComponent().isDead()
         );
-
+        health_bar_plane.draw(plane->getTransformComponent().getPosition() + glm::vec3(0.0f, 2.5f, 0.0f),view,projection,third_person_camera.getPosition(),5.0f,0.25f,plane->getHealthComponent().getHealth());
+        health_bar_enemy.draw(plane_enemy->getTransformComponent().getPosition() + glm::vec3(0.0f, 2.5f, 0.0f),view,projection,third_person_camera.getPosition(),5.0f,0.25f,plane_enemy->getHealthComponent().getHealth());
         renderCollisionBox(render_lines, view, projection);
         // --- Submissions ---
         renderer.submit_recursive(plane);

@@ -12,9 +12,9 @@ enum class BulletType {
     COMMON,
     FireBall,
     Autocannon,
-    kCount,
     Tergeo,
-    Kendavra
+    Kendavra,
+    kCount,
 };
 
 struct Bullet {
