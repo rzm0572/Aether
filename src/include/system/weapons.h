@@ -76,29 +76,10 @@ public:
         missles_earth.clear();
 
     }
-    void use(float dt, float now, glm::vec3 pos,glm::vec3 Velocity,glm::vec3 up,glm::vec3 right,glm::vec3 forward,glm::quat rotation ,glm::vec3 target,glm::mat4 view,glm::mat4 projection,ThirdPersonCamera third_person_camera,bool is_dead){
+    void use(float dt, float now, glm::vec3 pos,glm::vec3 Velocity,glm::vec3 up,glm::vec3 right,glm::vec3 forward,glm::quat rotation ,glm::vec3 target){
         auto& collision_configs = CollisionConfigRegistry::getInstance();
         // == 飞机自身的粒子 ==
-        // 尾焰
-        if(is_dead){
-            flareback.end_();
-            if(last_time_not_dead){
-                explosion_plane.start_();
-            }
-            last_time_not_dead &= !is_dead;
-            // ribbon1.end_();
-            // ribbon2.end_();
-        }
-        else{
-            flareback.draw(pos, view, projection, third_person_camera.getPosition(), 6.0f, 1.0f, 0.1f, forward);
-            
-            // ribbon1.addParticles(pos+right*3.5f + forward * 2.0f - up*0.5f,Velocity, 4, 0.2f);
-            // ribbon2.addParticles(pos-right*3.5f + forward * 2.0f - up*0.5f,Velocity, 4, 0.2f);
-
-            // ribbon1.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
-            // ribbon2.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
         
-        }
         // 拉烟
         // ribbon1.addParticles(pos + right * 1.5f,Velocity, 10, 0.1f); // 每帧发射10个粒子
         // ribbon2.addParticles(pos - right * 1.5f,Velocity, 10, 0.1f); // 每帧发射10个粒子
@@ -323,8 +304,27 @@ public:
         }
     }
 
-    void postProcess(float dt, float now, glm::vec3 pos, glm::vec3 target,glm::vec3 up, glm::vec3 right, glm::vec3 forward, glm::quat rotation, ThirdPersonCamera third_person_camera, glm::mat4 view, glm::mat4 projection, glm::vec3 camera_pos) {
-        flareback.draw(pos, view, projection, camera_pos, 6.0f, 1.0f, 0.1f, forward);
+    void postProcess(float dt, float now, glm::vec3 pos, glm::vec3 target,glm::vec3 up, glm::vec3 right, glm::vec3 forward, glm::quat rotation, glm::vec3 camera_pos, glm::mat4 view, glm::mat4 projection, bool is_dead) {
+        // 尾焰
+        if(is_dead){
+            flareback.end_();
+            if(last_time_not_dead){
+                explosion_plane.start_();
+            }
+            last_time_not_dead &= !is_dead;
+            // ribbon1.end_();
+            // ribbon2.end_();
+        }
+        else{
+            flareback.draw(pos, view, projection, camera_pos, 6.0f, 1.0f, 0.1f, forward);
+            
+            // ribbon1.addParticles(pos+right*3.5f + forward * 2.0f - up*0.5f,Velocity, 4, 0.2f);
+            // ribbon2.addParticles(pos-right*3.5f + forward * 2.0f - up*0.5f,Velocity, 4, 0.2f);
+
+            // ribbon1.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+            // ribbon2.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+        
+        }
         // == 绘制武器 ==
         // ++ 空空导弹 ++
         for(size_t i=0;i<missles.size();i++){
@@ -390,11 +390,11 @@ public:
                 // 随机一点转轴
                 float theta1 = static_cast<float>((rand()%20000-10000))/100000.0f;
                 float theta2 = static_cast<float>((rand()%20000-10000))/20000.0f*glm::pi<float>();
-                tergeo.draw(bullets[i].position,up * glm::cos(theta1) + right * glm::sin(theta1) * glm::cos(theta2) + up * glm::sin(theta1) * glm::sin(theta2), view, projection, third_person_camera.getPosition(), 8.0f, 7.0f, 0.1f,3.0f,18.0f,glm::vec3(0.63f,0.81f,0.9f));
+                tergeo.draw(bullets[i].position,up * glm::cos(theta1) + right * glm::sin(theta1) * glm::cos(theta2) + up * glm::sin(theta1) * glm::sin(theta2), view, projection, camera_pos, 8.0f, 7.0f, 0.1f,3.0f,18.0f,glm::vec3(0.63f,0.81f,0.9f));
             }
             else if(bullets[i].type == BulletType::Kendavra){
                 // 啃大瓜
-                kendavra.draw(bullets[i].position,bullets[i].velocity, view, projection, third_person_camera.getPosition(), 0.0f, 0.4f, 0.5f,0.2f,9.0f,glm::vec3(0.33f,1.0f,0.5f));
+                kendavra.draw(bullets[i].position,bullets[i].velocity, view, projection, camera_pos, 0.0f, 0.4f, 0.5f,0.2f,9.0f,glm::vec3(0.33f,1.0f,0.5f));
             }
         }
 
@@ -410,7 +410,7 @@ public:
             }
         }
         if(explosion_plane.exists_now()){
-            explosion_plane.draw(pos+forward*3.0f,view, projection, third_person_camera.getPosition(),3.5f,2.0f,0.05f);
+            explosion_plane.draw(pos+forward*3.0f,view, projection, camera_pos,3.5f,2.0f,0.05f);
         }
         for(size_t i=0;i<fireball_explosions.size();i++){
             if(fireball_explosions[i]->exists_now()){
