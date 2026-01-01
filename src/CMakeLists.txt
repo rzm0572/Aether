@@ -29,6 +29,7 @@ function(add_opengl_executable EXECUTABLE_NAME CUSTOM_SOURCE)
         PRIVATE glad
         PRIVATE glm::glm-header-only
         PRIVATE ${CMAKE_DL_LIBS}
+        PRIVATE ${JSONCPP_LIBRARIES}
         assimp::assimp
     )
 
@@ -37,12 +38,12 @@ function(add_opengl_executable EXECUTABLE_NAME CUSTOM_SOURCE)
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
         PRIVATE ${GLAD_DIR}/include
     )
-
     target_include_directories(${EXECUTABLE_NAME} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include          # 本地 include（如果存在）
         ${CMAKE_CURRENT_SOURCE_DIR}/../include       # 项目根目录下的 include/
         ${GLAD_DIR}/include                          # GLAD 头文件
         ${STB_INCLUDE_DIR}                           # STB 头文件
+        ${JSONCPP_INCLUDE_DIRS}
     )
 endfunction()
 

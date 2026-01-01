@@ -140,8 +140,8 @@ int main() {
 
     glm::vec3 initial_position2 = glm::vec3(200.0f,192.0f, 0.0f);
 
-    Plane* plane = new Plane(Owner::PLAYER, input, plane_model, initial_position, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"]);
-    Plane *plane_enemy = new Plane(Owner::ENEMY, input, plane_model, initial_position2, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"]);
+    Plane* plane = new Plane(Owner::PLAYER, input, plane_model, initial_position, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"],glm::mat4(1.0f),PhysicalComponent(getConfigPath("aircrafts/player.json")));
+    Plane *plane_enemy = new Plane(Owner::ENEMY, input, plane_model, initial_position2, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"],glm::mat4(1.0f),PhysicalComponent(getConfigPath("aircrafts/enemy.json")));
 
     // Terrain generation
     // PerlinGenerator perlin_generator(-10.0f, 10.0f, 16, 1);

@@ -60,6 +60,12 @@ public:
         if (collision_system) {
             collision_system->registerBulletManager(&bullet_manager);
         }
+        if(owner_ == Owner::PLAYER){// 配置武器参数
+            missle_config_path = getConfigPath("aircrafts/player_missle.json");
+        }
+        else{
+            missle_config_path = getConfigPath("aircrafts/enemy_missle.json");
+        }
     }
     ~Weapons(){
         for(size_t i=0;i<missles.size();i++){
@@ -175,7 +181,7 @@ public:
                                 missle_start_time[slot] = now;
                             }
                             else{
-                                missles.push_back(new Plane(owner_, _input, missle_model, pos - up * 1.5f, rotation, Velocity - up * 5.0f + 2.0f * forward, glm::vec3(0.0f,0.0f,0.0f), collision_configs.registry["missile"]));
+                                missles.push_back(new Plane(owner_, _input, missle_model, pos - up * 1.5f, rotation, Velocity - up * 5.0f + 2.0f * forward, glm::vec3(0.0f,0.0f,0.0f), collision_configs.registry["missile"],glm::mat4(1.0f),PhysicalComponent(missle_config_path)));
                                 missle_is_active.push_back(true);
                                 missle_start_time.push_back(now);
                             }
@@ -194,7 +200,7 @@ public:
                                 boom_start_time[slot] = now;
                             }
                             else{
-                                booms.push_back(new Plane(owner_, _input, boom_model, pos - up * 2.0f, rotation, Velocity - up * 5.0f, glm::vec3(0.0f,0.0f,0.0f), collision_configs.registry["bomb"]));
+                                booms.push_back(new Plane(owner_, _input, boom_model, pos - up * 2.0f, rotation, Velocity - up * 5.0f, glm::vec3(0.0f,0.0f,0.0f), collision_configs.registry["bomb"],glm::mat4(1.0f),PhysicalComponent(getConfigPath("aircrafts/bomb.json"))));
                                 boom_is_active.push_back(true);
                                 boom_start_time.push_back(now);
                             }
@@ -280,7 +286,7 @@ public:
                                 missle_earth_start_time[slot] = now;
                             }
                             else{
-                                missles_earth.push_back(new Plane(owner_, _input, missle_earth_model, my_pos,my_quat,my_velocity , glm::vec3(0.0f,0.0f,0.0f), collision_configs.registry["missile"]));
+                                missles_earth.push_back(new Plane(owner_, _input, missle_earth_model, my_pos,my_quat,my_velocity , glm::vec3(0.0f,0.0f,0.0f), collision_configs.registry["missile"],glm::mat4(1.0f),PhysicalComponent(missle_config_path)));
                                 missle_earth_is_active.push_back(true);
                                 missle_earth_start_time.push_back(now);
                             }
@@ -531,4 +537,6 @@ private:
     // 碰撞单元
     std::vector<Plane *> collider_planes;
     bool last_time_not_dead=true;
+    // 武器配置
+    std::string missle_config_path = getConfigPath("aircrafts/default.json");
 };
