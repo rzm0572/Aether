@@ -38,6 +38,12 @@ public:
         return health_/100.0f;
     }
 
+    void resethp(){
+        health_ = 100.0f;
+        isDead_ = false;
+        isDeadPrev_ = false;
+    }
+
 private:
     float health_ { 100.0f };
     bool isDead_ { false };

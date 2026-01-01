@@ -2,6 +2,10 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <fstream>
+#include <iostream>
+#include <json/json.h>
+#include <sstream>
 #include "interaction/input.h"
 #include "utils/profiler.h"
 
@@ -109,12 +113,14 @@ public:
 
                 if (!near_height) {
                     // 远离目标高度：全力爬升/下降，但限制仰角
-                    if ((position.y < 100 || height_diff > 0.0f) && forward.y < max_pitch_abs) {
+                    if ((position.y < 200.0f || height_diff > 0.0f) && forward.y < max_pitch_abs ) {
                         result_raw |= (1 << (size_t)PhysicalInput::PITCH_UP);
-                    } else if (height_diff < 0.0f && forward.y > -max_pitch_abs) {
+                    } else if (height_diff < -0.0f && forward.y > -max_pitch_abs ) {
                         result_raw |= (1 << (size_t)PhysicalInput::PITCH_DOWN);
                     }
                 } 
+                // std::cout<<"y vel: "<<forward.y<<std::endl;
+                // std::cout<<"Veclocity: "<<velocity<<std::endl;
                 // else {
                 //     // 高度已达标，尝试回平
                 //     if (forward.y > pitch_deadzone) {
@@ -248,6 +254,10 @@ public:
 
 class PhysicalComponent {
 public:
+    explicit PhysicalComponent(const std::string& json_path) {
+        loadFromJson(json_path);
+    }
+
     PhysicalComponent(
         float mass = 1000.0f,
         float max_thrust_force = 10000.0f,        // mass * max_thrust_to_weight_ratio
@@ -350,6 +360,56 @@ public:
     }
 
 private:
+    void loadFromJson(const std::string& json_path) {
+        std::ifstream file(json_path);
+        if (!file.is_open()) {// 若文件不存在，则使用默认配置
+            std::cerr << "Failed to open JSON config: " << json_path << std::endl;
+            setDefaults();
+            return;
+        }
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        std::string json_string = buffer.str();
+
+        Json::Value root;
+        Json::Reader reader;
+        if (!reader.parse(json_string, root)) {
+            std::cerr << "Failed to parse JSON config: " << json_path << std::endl;
+            setDefaults();
+            return;
+        }
+
+        mass_               = root["mass"].asFloat();
+        thrust_force_       = root["thrust_force"].asFloat();
+        thrust_power_       = root["thrust_power"].asFloat();
+        lift_coeff_         = root["lift_coeff"].asFloat();
+        forward_friction_   = root["forward_friction"].asFloat();
+        lateral_friction_   = root["lateral_friction"].asFloat();
+        vertical_friction_  = root["vertical_friction"].asFloat();
+        pitch_force_        = root["pitch_force"].asFloat();
+        yaw_force_          = root["yaw_force"].asFloat();
+        roll_force_         = root["roll_force"].asFloat();
+        angular_damping_    = root["angular_damping"].asFloat();
+        zero_lift_aoa_      = root["zero_lift_aoa"].asFloat();
+
+        std::cout<<"PhysicalComponent loaded from JSON config: "<<json_path<<std::endl;
+        file.close();
+    }
+
+    void setDefaults() {
+        mass_ = 1000.0f;
+        thrust_force_ = 10000.0f;
+        thrust_power_ = 7500000.0f;
+        lift_coeff_ = 20.0f;
+        forward_friction_ = 0.016f;
+        lateral_friction_ = 50.0f;
+        vertical_friction_ = 25.0f;
+        pitch_force_ = 8.0f;
+        yaw_force_ = 2.0f;
+        roll_force_ = 8.0f;
+        angular_damping_ = 4.0f;
+        zero_lift_aoa_ = 3.0f;
+    }
     void synchronizeVectors() {
         forward_ = rotation_ * glm::vec3(1, 0, 0);
         up_ = rotation_ * glm::vec3(0, 1, 0);

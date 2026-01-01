@@ -6,11 +6,12 @@
 struct BulletProperties {
     float damage { 1.0f };
 } kBulletProperties[(size_t)BulletType::kCount] = {
-    { 1.0f },
-    { 3.0f },
     { 5.0f },
-    { 3.0f },
-    { 3.0f }
+    { 5.0f },
+    { 5.0f },
+    { 5.0f },
+    { 5.0f },
+    { 5.0f }
 };
 
 void BulletManager::fire(BulletType type, glm::vec3 position, glm::vec3 velocity, float now, CollisionLayer layer) {

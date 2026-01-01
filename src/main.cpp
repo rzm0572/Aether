@@ -133,15 +133,15 @@ int main() {
     }
 
     // GameObject* plane = GameObject::createFromModel(plane_model);
-    glm::vec3 initial_position = glm::vec3(0.0f, 192.0f, 0.0f);
+    glm::vec3 initial_position = glm::vec3(0.0f, 300.0f, 0.0f);
     glm::quat initial_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f); 
     glm::vec3 velocity = glm::vec3(70.0f, 0.0f, 0.0f);
     glm::vec3 angular_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 
-    glm::vec3 initial_position2 = glm::vec3(200.0f,192.0f, 0.0f);
+    glm::vec3 initial_position2 = glm::vec3(200.0f,300.0f, 0.0f);
 
-    Plane* plane = new Plane(Owner::PLAYER, input, plane_model, initial_position, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"]);
-    Plane *plane_enemy = new Plane(Owner::ENEMY, input, plane_model, initial_position2, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"]);
+    Plane* plane = new Plane(Owner::PLAYER, input, plane_model, initial_position, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"],glm::mat4(1.0f),PhysicalComponent(getConfigPath("aircrafts/player.json")));
+    Plane *plane_enemy = new Plane(Owner::ENEMY, input, plane_model, initial_position2, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"],glm::mat4(1.0f),PhysicalComponent(getConfigPath("aircrafts/enemy.json")));
 
     // Terrain generation
     // PerlinGenerator perlin_generator(-10.0f, 10.0f, 16, 1);
@@ -243,8 +243,8 @@ int main() {
         auto& enemy_tranform = plane_enemy->getTransformComponent();
         auto& enemy_physical = plane_enemy->physical_component();
 
-        weapons_player.use(dt, curr_frame, player_transform.getPosition(),player_physical.getVelocity(),player_physical.getUp(),player_physical.getRight(),player_physical.GetForward(),player_physical.getRotation(),enemy_tranform.getPosition());
-        weapons_enemy.use(dt, curr_frame, enemy_tranform.getPosition(),enemy_physical.getVelocity(),enemy_physical.getUp(),enemy_physical.getRight(),enemy_physical.GetForward(),enemy_physical.getRotation(),player_transform.getPosition());
+        weapons_player.use(dt, curr_frame, player_transform.getPosition(),player_physical.getVelocity(),player_physical.getUp(),player_physical.getRight(),player_physical.GetForward(),player_physical.getRotation(),enemy_tranform.getPosition(),plane->getHealthComponent().isDead());
+        weapons_enemy.use(dt, curr_frame, enemy_tranform.getPosition(),enemy_physical.getVelocity(),enemy_physical.getUp(),enemy_physical.getRight(),enemy_physical.GetForward(),enemy_physical.getRotation(),player_transform.getPosition(),plane_enemy->getHealthComponent().isDead());
         
         weapons_player.submitCollision();
         weapons_enemy.submitCollision();

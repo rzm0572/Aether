@@ -14,6 +14,8 @@ enum class BulletType {
     Autocannon,
     Tergeo,
     Kendavra,
+    Crucio,
+    Signal,
     kCount,
 };
 
@@ -41,7 +43,7 @@ public:
         for (auto& bullet : bullets_) {
             bullet.prev_position = bullet.position;
             bullet.position = bullet.position + bullet.velocity * dt;
-            if(bullet.type == BulletType::Tergeo||bullet.type == BulletType::Kendavra){
+            if(bullet.type == BulletType::Tergeo||bullet.type == BulletType::Kendavra||bullet.type == BulletType::Crucio||bullet.type == BulletType::COMMON){
                 bullet.velocity = (bullet.velocity) * velocity_damping;
             }
             else{
@@ -68,11 +70,16 @@ public:
         size_t alive_bullets = 0;
         for (size_t i = 0; i < bullets_.size(); ++i) {
             if (now - bullets_[i].shoot_time > MAX_LIFE_TIME) {
-                explode_poses.push_back(bullets_[i].position);
+                if(bullets_[i].type!= BulletType::COMMON){
+                    explode_poses.push_back(bullets_[i].position);
+                }
+                
                 continue;
             }
             if (bullets_[i].collided) {
-                explode_poses.push_back(bullets_[i].position);
+                if(bullets_[i].type!= BulletType::COMMON){
+                    explode_poses.push_back(bullets_[i].position);
+                }
                 continue;
             }
 

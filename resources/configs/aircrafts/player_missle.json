@@ -1,0 +1,14 @@
+{
+  "mass": 200.0,
+  "thrust_force": 80000.0,
+  "thrust_power": 80000000.0,
+  "lift_coeff": 10.0,
+  "forward_friction": 0.15,
+  "lateral_friction": 200.0,
+  "vertical_friction": 150.0,
+  "pitch_force": 8.0,
+  "yaw_force": 8.0,
+  "roll_force": 8.0,
+  "angular_damping": 8.0,
+  "zero_lift_aoa": 0.0
+}

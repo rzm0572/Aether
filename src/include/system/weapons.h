@@ -60,6 +60,12 @@ public:
         if (collision_system) {
             collision_system->registerBulletManager(&bullet_manager);
         }
+        if(owner_ == Owner::PLAYER){// 配置武器参数
+            missle_config_path = getConfigPath("aircrafts/player_missle.json");
+        }
+        else{
+            missle_config_path = getConfigPath("aircrafts/enemy_missle.json");
+        }
     }
     ~Weapons(){
         for(size_t i=0;i<missles.size();i++){
@@ -76,7 +82,7 @@ public:
         missles_earth.clear();
 
     }
-    void use(float dt, float now, glm::vec3 pos,glm::vec3 Velocity,glm::vec3 up,glm::vec3 right,glm::vec3 forward,glm::quat rotation ,glm::vec3 target){
+    void use(float dt, float now, glm::vec3 pos,glm::vec3 Velocity,glm::vec3 up,glm::vec3 right,glm::vec3 forward,glm::quat rotation ,glm::vec3 target,bool is_dead){
         auto& collision_configs = CollisionConfigRegistry::getInstance();
         // == 飞机自身的粒子 ==
         
@@ -88,7 +94,7 @@ public:
         // == 根据输入发射武器或者根据计时器自动发射 ==
         bool Fire = false;
         if(_kind == 0){// 手动发射
-            if(now - _last_time > 0.001f){// 间隔时间
+            if(now - _last_time > 0.01f){// 间隔时间
                 // std::cout<<"check time right "<<_last_time<<std::endl;
                 // ++ 武器切换 ++
                 if(_input.getKeyPressed(InputKey::H)){
@@ -142,15 +148,34 @@ public:
 
         }
         else{ // 自动发射
-            // if(now - _last_time > 10.0f){
-            //     // ++ 武器切换 ++
-            //     weapon_set = rand()%4;
-            //     weapon_kind = rand()%weapon_num[weapon_set];
-            //     _last_time = now;
-            // }
-            // if(now - _last_time_fire > 5.0f){
-                // Fire = true;
-            // }
+            
+            if(now - _last_time > 10.0f){
+                // ++ 武器切换 ++
+                // weapon_set = rand()%4;
+                weapon_set = 1;
+                weapon_kind = rand()%3;
+                if(weapon_kind == 2){
+                    weapon_kind=4;
+                }
+                _last_time = now;
+            }
+            if(weapon_kind <= 1 || weapon_kind == 4){
+                if(now - _last_time_fire > 0.1f){
+                    Fire = true;
+                }                
+            }
+            else{
+                if(now - _last_time_fire > 2.0f){
+                    Fire = true;
+                }
+            }
+            if(now<10.0f){
+                Fire = false;
+            }
+            if(is_dead){
+                Fire = false;
+            }
+
         }
         // std::cout<<"weapon_set:"<<weapon_set<<" weapon_kind:"<<weapon_kind<<" fire: "<<Fire<<std::endl;
         // == 发射武器 ==
@@ -170,12 +195,14 @@ public:
                                 }
                             }
                             if(slot != -1){
+                                (missles[slot])->getHealthComponent().resethp();
                                 (missles[slot])->physical_component().initialize(pos - up * 1.5f, rotation, Velocity - up * 5.0f + 2.0f * forward, glm::vec3(0.0f,0.0f,0.0f));
+                                (missles[slot])->synchronizeTransform();
                                 missle_is_active[slot] = true;
                                 missle_start_time[slot] = now;
                             }
                             else{
-                                missles.push_back(new Plane(owner_, _input, missle_model, pos - up * 1.5f, rotation, Velocity - up * 5.0f + 2.0f * forward, glm::vec3(0.0f,0.0f,0.0f), collision_configs.registry["missile"]));
+                                missles.push_back(new Plane(owner_, _input, missle_model, pos - up * 1.5f, rotation, Velocity - up * 5.0f + 2.0f * forward, glm::vec3(0.0f,0.0f,0.0f), collision_configs.registry["missile"],glm::mat4(1.0f),PhysicalComponent(missle_config_path)));
                                 missle_is_active.push_back(true);
                                 missle_start_time.push_back(now);
                             }
@@ -189,12 +216,14 @@ public:
                                 }
                             }
                             if(slot != -1){
+                                (booms[slot])->getHealthComponent().resethp();
                                 (booms[slot])->physical_component().initialize(pos - up * 2.0f, rotation, Velocity - up * 5.0f, glm::vec3(0.0f,0.0f,0.0f));
+                                (booms[slot])->synchronizeTransform();
                                 boom_is_active[slot] = true;
                                 boom_start_time[slot] = now;
                             }
                             else{
-                                booms.push_back(new Plane(owner_, _input, boom_model, pos - up * 2.0f, rotation, Velocity - up * 5.0f, glm::vec3(0.0f,0.0f,0.0f), collision_configs.registry["bomb"]));
+                                booms.push_back(new Plane(owner_, _input, boom_model, pos - up * 2.0f, rotation, Velocity - up * 5.0f, glm::vec3(0.0f,0.0f,0.0f), collision_configs.registry["bomb"],glm::mat4(1.0f),PhysicalComponent(getConfigPath("aircrafts/bomb.json"))));
                                 boom_is_active.push_back(true);
                                 boom_start_time.push_back(now);
                             }
@@ -202,8 +231,7 @@ public:
                     }
                 break;
                 case 1:
-                    if(_last_time_fire + 0.1f < now){
-                        _last_time_fire = now;
+                    if(_last_time_fire + 0.05f < now){
 
                         CollisionLayer layer = CollisionLayer::LAYER_NEUTRAL;
                         if (owner_ == Owner::PLAYER) {
@@ -215,14 +243,14 @@ public:
                         // 机炮+魔法
                         if(weapon_kind == 0){// 火球
                             bullet_manager.fire(BulletType::FireBall, pos- up * 2.0f + forward * 6.0f, Velocity + 120.0f * forward, now, layer);
+                            _last_time_fire = now;
                         }
                         else if(weapon_kind == 1){// 机炮
                             bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f + right * 1.0f + forward * 6.0f, Velocity + 120.0f * forward, now, layer);
                             bullet_manager.fire(BulletType::Autocannon, pos- up * 2.0f - right * 1.0f + forward * 6.0f, Velocity + 120.0f * forward, now, layer);
+                            _last_time_fire = now;
                         }
-                        else if(weapon_kind == 2){// 旋风
-                            bullet_manager.fire(BulletType::Tergeo, pos- up * 1.0f + forward * 8.0f, Velocity + 120.0f * forward, now, layer);
-                        }
+
                     }
                     if(_last_time_fire + 0.02f < now){
                         CollisionLayer layer = CollisionLayer::LAYER_NEUTRAL;
@@ -231,17 +259,49 @@ public:
                         } else if (owner_ == Owner::ENEMY) {
                             layer = CollisionLayer::LAYER_ENEMY;
                         }
-                        _last_time_fire = now;
-                        if(weapon_kind == 3){// 啃大瓜
+                        if(weapon_kind == 4){// 啃大瓜
                             float theta1 = static_cast<float>((rand()%20000-10000))/100000.0f;
                             float theta2 = static_cast<float>((rand()%20000-10000))/20000.0f*glm::pi<float>();
-                            bullet_manager.fire(BulletType::Kendavra, pos- up * 2.0f + forward * 6.0f + right * (static_cast<float>((rand()%20000-10000)))/2500.0f, Velocity + 120.0f * forward * glm::cos(theta1) + 120.0f * right * glm::sin(theta1) * glm::cos(theta2) + 120.0f * up * glm::sin(theta1) * glm::sin(theta2), now, layer);
+                            bullet_manager.fire(BulletType::Crucio, pos- up * 2.0f + forward * 6.0f + right * (static_cast<float>((rand()%20000-10000)))/2500.0f, Velocity + 120.0f * forward * glm::cos(theta1) + 120.0f * right * glm::sin(theta1) * glm::cos(theta2) + 120.0f * up * glm::sin(theta1) * glm::sin(theta2), now, layer);
+                            _last_time_fire = now;
+                        }
+                    }
+                    if(_last_time_fire + 0.2f < now){
+                        CollisionLayer layer = CollisionLayer::LAYER_NEUTRAL;
+                        if (owner_ == Owner::PLAYER) {
+                            layer = CollisionLayer::LAYER_PLAYER;
+                        } else if (owner_ == Owner::ENEMY) {
+                            layer = CollisionLayer::LAYER_ENEMY;
+                        }
+                        
+                        if(weapon_kind == 2){// 旋风
+                            bullet_manager.fire(BulletType::Tergeo, pos- up * 1.0f + forward * 8.0f, Velocity + 120.0f * forward, now, layer);
+                            for(int i=0;i<10;i++){
+                                glm::vec3 dir = glm::normalize(glm::vec3(rand()%10000-5000,rand()%10000-5000,rand()%10000-5000)) * 4.0f;
+                                bullet_manager.fire(BulletType::COMMON, pos- up * 1.0f + forward * 8.0f + dir, Velocity + 120.0f * forward, now, layer);
+                            }
+                            _last_time_fire = now;
+                        }
+                        else if(weapon_kind == 3){// 啃大瓜
+                            
+                            for(int i=1;i<6;i++){
+                                float theta = static_cast<float>(i)/50.0f*glm::pi<float>();
+                                glm::vec3 dir1 = forward * glm::cos(theta) + right * glm::sin(theta);
+                                glm::vec3 dir2 = forward * glm::cos(theta) - right * glm::sin(theta);
+                                glm::vec3 dir3 = forward * glm::cos(theta) + up * glm::sin(theta);
+                                glm::vec3 dir4 = forward * glm::cos(theta) - up * glm::sin(theta);
+                                bullet_manager.fire(BulletType::Kendavra, pos- up * 2.0f + forward * 6.0f + dir1, Velocity + 60.0f * dir1, now, layer);
+                                bullet_manager.fire(BulletType::Kendavra, pos- up * 2.0f + forward * 6.0f + dir2, Velocity + 60.0f * dir2, now, layer);
+                                bullet_manager.fire(BulletType::Kendavra, pos- up * 2.0f + forward * 6.0f + dir3, Velocity + 60.0f * dir3, now, layer);
+                                bullet_manager.fire(BulletType::Kendavra, pos- up * 2.0f + forward * 6.0f + dir4, Velocity + 60.0f * dir4, now, layer);
+                            }
+                            _last_time_fire = now;
                         }
                     }
                 break;
                 case 2:
                     // 火力支援
-                    if(_last_time_help + 1.0f < now){
+                    if(_last_time_help + 0.7f < now){
                         _last_time_help = now;
                         if(weapon_kind == 0){// 地对空导弹
                             int slot = -1;
@@ -275,19 +335,25 @@ public:
                             }
 
                             if(slot != -1){
+                                (missles_earth[slot])->getHealthComponent().resethp();
                                 (missles_earth[slot])->physical_component().initialize(my_pos,my_quat, my_velocity, glm::vec3(0.0f,0.0f,0.0f));
+                                (missles_earth[slot])->synchronizeTransform();
                                 missle_earth_is_active[slot] = true;
                                 missle_earth_start_time[slot] = now;
                             }
                             else{
-                                missles_earth.push_back(new Plane(owner_, _input, missle_earth_model, my_pos,my_quat,my_velocity , glm::vec3(0.0f,0.0f,0.0f), collision_configs.registry["missile"]));
+                                missles_earth.push_back(new Plane(owner_, _input, missle_earth_model, my_pos,my_quat,my_velocity , glm::vec3(0.0f,0.0f,0.0f), collision_configs.registry["missile"],glm::mat4(1.0f),PhysicalComponent(missle_config_path)));
                                 missle_earth_is_active.push_back(true);
                                 missle_earth_start_time.push_back(now);
                             }
                         }
-                        else{// 空中魔法
-
-
+                        else{// 信号弹
+                            glm::vec3 tar=target-pos-5.0f*forward;
+                            tar.y = 0.0f;
+                            tar=glm::normalize(tar);
+                            bullet_manager.fire(BulletType::Signal, glm::vec3(pos.x,78.0f,pos.z)  + tar * 5.0f, Velocity + glm::vec3(0.0f,80.0f,0.0f), now, CollisionLayer::LAYER_NEUTRAL);
+                            bullet_manager.fire(BulletType::Signal, glm::vec3(pos.x,74.0f,pos.z)  + tar * 5.0f, Velocity + glm::vec3(0.0f,80.0f,0.0f), now, CollisionLayer::LAYER_NEUTRAL);
+                            bullet_manager.fire(BulletType::Signal, glm::vec3(pos.x,70.0f,pos.z)  + tar * 5.0f, Velocity + glm::vec3(0.0f,80.0f,0.0f), now, CollisionLayer::LAYER_NEUTRAL);
                         }
                     }
                 break;
@@ -296,7 +362,7 @@ public:
                     if(weapon_kind == 0){// 箔条
 
                     }
-                    else{// 信号弹
+                    else{
 
                     }
                 break;
@@ -392,9 +458,16 @@ public:
                 float theta2 = static_cast<float>((rand()%20000-10000))/20000.0f*glm::pi<float>();
                 tergeo.draw(bullets[i].position,up * glm::cos(theta1) + right * glm::sin(theta1) * glm::cos(theta2) + up * glm::sin(theta1) * glm::sin(theta2), view, projection, camera_pos, 8.0f, 7.0f, 0.1f,3.0f,18.0f,glm::vec3(0.63f,0.81f,0.9f));
             }
+            else if(bullets[i].type == BulletType::Crucio){
+                kendavra.draw(bullets[i].position,bullets[i].velocity, view, projection, camera_pos, 0.0f, 0.4f, 0.5f,0.2f,9.0f,glm::vec3(1.0f,0.33f,0.5f));
+            }
             else if(bullets[i].type == BulletType::Kendavra){
                 // 啃大瓜
                 kendavra.draw(bullets[i].position,bullets[i].velocity, view, projection, camera_pos, 0.0f, 0.4f, 0.5f,0.2f,9.0f,glm::vec3(0.33f,1.0f,0.5f));
+            }
+            else if(bullets[i].type == BulletType::Signal){
+                // 信号弹
+                kendavra.draw(bullets[i].position,bullets[i].velocity, view, projection, camera_pos, 0.0f, 0.4f, 0.5f,0.2f,9.0f,glm::vec3(1.0f,1.0f,0.2f));
             }
         }
 
@@ -406,7 +479,7 @@ public:
             if(explosions[i]->exists_now()){
                 // std::cout<<"explosions position "<<explosion_positions[i] << "  pos "<<pos<<std::endl;
                 // explosions[i]->draw(pos,view, projection, third_person_camera.getPosition(),15.0f,2.0f,0.05f);
-                explosions[i]->draw(explosion_positions[i],view, projection, camera_pos,15.0f,2.0f,0.1f);
+                explosions[i]->draw(explosion_positions[i],view, projection, camera_pos,30.0f,2.0f,0.2f);
             }
         }
         if(explosion_plane.exists_now()){
@@ -471,7 +544,7 @@ private:
     Owner owner_;
     int _kind;// 是可以手动操纵-0/还是自动操纵-1
     int weapon_set = 0;// 0-空射导弹 1-机炮+魔法 2-火力支援 3-主动防御 
-    int weapon_num[4] = {2,4,2,2};
+    int weapon_num[4] = {2,5,2,2};
     int weapon_kind = 0;
     Input& _input;
     float _last_time;
@@ -531,4 +604,6 @@ private:
     // 碰撞单元
     std::vector<Plane *> collider_planes;
     bool last_time_not_dead=true;
+    // 武器配置
+    std::string missle_config_path = getConfigPath("aircrafts/default.json");
 };
