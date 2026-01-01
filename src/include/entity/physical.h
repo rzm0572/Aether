@@ -109,7 +109,7 @@ public:
 
                 if (!near_height) {
                     // 远离目标高度：全力爬升/下降，但限制仰角
-                    if (height_diff > 0.0f && forward.y < max_pitch_abs) {
+                    if ((position.y < 100 || height_diff > 0.0f) && forward.y < max_pitch_abs) {
                         result_raw |= (1 << (size_t)PhysicalInput::PITCH_UP);
                     } else if (height_diff < 0.0f && forward.y > -max_pitch_abs) {
                         result_raw |= (1 << (size_t)PhysicalInput::PITCH_DOWN);

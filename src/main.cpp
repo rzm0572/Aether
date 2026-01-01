@@ -133,12 +133,12 @@ int main() {
     }
 
     // GameObject* plane = GameObject::createFromModel(plane_model);
-    glm::vec3 initial_position = glm::vec3(0.0f, 128.0f, 0.0f);
+    glm::vec3 initial_position = glm::vec3(0.0f, 192.0f, 0.0f);
     glm::quat initial_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f); 
     glm::vec3 velocity = glm::vec3(70.0f, 0.0f, 0.0f);
     glm::vec3 angular_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
 
-    glm::vec3 initial_position2 = glm::vec3(400.0f,128.0f, 0.0f);
+    glm::vec3 initial_position2 = glm::vec3(200.0f,192.0f, 0.0f);
 
     Plane* plane = new Plane(Owner::PLAYER, input, plane_model, initial_position, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"]);
     Plane *plane_enemy = new Plane(Owner::ENEMY, input, plane_model, initial_position2, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"]);
