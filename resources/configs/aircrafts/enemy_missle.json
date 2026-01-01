@@ -6,9 +6,9 @@
   "forward_friction": 0.14,
   "lateral_friction": 180.0,
   "vertical_friction": 130.0,
-  "pitch_force": 90.0,
-  "yaw_force": 90.0,
-  "roll_force": 4.0,
+  "pitch_force": 8.0,
+  "yaw_force": 8.0,
+  "roll_force": 8.0,
   "angular_damping": 9.0,
   "zero_lift_aoa": 0.0
 }

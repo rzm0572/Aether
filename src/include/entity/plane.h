@@ -109,13 +109,13 @@ public:
 
         collision.clearEvents();
     }
-
-private:
     void synchronizeTransform() {
         auto& transform = getTransformComponent();
         transform.setPosition(physical_component_.getPosition());
         transform.setRotation(physical_component_.getRotation());
     }
+private:
+
 
     Owner owner_;
 
