@@ -243,8 +243,8 @@ int main() {
         auto& enemy_tranform = plane_enemy->getTransformComponent();
         auto& enemy_physical = plane_enemy->physical_component();
 
-        weapons_player.use(dt, curr_frame, player_transform.getPosition(),player_physical.getVelocity(),player_physical.getUp(),player_physical.getRight(),player_physical.GetForward(),player_physical.getRotation(),enemy_tranform.getPosition());
-        weapons_enemy.use(dt, curr_frame, enemy_tranform.getPosition(),enemy_physical.getVelocity(),enemy_physical.getUp(),enemy_physical.getRight(),enemy_physical.GetForward(),enemy_physical.getRotation(),player_transform.getPosition());
+        weapons_player.use(dt, curr_frame, player_transform.getPosition(),player_physical.getVelocity(),player_physical.getUp(),player_physical.getRight(),player_physical.GetForward(),player_physical.getRotation(),enemy_tranform.getPosition(),plane->getHealthComponent().isDead());
+        weapons_enemy.use(dt, curr_frame, enemy_tranform.getPosition(),enemy_physical.getVelocity(),enemy_physical.getUp(),enemy_physical.getRight(),enemy_physical.GetForward(),enemy_physical.getRotation(),player_transform.getPosition(),plane_enemy->getHealthComponent().isDead());
         
         weapons_player.submitCollision();
         weapons_enemy.submitCollision();

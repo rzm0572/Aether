@@ -82,7 +82,7 @@ public:
         missles_earth.clear();
 
     }
-    void use(float dt, float now, glm::vec3 pos,glm::vec3 Velocity,glm::vec3 up,glm::vec3 right,glm::vec3 forward,glm::quat rotation ,glm::vec3 target){
+    void use(float dt, float now, glm::vec3 pos,glm::vec3 Velocity,glm::vec3 up,glm::vec3 right,glm::vec3 forward,glm::quat rotation ,glm::vec3 target,bool is_dead){
         auto& collision_configs = CollisionConfigRegistry::getInstance();
         // == 飞机自身的粒子 ==
         
@@ -170,6 +170,9 @@ public:
                 }
             }
             if(now<10.0f){
+                Fire = false;
+            }
+            if(is_dead){
                 Fire = false;
             }
 
@@ -344,9 +347,13 @@ public:
                                 missle_earth_start_time.push_back(now);
                             }
                         }
-                        else{// 空中魔法
-
-
+                        else{// 信号弹
+                            glm::vec3 tar=target-pos-5.0f*forward;
+                            tar.y = 0.0f;
+                            tar=glm::normalize(tar);
+                            bullet_manager.fire(BulletType::Signal, glm::vec3(pos.x,78.0f,pos.z)  + tar * 5.0f, Velocity + glm::vec3(0.0f,80.0f,0.0f), now, CollisionLayer::LAYER_NEUTRAL);
+                            bullet_manager.fire(BulletType::Signal, glm::vec3(pos.x,74.0f,pos.z)  + tar * 5.0f, Velocity + glm::vec3(0.0f,80.0f,0.0f), now, CollisionLayer::LAYER_NEUTRAL);
+                            bullet_manager.fire(BulletType::Signal, glm::vec3(pos.x,70.0f,pos.z)  + tar * 5.0f, Velocity + glm::vec3(0.0f,80.0f,0.0f), now, CollisionLayer::LAYER_NEUTRAL);
                         }
                     }
                 break;
@@ -355,7 +362,7 @@ public:
                     if(weapon_kind == 0){// 箔条
 
                     }
-                    else{// 信号弹
+                    else{
 
                     }
                 break;
@@ -457,6 +464,10 @@ public:
             else if(bullets[i].type == BulletType::Kendavra){
                 // 啃大瓜
                 kendavra.draw(bullets[i].position,bullets[i].velocity, view, projection, camera_pos, 0.0f, 0.4f, 0.5f,0.2f,9.0f,glm::vec3(0.33f,1.0f,0.5f));
+            }
+            else if(bullets[i].type == BulletType::Signal){
+                // 信号弹
+                kendavra.draw(bullets[i].position,bullets[i].velocity, view, projection, camera_pos, 0.0f, 0.4f, 0.5f,0.2f,9.0f,glm::vec3(1.0f,1.0f,0.2f));
             }
         }
 

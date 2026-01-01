@@ -15,6 +15,7 @@ enum class BulletType {
     Tergeo,
     Kendavra,
     Crucio,
+    Signal,
     kCount,
 };
 

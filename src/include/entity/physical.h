@@ -119,8 +119,8 @@ public:
                         result_raw |= (1 << (size_t)PhysicalInput::PITCH_DOWN);
                     }
                 } 
-                std::cout<<"y vel: "<<forward.y<<std::endl;
-                std::cout<<"Veclocity: "<<velocity<<std::endl;
+                // std::cout<<"y vel: "<<forward.y<<std::endl;
+                // std::cout<<"Veclocity: "<<velocity<<std::endl;
                 // else {
                 //     // 高度已达标，尝试回平
                 //     if (forward.y > pitch_deadzone) {
