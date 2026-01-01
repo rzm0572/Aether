@@ -16,3 +16,6 @@
 [submodule "repo/assimp"]
 	path = repo/assimp
 	url = https://github.com/assimp/assimp.git
+[submodule "repo/jsoncpp"]
+	path = repo/jsoncpp
+	url = git@github.com:open-source-parsers/jsoncpp.git
