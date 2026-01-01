@@ -148,15 +148,31 @@ public:
 
         }
         else{ // 自动发射
-            // if(now - _last_time > 10.0f){
-            //     // ++ 武器切换 ++
-            //     weapon_set = rand()%4;
-            //     weapon_kind = rand()%weapon_num[weapon_set];
-            //     _last_time = now;
-            // }
-            // if(now - _last_time_fire > 5.0f){
-                // Fire = true;
-            // }
+            
+            if(now - _last_time > 10.0f){
+                // ++ 武器切换 ++
+                // weapon_set = rand()%4;
+                weapon_set = 1;
+                weapon_kind = rand()%3;
+                if(weapon_kind == 2){
+                    weapon_kind=4;
+                }
+                _last_time = now;
+            }
+            if(weapon_kind <= 1 || weapon_kind == 4){
+                if(now - _last_time_fire > 0.1f){
+                    Fire = true;
+                }                
+            }
+            else{
+                if(now - _last_time_fire > 2.0f){
+                    Fire = true;
+                }
+            }
+            if(now<10.0f){
+                Fire = false;
+            }
+
         }
         // std::cout<<"weapon_set:"<<weapon_set<<" weapon_kind:"<<weapon_kind<<" fire: "<<Fire<<std::endl;
         // == 发射武器 ==

@@ -1,8 +1,8 @@
 {
   "mass": 8000.0,
   "thrust_force": 120000.0,
-  "thrust_power": 24000000.0,
-  "lift_coeff": 350.0,
+  "thrust_power": 2400000.0,
+  "lift_coeff": 900.0,
   "forward_friction": 0.08,
   "lateral_friction": 800.0,
   "vertical_friction": 40.0,
