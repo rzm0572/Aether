@@ -16,11 +16,11 @@ class Texture {
 
 public:
     // 构造函数：指定纹理类型（通常是 GL_TEXTURE_2D）和文件路径
-    Texture(GLenum type, const std::string& filepath)
-        : m_type(type), m_filepath(filepath), m_textureID(0), m_width(0), m_height(0), m_channels(0), m_depth(1) {}
+    Texture(GLenum type, const std::string& filepath, bool alloc_gpu = true)
+        : m_alloc_gpu(true), m_type(type), m_filepath(filepath), m_textureID(0), m_width(0), m_height(0), m_channels(0), m_depth(1) {}
     
     ~Texture(){
-        if (m_textureID) {
+        if (m_alloc_gpu && m_textureID) {
             glDeleteTextures(1, &m_textureID);
         }
     }
@@ -29,6 +29,7 @@ public:
     Texture& operator=(const Texture&) = delete;
 
     Texture(Texture&& other) {
+        m_alloc_gpu = other.m_alloc_gpu;
         m_type = other.m_type;
         m_filepath = std::move(other.m_filepath);
         m_textureID = other.m_textureID;
@@ -42,10 +43,11 @@ public:
 
     Texture& operator=(Texture&& other) {
         if (this != &other) {
-            if (m_textureID) {
+            if (m_alloc_gpu && m_textureID) {
                 glDeleteTextures(1, &m_textureID);
             }
 
+            m_alloc_gpu = other.m_alloc_gpu;
             m_type = other.m_type;
             m_filepath = std::move(other.m_filepath);
             m_textureID = other.m_textureID;
@@ -62,6 +64,10 @@ public:
     // Load texture from file
     // Return true if successful, false otherwise
     bool Load(){
+        if (!m_alloc_gpu) {
+            return true;
+        }
+
         // 加载图像数据
         stbi_set_flip_vertically_on_load(true); // OpenGL 原点在左下，需翻转
         unsigned char* data = stbi_load(m_filepath.c_str(), &m_width, &m_height, &m_channels, 0);
@@ -105,6 +111,9 @@ public:
     }
     // 绑定纹理到指定纹理单元（如 GL_TEXTURE0）
     void Bind(GLenum textureUnit = GL_TEXTURE0) const {
+        if (!m_alloc_gpu) {
+            return;
+        }
         glActiveTexture(textureUnit);
         glBindTexture(m_type, m_textureID);
     }
@@ -112,11 +121,16 @@ public:
     // 获取 OpenGL 纹理 ID（用于调试或高级用途）
     GLuint getID() const { return m_textureID; }
 
+    const std::string& getFilePath() const {
+        return m_filepath;
+    }
+
     const std::string toString() const {
         return "Texture(type: " + std::to_string(m_type) + ", filepath: " + m_filepath + ", textureID: " + std::to_string(m_textureID) + ", width: " + std::to_string(m_width) + ", height: " + std::to_string(m_height) + ", channels: " + std::to_string(m_channels) + ")";
     }
 
 private:
+    bool m_alloc_gpu;
     GLenum m_type;                        // 纹理类型
     std::string m_filepath;               // 纹理文件路径
     GLuint m_textureID;                   // OpenGL 纹理 ID
@@ -136,8 +150,9 @@ public:
     TextureManager& operator=(const TextureManager&) = delete;
 
     // Load default texture
-    void init() {
-        default_texture_ = std::make_shared<Texture>(GL_TEXTURE_2D, getAssetPath("textures/white.png"));
+    void init(bool alloc_gpu = true) {
+        alloc_gpu_ = alloc_gpu;
+        default_texture_ = std::make_shared<Texture>(GL_TEXTURE_2D, getAssetPath("textures/white.png"), alloc_gpu);
         default_texture_->Load();
     }
 
@@ -152,14 +167,16 @@ public:
         }
 
         // Load texture from file and add it to cache
-        textures_.emplace(filepath, std::make_shared<Texture>(type, filepath));
+        textures_.emplace(filepath, std::make_shared<Texture>(type, filepath, alloc_gpu_));
         auto texture = textures_.at(filepath);
-        bool success = texture->Load();
+        if (alloc_gpu_) {
+            bool success = texture->Load();
 
-        // If loading fails, remove texture from cache and return default texture
-        if (!success) {
-            textures_.erase(filepath);
-            return default_texture_;
+            // If loading fails, remove texture from cache and return default texture
+            if (!success) {
+                textures_.erase(filepath);
+                return default_texture_;
+            }
         }
 
         return texture;
@@ -195,6 +212,7 @@ public:
     }
 
 private:
+    bool alloc_gpu_ { true };
 
     std::unordered_map<std::string, std::shared_ptr<Texture>> textures_;
 

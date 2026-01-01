@@ -15,6 +15,8 @@ bool Material::loadMaterial(const aiMaterial* material, const std::filesystem::p
 
     std::cout << "Loading material: " << material->GetName().C_Str() << std::endl;
 
+    name_ = material->GetName().C_Str();
+
     auto texture_manager = ServiceLocator<TextureManager>::get();
     if (texture_manager == nullptr) {
         std::cerr << "Failed to get texture manager" << std::endl;

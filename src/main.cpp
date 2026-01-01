@@ -127,7 +127,7 @@ int main() {
 
     // Load models
     Model plane_model;
-    if (!plane_model.loadModel(getAssetPath("models/j10/scene.gltf"))) {
+    if (!plane_model.loadModel(getAssetPath("models/j10_obj/j10.obj"))) {
         std::cerr << "Failed to load model!" << std::endl;
         return -1;
     }

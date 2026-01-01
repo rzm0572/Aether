@@ -44,15 +44,15 @@ public:
         kendavra.start_();
 
         // 空对空导弹模型导入
-        if (!missle_model.loadModel(getAssetPath("models/missle1/scene.gltf"))) {
+        if (!missle_model.loadModel(getAssetPath("models/missle1_obj/missle1.obj"))) {
             std::cerr << "Failed to load model missle1!" << std::endl;
         }
         // 对地导弹模型导入
-        if (!boom_model.loadModel(getAssetPath("models/boom/scene.gltf"))) {
+        if (!boom_model.loadModel(getAssetPath("models/boom_obj/boom.obj"))) {
             std::cerr << "Failed to load boom model!" << std::endl;
         }
         // 地对空导弹模型导入
-        if (!missle_earth_model.loadModel(getAssetPath("models/missle2/scene.gltf"))) {
+        if (!missle_earth_model.loadModel(getAssetPath("models/missle2_obj/missle2.obj"))) {
             std::cerr << "Failed to load surface to air missle model!" << std::endl;
         }
 

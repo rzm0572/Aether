@@ -18,7 +18,7 @@ public:
         shader_manager.init();
         ServiceLocator<ShaderManager>::provide(&shader_manager);
 
-        texture_manager.init();
+        texture_manager.init(config.alloc_gpu);
         ServiceLocator<TextureManager>::provide(&texture_manager);
 
         material_manager.init();

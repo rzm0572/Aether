@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <cassert>
+#include <fstream>
 #include <filesystem>
 #include <glad/glad.h>
 #include <assimp/Importer.hpp>
@@ -24,6 +25,78 @@ struct ModelNode {
     glm::mat4 local_transform;
     std::vector<unsigned int> meshes;
     std::vector<ModelNode> children;
+
+    void serialize(std::ostream& os, const std::string& prefix, int depth = 0) const {
+        std::string indent(depth * 4, ' ');
+        std::string prefix_str = prefix + indent;
+
+        os << prefix_str << "MODELNODE " << (name.empty() ? "Untitled" : name) << std::endl;
+        
+        const float* mat = glm::value_ptr(local_transform);
+        os << prefix_str << "LOCALTRANS";
+        for (int i = 0; i < 16; i++) {
+            os << " " << mat[i];
+        }
+        os << std::endl;
+
+        os << prefix_str << "MESH " << meshes.size();
+        for (unsigned int mesh_index : meshes) {
+            os << " " << mesh_index;
+        }
+        os << std::endl;
+
+        os << prefix_str << "CHILDREN " << children.size() << std::endl;
+
+        for (const auto& child : children) {
+            child.serialize(os, prefix, depth + 1);
+        }
+    }
+
+    void deserialize(std::istream& is, const std::string name, const std::string& prefix) {
+        std::string line;
+
+        auto getStringStream = [&]() -> std::stringstream {
+            std::getline(is, line);
+            if (!prefix.empty() && line.find(prefix) == 0) {
+                line = line.substr(prefix.length());
+            }
+            return std::stringstream(line);
+        };
+
+        std::string keyword;
+        std::stringstream ss;
+
+        this->name = name;
+
+        float mat[16];
+        ss = getStringStream();
+        ss >> keyword;
+        for (int i = 0; i < 16; i++) {
+            ss >> mat[i];
+        }
+        local_transform = glm::make_mat4(mat);
+
+        int num_meshes;
+        ss = getStringStream();
+        ss >> keyword >> num_meshes;
+        meshes.resize(num_meshes);
+        for (int i = 0; i < num_meshes; i++) {
+            ss >> meshes[i];
+        }
+
+        int num_children;
+        ss = getStringStream();
+        ss >> keyword >> num_children;
+        children.resize(num_children);
+        for (int i = 0; i < num_children; i++) {
+            std::stringstream child_ss = getStringStream();
+            std::string child_keyword, child_name;
+            child_ss >> child_keyword >> child_name;
+            children[i].deserialize(is, child_name, prefix);
+        }
+
+        // std::cout << "Deserialize " << name << " with " << num_meshes << " meshes, " << num_children << " children" << std::endl;
+    }
 };
 
 // Model class
@@ -37,16 +110,22 @@ class Model {
     friend class ExplodedModel;
 
 public:
-    Model() {
-        glGenVertexArrays(1, &VAO_);
+    Model(bool alloc_gpu = true) : alloc_gpu_(alloc_gpu) {
+        if (alloc_gpu_) {
+            glGenVertexArrays(1, &VAO_);
+        }
     }
 
     ~Model() {
-        glDeleteVertexArrays(1, &VAO_);
+        if (alloc_gpu_) {
+            glDeleteVertexArrays(1, &VAO_);
+        }
     }
 
-    Model(const std::string& filename) {
-        glGenVertexArrays(1, &VAO_);
+    Model(const std::string& filename, bool alloc_gpu = true) : alloc_gpu_(alloc_gpu) {
+        if (alloc_gpu_) {
+            glGenVertexArrays(1, &VAO_);
+        }
         loadModel(filename);
     }
 
@@ -54,25 +133,34 @@ public:
     bool loadModel(const std::string& filepath) {
         destroyModel();    // If model is already loaded, destroy it first
 
-        // Read file via ASSIMP
-        bool success = false;
-        Assimp::Importer importer;
-        const aiScene* scene = importer.ReadFile(
-            filepath.c_str(),
-            aiProcess_Triangulate |         // 所有多边形转成三角形
-            aiProcess_GenSmoothNormals |            // 自动生成平滑法线
-            aiProcess_FlipUVs |                     // 翻转 UV（适配 OpenGL）
-            aiProcess_JoinIdenticalVertices         // 合并重复顶点，节省内存
-        );
+        std::filesystem::path path(filepath);
+        std::string extension = path.extension().string();
 
-        if (scene && scene->HasMeshes()) {
-            std::filesystem::path path(filepath);
-            success = initFromScene(scene, path.parent_path());
-        } else {
-            std::cerr << "Error parsing '" << filepath << "': '" << importer.GetErrorString() << "'" << std::endl;
+        if (extension == ".gltf") {
+            // Read file via ASSIMP
+            bool success = false;
+            Assimp::Importer importer;
+            const aiScene* scene = importer.ReadFile(
+                filepath.c_str(),
+                aiProcess_Triangulate |         // 所有多边形转成三角形
+                aiProcess_GenSmoothNormals |            // 自动生成平滑法线
+                aiProcess_FlipUVs |                     // 翻转 UV（适配 OpenGL）
+                aiProcess_JoinIdenticalVertices         // 合并重复顶点，节省内存
+            );
+
+            if (scene && scene->HasMeshes()) {
+                std::filesystem::path path(filepath);
+                success = initFromScene(scene, path.parent_path());
+            } else {
+                std::cerr << "Error parsing '" << filepath << "': '" << importer.GetErrorString() << "'" << std::endl;
+            }
+
+            return success;
+        } else if (extension == ".obj") {
+            return importObjModel(filepath);
         }
 
-        return success;
+        return false;
     }
 
     const Mesh* getMesh(unsigned int index) {
@@ -115,24 +203,88 @@ public:
     }
 
     // Debugging function
-    void outputModelTree() const {
-        outputModelTree(root_node_);
+    void outputModelTree(std::ostream& os) const {
+        outputModelTree(os, root_node_);
     }
 
-    void outputModelTree(const ModelNode& node) const {
-        std::cout << node.name << " (" << node.meshes.size() << " meshes, " << node.children.size() << " children)" << std::endl;
-        std::cout << "\tlocal_transform: \n" << node.local_transform << std::endl;
+    void outputModelTree(std::ostream& os, const ModelNode& node) const {
+        os << node.name << " (" << node.meshes.size() << " meshes, " << node.children.size() << " children)" << std::endl;
+        os << "\tlocal_transform: \n" << node.local_transform << std::endl;
         for (const auto& mesh_index : node.meshes) {
-            std::cout << "\t" << mesh_map_.at(meshes_[mesh_index].name_)->toString() << std::endl;
+            os << "\t" << meshes_[mesh_index].toString() << std::endl;
         }
-        std::cout << "\tchild: ";
+        os << "\tchild: ";
         for (const auto& child : node.children) {
-            std::cout << child.name << " ";
+            os << child.name << " ";
         }
-        std::cout << std::endl;
+        os << std::endl;
         for (const auto& child : node.children) {
-            outputModelTree(child);
+            outputModelTree(os, child);
         }
+    }
+
+    void exportModelAsObj(const std::string& filepath) {
+        std::filesystem::path obj_path(filepath);
+
+        std::string mtl_filepath = obj_path.replace_extension(".mtl").string();
+        exportMaterialAsMtl(mtl_filepath);
+
+        std::ofstream obj(filepath);
+        if (!obj.is_open()) {
+            std::cerr << "[export] Error opening file for writing: " << filepath << std::endl;
+            return;
+        }
+
+        obj << "mtllib " << mtl_filepath << std::endl;
+        vIndex vertex_index = 1;
+        for (const auto& mesh : meshes_) {
+            obj << "o " << mesh.name_ << std::endl;
+
+            for (const auto& vertex : mesh.vertices_) {
+                obj << "v " << vertex.Position.x << " " << vertex.Position.y << " " << vertex.Position.z << std::endl;
+            }
+
+            for (const auto& vertex : mesh.vertices_) {
+                obj << "vt " << vertex.TexCoords.x << " " << vertex.TexCoords.y << std::endl;
+            }
+
+            for (const auto& vertex : mesh.vertices_) {
+                obj << "vn " << vertex.Normal.x << " " << vertex.Normal.y << " " << vertex.Normal.z << std::endl;
+            }
+
+            if (isMeshHasMaterial(mesh)) {
+                std::string material_name = "Material_" + std::to_string(mesh.material_index_);
+                auto material = default_materials_[mesh.material_index_];
+                if (material) {
+                    material_name = material->getName();
+                }
+                obj << "usemtl " << material_name << std::endl;
+            }
+
+            obj << "s off" << std::endl;
+
+            const auto& mesh_indices = mesh.indices_;
+            for (size_t i = 0; i < mesh_indices.size(); i += 3) {
+                unsigned int i0 = mesh_indices[i] + vertex_index;
+                unsigned int i1 = mesh_indices[i + 1] + vertex_index;
+                unsigned int i2 = mesh_indices[i + 2] + vertex_index;
+                
+                obj << "f " << i0 << "/" << i0 << "/" << i0 << " "
+                            << i1 << "/" << i1 << "/" << i1 << " "
+                            << i2 << "/" << i2 << "/" << i2 << std::endl;
+            }
+
+            vertex_index += mesh.vertices_.size();
+
+            obj << std::endl;
+        }
+
+        obj << "# BEGIN_MODEL_TREE" << std::endl;
+        root_node_.serialize(obj, "# ");
+        obj << "# END_MODEL_TREE" << std::endl;
+
+        obj.close();
+        std::cout << "[export] Model exported to " << filepath << std::endl;
     }
 
 protected:
@@ -219,6 +371,37 @@ protected:
         return default_materials_.size() - 1;
     }
 
+    bool isMeshHasMaterial(const Mesh& mesh) {
+        if (mesh.material_index_ >= default_materials_.size()) {
+            return false;
+        }
+        if (default_materials_[mesh.material_index_] == nullptr) {
+            return false;
+        }
+        return true;
+    }
+
+    void exportMaterialAsMtl(const std::string& filepath) {
+        std::ofstream mtl(filepath);
+        if (!mtl.is_open()) {
+            std::cerr << "[export] Error opening file for writing: " << filepath << std::endl;
+            return;
+        }
+
+        for (size_t i = 0; i < default_materials_.size(); ++i) {
+            const auto& material = default_materials_[i];
+            if (material == nullptr) {
+                continue;
+            }
+
+            material->exportToMtl(mtl, "Material_" + std::to_string(i));
+        }
+
+        std::cout << "[export] Material exported to " << filepath << std::endl;
+
+        mtl.close();
+    }
+
 private:
     bool initFromScene(const aiScene* scene, const std::filesystem::path& directory) {
         meshes_.resize(scene->mNumMeshes);
@@ -234,7 +417,9 @@ private:
 
         std::cout << "Loaded " << global_vertices.size() << " vertices and " << global_indices.size() << " indices" << std::endl;
 
-        allocGPU(global_vertices, global_indices);
+        if (alloc_gpu_) {
+            allocGPU(global_vertices, global_indices);
+        }
 
         for (unsigned int i = 0; i < scene->mNumMaterials; ++i) {
             const aiMaterial* material = scene->mMaterials[i];
@@ -304,7 +489,9 @@ private:
     }
 
     void destroyModel() {
-        releaseGPU();
+        if (alloc_gpu_) {
+            releaseGPU();
+        }
         meshes_.clear();
         default_materials_.clear();
     }
@@ -320,8 +507,260 @@ private:
         }
     }
 
+    bool importObjModel(const std::string& filepath) {
+        bool success = importObjModelGeometry(filepath);
+        if (!success) {
+            return false;
+        }
+
+        std::cout << "[import] geometry part of model " << filepath << " imported successfully" << std::endl;
+
+        return importObjModelTree(filepath);
+    }
+
+    bool importObjModelGeometry(const std::string& filepath) {
+        std::filesystem::path obj_path(filepath);
+        std::filesystem::path base_dir_path = obj_path.parent_path();
+
+        std::ifstream obj(filepath);
+        if (!obj.is_open()) {
+            std::cerr << "[import] Error opening file for reading: " << filepath << std::endl;
+            return false;
+        }
+
+        std::vector<glm::vec3> position_tmp;
+        std::vector<glm::vec2> tex_coord_tmp;
+        std::vector<glm::vec3> normal_tmp;
+
+        std::string current_mesh_name;
+        std::string current_material_name;
+        std::vector<Vertex> vertices;
+        std::vector<vIndex> indices;
+        std::unordered_map<std::string, unsigned int> material_map;
+
+        std::vector<Vertex> global_vertices;
+        std::vector<vIndex> global_indices;
+
+        std::string line;
+        while (std::getline(obj, line)) {
+            std::stringstream ss(line);
+            std::string keyword;
+            ss >> keyword;
+
+            if (keyword == "mtllib") {
+                std::string mtl_filename;
+                ss >> mtl_filename;
+                importMtlFile((base_dir_path / mtl_filename).string(), material_map);
+            } else if (keyword == "v") {
+                glm::vec3 position;
+                ss >> position.x >> position.y >> position.z;
+                position_tmp.push_back(position);
+            } else if (keyword == "vt") {
+                glm::vec2 tex_coord;
+                ss >> tex_coord.x >> tex_coord.y;
+                tex_coord_tmp.push_back(tex_coord);
+            } else if (keyword == "vn") {
+                glm::vec3 normal;
+                ss >> normal.x >> normal.y >> normal.z;
+                normal_tmp.push_back(normal);
+            } else if (keyword == "usemtl") {
+                if (!vertices.empty()) {
+                    flushMeshImport(current_mesh_name, vertices, indices, material_map[current_material_name], global_vertices, global_indices);
+                }
+                ss >> current_material_name;
+            } else if (keyword == "o" || keyword == "g") {
+                if (!vertices.empty()) {
+                    flushMeshImport(current_mesh_name, vertices, indices, material_map[current_material_name], global_vertices, global_indices);
+                }
+                ss >> current_mesh_name;
+            } else if (keyword == "f") {
+                std::string vertex_substr;
+                for (int i = 0; i < 3; ++i) {
+                    ss >> vertex_substr;
+                    size_t slash_pos_1 = vertex_substr.find("/");
+                    size_t slash_pos_2 = vertex_substr.find("/", slash_pos_1 + 1);
+                    
+                    vIndex v_index = std::stoi(vertex_substr.substr(0, slash_pos_1)) - 1;
+                    vIndex vt_index = std::stoi(vertex_substr.substr(slash_pos_1 + 1, slash_pos_2 - slash_pos_1 - 1)) - 1;
+                    vIndex vn_index = std::stoi(vertex_substr.substr(slash_pos_2 + 1)) - 1;
+
+                    Vertex vertex = {
+                        position_tmp[v_index],
+                        tex_coord_tmp[vt_index],
+                        normal_tmp[vn_index]
+                    };
+
+                    vertices.push_back(vertex);
+                    indices.push_back(vertices.size() - 1);
+                }
+            }
+        }
+
+        if (!vertices.empty()) {
+            flushMeshImport(current_mesh_name, vertices, indices, material_map[current_material_name], global_vertices, global_indices);
+        }
+
+        if (alloc_gpu_) {
+            allocGPU(global_vertices, global_indices);
+        }
+
+        return true;
+    }
+
+    void flushMeshImport(std::string name, std::vector<Vertex>& vertices, std::vector<vIndex>& indices, unsigned int material_index, std::vector<Vertex>& global_vertices, std::vector<vIndex>& global_indices) {
+        unsigned int vertex_offset = (unsigned int)global_vertices.size();
+        size_t index_offset = global_indices.size();
+
+        global_vertices.insert(global_vertices.end(), vertices.begin(), vertices.end());
+        for (auto index : indices) {
+            global_indices.push_back(index + vertex_offset);
+        }
+
+        Mesh mesh;
+        mesh.initMesh(name, vertices, indices, index_offset, material_index);
+        insertMesh(std::move(mesh));
+
+        vertices.clear();
+        indices.clear();
+    }
+
+    void importMtlFile(const std::string& filepath, std::unordered_map<std::string, unsigned int>& material_map) {
+        auto texture_manager = ServiceLocator<TextureManager>::get();
+        if (!texture_manager) {
+            std::cerr << "[import] Texture manager not initialized" << std::endl;
+            return;
+        }
+
+        std::filesystem::path mtl_path(filepath);
+        std::ifstream mtl(filepath);
+        if (!mtl.is_open()) {
+            std::cerr << "[import] Error opening file for reading: " << filepath << std::endl;
+            return;
+        }
+
+        std::string line;
+        std::shared_ptr<Material> current_material;
+        std::string current_material_name;
+
+        auto load_texture_constant = [&current_material](const std::string& slot, unsigned int count, std::stringstream& ss, unsigned int padding = 0, float padding_value = 0.0f) {
+            glm::vec4 value { padding_value };
+            int num_input = count - padding;
+
+            if (num_input >= 1) { ss >> value.x; }
+            if (num_input >= 2) { ss >> value.y; }
+            if (num_input >= 3) { ss >> value.z; }
+            if (num_input >= 4) { ss >> value.w; }
+
+            if (count == 1) {
+                if (current_material) {
+                    current_material->setConstant(slot, value.x);
+                }
+            } else if (count == 3) {
+                if (current_material) {
+                    current_material->setConstant(slot, glm::vec3(value.x, value.y, value.z));
+                }
+            } else if (count == 4) {
+                if (current_material) {
+                    current_material->setConstant(slot, value);
+                }
+            }
+        };
+
+        auto load_texture = [&](const std::string& slot, std::stringstream& ss) {
+            std::string texture_filename;
+            ss >> texture_filename;
+            std::string texture_path = (mtl_path.parent_path() / texture_filename).string();
+            std::cout << "[import] Loading texture: " << texture_path << std::endl;
+            auto texture = texture_manager->getTexture(texture_path);
+
+            if (current_material) {
+                current_material->setTexture(slot, texture);
+            }
+        };
+
+        auto shader = ServiceLocator<ShaderManager>::get()->getShader("model");
+        while (std::getline(mtl, line)) {
+            std::stringstream ss(line);
+            std::string keyword;
+            ss >> keyword;
+
+            if (keyword == "newmtl") {
+                ss >> current_material_name;
+                current_material = std::make_shared<Material>(shader);
+                unsigned int material_index = insertMaterial(current_material);
+                material_map[current_material_name] = material_index;
+            } else if (keyword == "Kd") {
+                load_texture_constant("Diffuse", 4, ss, 1, 1.0f);
+            } else if (keyword == "map_Kd") {
+                load_texture("Diffuse", ss);
+            } else if (keyword == "Ks") {
+                load_texture_constant("Specular", 3, ss);
+            } else if (keyword == "map_Ks") {
+                load_texture("Specular", ss);
+            } else if (keyword == "Pm") {
+                load_texture_constant("Metallic", 1, ss);
+            } else if (keyword == "Pr") {
+                load_texture_constant("Roughness", 1, ss);
+            }
+        }
+
+    }
+
+    bool importObjModelTree(const std::string& filepath) {
+        std::ifstream obj(filepath);
+        if (!obj.is_open()) {
+            std::cerr << "[import] Error opening file for reading: " << filepath << std::endl;
+            return false;
+        }
+        
+        bool has_model_tree = false;
+
+        std::string line;
+        while (std::getline(obj, line)) {
+            if (line.find("# BEGIN_MODEL_TREE") != std::string::npos) {
+                has_model_tree = true;
+                break;
+            }
+        }
+
+        if (!has_model_tree) {
+            std::cout << "[import] Model " << filepath << " does not have a model tree, using default flat structure" << std::endl;
+            root_node_ = ModelNode();
+            root_node_.name = "root";
+            root_node_.local_transform = glm::mat4(1.0f);
+            for (size_t i = 0; i < meshes_.size(); ++i) {
+                root_node_.meshes.push_back(i);
+            }
+
+            obj.close();
+            return true;
+        }
+
+        std::string keyword;
+        std::string root_name;
+        std::getline(obj, line);
+        if (line.size() > 2) {
+            line = line.substr(2);
+        }
+        
+        std::stringstream ss(line);
+        ss >> keyword >> root_name;
+        
+        if (keyword == "MODELNODE") {
+            root_node_ = ModelNode();
+            root_node_.deserialize(obj, root_name, "# ");
+        }
+
+        obj.close();
+
+        std::cout << "[import] Model tree of " << filepath << " loaded." << std::endl;
+        return true;
+    }
+
 private:
     static constexpr unsigned int UV_CHANNEL_DIFFUSE = 0;
+
+    bool alloc_gpu_ { true };
 
     GLuint VAO_ {INVALID_VAO};
     GLuint VBO_ {INVALID_VBO};

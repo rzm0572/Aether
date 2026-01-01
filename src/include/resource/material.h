@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <fstream>
 #include <filesystem>
 #include "assimp/material.h"
 #include "utils/profiler.h"
@@ -93,7 +94,11 @@ public:
     void setShader(const std::string& name);
 
     void setTexture(std::string name, std::shared_ptr<const Texture> texture, TextureSlot::TextureUnion constant = 0.0f) {
-        texture_slots_[name] = TextureSlot(texture, constant);
+        if (texture_slots_.find(name) != texture_slots_.end()) {
+            texture_slots_[name].texture = texture;
+        } else {
+            texture_slots_[name] = TextureSlot(texture, constant);
+        }
     }
 
     void setConstant(std::string name, TextureSlot::TextureUnion constant) {
@@ -112,6 +117,10 @@ public:
 
     const Shader* getShader() const {
         return shader_;
+    }
+
+    const std::string getName() const {
+        return name_;
     }
 
     // Debugging
@@ -139,9 +148,89 @@ public:
         return str + "\n\t], addr = " + std::to_string((size_t)this) + ")";
     }
 
+    void exportToMtl(std::ofstream& ofs, std::string material_name = "default") {
+        if (name_.empty()) {
+            ofs << "newmtl " << material_name << std::endl;
+        } else {
+            ofs << "newmtl " << name_ << std::endl;
+        }
+        
+        ofs << "Ka 0.200000 0.200000 0.200000" << std::endl;
+        ofs << "Ke 0.000000 0.000000 0.000000" << std::endl;
+        ofs << "Ni 1.000000" << std::endl;
+        ofs << "d 1.000000" << std::endl;
+        ofs << "illum 2" << std::endl;
+
+        const auto& slots = texture_slots_;
+
+        auto toVec3 = [](const auto& arg) -> glm::vec3 {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, glm::vec3>) {
+                return arg;
+            } else if constexpr (std::is_same_v<T, glm::vec4>) {
+                return glm::vec3(arg.x, arg.y, arg.z);
+            } else {
+                return glm::vec3(arg, arg, arg);
+            }
+        };
+
+        if (auto it = slots.find("Diffuse"); it != slots.end()) {
+            glm::vec3 kd = std::visit(toVec3, it->second.texture_const);
+            ofs << "Kd " << kd.x << " " << kd.y << " " << kd.z << std::endl;
+
+            if (it->second.texture != nullptr) {
+                std::filesystem::path texture_path = it->second.texture->getFilePath();
+                ofs << "map_Kd " << texture_path.filename().string() << std::endl;
+            }
+        } else {
+            ofs << "Kd 1.0 1.0 1.0" << std::endl;
+        }
+
+        if (auto it = slots.find("Specular"); it != slots.end()) {
+            glm::vec3 ks = std::visit(toVec3, it->second.texture_const);
+            ofs << "Ks " << ks.x << " " << ks.y << " " << ks.z << std::endl;
+
+            if (it->second.texture != nullptr) {
+                std::filesystem::path texture_path = it->second.texture->getFilePath();
+                ofs << "map_Ks " << texture_path.filename().string() << std::endl;
+            }
+        } else {
+            ofs << "Ks 0.35 0.35 0.35" << std::endl;
+        }
+
+        if (auto it = slots.find("Metallic"); it != slots.end()) {
+            float metallic = std::get<float>(it->second.texture_const);
+            ofs << "Pm " << metallic << std::endl;
+
+            if (it->second.texture != nullptr) {
+                std::filesystem::path texture_path = it->second.texture->getFilePath();
+                ofs << "map_Pm " << texture_path.filename().string() << std::endl;
+            }
+        } else {
+            ofs << "Pm 0.0" << std::endl;
+        }
+
+        if (auto it = slots.find("Roughness"); it != slots.end()) {
+            float roughness = std::get<float>(it->second.texture_const);
+            ofs << "Pr " << roughness << std::endl;
+
+            if (it->second.texture != nullptr) {
+                std::filesystem::path texture_path = it->second.texture->getFilePath();
+                ofs << "map_Pr " << texture_path.filename().string() << std::endl;
+            }
+        } else {
+            ofs << "Pr 0.5" << std::endl;
+        }
+
+        ofs << std::endl;
+    }
+
 private:
     // shader program
     const Shader* shader_;
+
+    // material name
+    std::string name_;
 
     // texture slots
     std::unordered_map<std::string, TextureSlot> texture_slots_;

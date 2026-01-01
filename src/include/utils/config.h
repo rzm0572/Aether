@@ -50,6 +50,8 @@ public:
         std::cout << "  Screen height: " << scr_height << std::endl;
         std::cout << "  Z-near: " << z_near << std::endl;
         std::cout << "  Z-far: " << z_far << std::endl;
+        std::cout << "  Debug mode: " << debug_mode << std::endl;
+        std::cout << "  GPU memory allocation: " << alloc_gpu << std::endl;
     }
 
 public:
@@ -59,4 +61,5 @@ public:
     float z_near = 0.1f;           ///< Near clipping plane distance
     float z_far = 500.0f;          ///< Far clipping plane distance
     bool debug_mode = true;        ///< Flag to enable debug mode
+    bool alloc_gpu = true;         ///< Flag to enable GPU memory allocation
 };
