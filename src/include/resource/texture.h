@@ -1,13 +1,16 @@
 #pragma once
 
 #include "utils/path_handler.h"
-#include <string>
-#include <iostream>
+
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <glad/glad.h>
 #include <stb_image.h>
+#include <glm/glm.hpp>
+
+#include <string>
+#include <iostream>
 #include <unordered_map>
 
 // Texture class
@@ -16,8 +19,16 @@ class Texture {
 
 public:
     // 构造函数：指定纹理类型（通常是 GL_TEXTURE_2D）和文件路径
-    Texture(GLenum type, const std::string& filepath, bool alloc_gpu = true)
-        : m_alloc_gpu(true), m_type(type), m_filepath(filepath), m_textureID(0), m_width(0), m_height(0), m_channels(0), m_depth(1) {}
+    Texture(
+        GLenum type,
+        const std::string& filepath,
+        const std::string& name = "",
+        bool alloc_gpu = true
+    ): m_alloc_gpu(alloc_gpu), m_type(type), m_name(name), m_filepath(filepath), m_textureID(0), m_width(0), m_height(0), m_channels(0), m_depth(1) {
+        if (m_name.empty() && !m_filepath.empty()) {
+            m_name = m_filepath;
+        }
+    }
     
     ~Texture(){
         if (m_alloc_gpu && m_textureID) {
@@ -64,6 +75,10 @@ public:
     // Load texture from file
     // Return true if successful, false otherwise
     bool Load(){
+        if (m_type != GL_TEXTURE_2D) {
+            return false;
+        }
+
         if (!m_alloc_gpu) {
             return true;
         }
@@ -78,18 +93,25 @@ public:
         }
 
         // 确定格式
-        GLenum format;
-        if (m_channels == 1)
-            format = GL_RED;
-        else if (m_channels == 3)
-            format = GL_RGB;
-        else if (m_channels == 4)
-            format = GL_RGBA;
+        if (m_channels == 1) {
+            format_ = GL_RED;
+            internal_format_ = GL_RED;
+        }
+        else if (m_channels == 3) {
+            format_ = GL_RGB;
+            internal_format_ = GL_RGB;
+        }
+        else if (m_channels == 4) {
+            format_ = GL_RGBA;
+            internal_format_ = GL_RGBA;
+        }
         else {
             std::cerr << "Unsupported number of channels: " << m_channels << " in " << m_filepath << std::endl;
             stbi_image_free(data);
             return false;
         }
+
+        type_ = GL_UNSIGNED_BYTE;
 
         // 生成并配置纹理
         glGenTextures(1, &m_textureID);
@@ -100,7 +122,7 @@ public:
         glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
         glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        glTexImage2D(m_type, 0, format, m_width, m_height, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(m_type, 0, internal_format_, m_width, m_height, 0, format_, type_, data);
         glGenerateMipmap(m_type);
 
         stbi_image_free(data);
@@ -118,6 +140,97 @@ public:
         glBindTexture(m_type, m_textureID);
     }
 
+    template<typename T>
+    bool Load(const T* data, int width, int height, int channel, int depth = 1) {
+        if (!data) {
+            std::cerr << "Texture data does not exist" << std::endl;
+            return false;
+        }
+
+        if (depth < 1 || (m_type == GL_TEXTURE_2D && depth > 1)) {
+            return false;
+        }
+
+        switch (channel) {
+            case 1:  format_ = GL_RED;   break;
+            case 2:  format_ = GL_RG;    break;
+            case 3:  format_ = GL_RGB;   break;
+            case 4:  format_ = GL_RGBA;  break;
+            default: {
+                std::cerr << "Unsupported number of channels: " << channel << std::endl;
+                return false;
+            }
+        }
+
+        if constexpr (std::is_same_v<T, unsigned char>) {
+            type_ = GL_UNSIGNED_BYTE;
+            if (channel == 1) {
+                internal_format_ = GL_R8;
+            } else if (channel == 3) {
+                internal_format_ = GL_RGB8;
+            } else if (channel == 4) {
+                internal_format_ = GL_RGBA8;
+            }
+        } else if constexpr (std::is_same_v<T, float> || std::is_same_v<T, glm::vec3>) {
+            type_ = GL_FLOAT;
+            if (channel == 1) {
+                internal_format_ = GL_R32F;
+            } else if (channel == 3) {
+                internal_format_ = GL_RGB32F;
+            } else if (channel == 4) {
+                internal_format_ = GL_RGBA32F;
+            }
+        } else {
+            static_assert(false, "Unsupported texture data type");
+        }
+
+        glGenTextures(1, &m_textureID);
+        glBindTexture(m_type, m_textureID);
+
+        glTexParameteri(m_type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(m_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        int max_level = static_cast<int>(std::floor(std::log2(std::max(width, height)))) + 1;
+
+        if (data != nullptr) {
+            glTexImage3D(m_type, 0, internal_format_, width, height, depth, 0, format_, type_, data);
+            glGenerateMipmap(m_type);
+        } else {
+            for (int i = 0; i < max_level; ++i) {
+                int mip_width = std::max(1, width >> i);
+                int mip_height = std::max(1, height >> i);
+                glTexImage3D(m_type, i, internal_format_, mip_width, mip_height, depth, 0, format_, type_, nullptr);
+            }
+        }
+
+        glBindTexture(m_type, 0);
+
+        m_width = width;
+        m_height = height;
+        m_channels = channel;
+        m_depth = depth;
+
+        std::cout << "Loaded texture: " << m_filepath << " (" << m_width << "x" << m_height << ", " << m_channels << " channels)" << std::endl;
+        return true;
+    }
+
+    template<typename T>
+    bool updateTextureLayer(const T* data, int layer_index) {
+        if (m_type != GL_TEXTURE_2D_ARRAY || layer_index < 0 || layer_index >= m_depth) {
+            return false;
+        }
+
+        glBindTexture(m_type, m_textureID);
+        glTexSubImage3D(m_type, 0, 0, 0, layer_index, m_width, m_height, 1, format_, type_, data);
+
+        // TODO: Generate Mipmaps by fragment shader
+        glGenerateMipmap(m_type);
+
+        glBindTexture(m_type, 0);
+    }
+
     // 获取 OpenGL 纹理 ID（用于调试或高级用途）
     GLuint getID() const { return m_textureID; }
 
@@ -126,16 +239,20 @@ public:
     }
 
     const std::string toString() const {
-        return "Texture(type: " + std::to_string(m_type) + ", filepath: " + m_filepath + ", textureID: " + std::to_string(m_textureID) + ", width: " + std::to_string(m_width) + ", height: " + std::to_string(m_height) + ", channels: " + std::to_string(m_channels) + ")";
+        return "Texture(type: " + std::to_string(m_type) + ", name: " + m_name + ", filepath: " + m_filepath + ", textureID: " + std::to_string(m_textureID) + ", width: " + std::to_string(m_width) + ", height: " + std::to_string(m_height) + ", channels: " + std::to_string(m_channels) + ", m_depth: " + std::to_string(m_depth) + ")";
     }
 
 private:
     bool m_alloc_gpu;
     GLenum m_type;                        // 纹理类型
+    std::string m_name;                   // 纹理名称
     std::string m_filepath;               // 纹理文件路径
     GLuint m_textureID;                   // OpenGL 纹理 ID
     int m_width, m_height, m_channels;    // 图像宽度、高度、通道数
     int m_depth;                          // 纹理深度
+    GLenum internal_format_;
+    GLenum format_;
+    GLenum type_;
 };
 
 // Texture manager class
@@ -152,29 +269,29 @@ public:
     // Load default texture
     void init(bool alloc_gpu = true) {
         alloc_gpu_ = alloc_gpu;
-        default_texture_ = std::make_shared<Texture>(GL_TEXTURE_2D, getAssetPath("textures/white.png"), alloc_gpu);
+        default_texture_ = std::make_shared<Texture>(GL_TEXTURE_2D, getAssetPath("textures/white.png"), "default", alloc_gpu);
         default_texture_->Load();
     }
 
     // Get texture by filepath
     // If texture is not in cache, load it from file and add it to cache
     // If loading fails, return default texture
-    std::shared_ptr<const Texture> getTexture(const std::string& filepath, GLenum type = GL_TEXTURE_2D) {
+    std::shared_ptr<const Texture> getTexture(const std::string& name, const std::string& filepath, GLenum type = GL_TEXTURE_2D) {
         // Check if texture is already in cache
-        auto it = textures_.find(filepath);
+        auto it = textures_.find(name);
         if (it != textures_.end()) {
             return it->second;
         }
 
         // Load texture from file and add it to cache
-        textures_.emplace(filepath, std::make_shared<Texture>(type, filepath, alloc_gpu_));
-        auto texture = textures_.at(filepath);
+        textures_.emplace(name, std::make_shared<Texture>(type, filepath, name, alloc_gpu_));
+        auto texture = textures_.at(name);
         if (alloc_gpu_) {
             bool success = texture->Load();
 
             // If loading fails, remove texture from cache and return default texture
             if (!success) {
-                textures_.erase(filepath);
+                textures_.erase(name);
                 return default_texture_;
             }
         }
@@ -182,7 +299,21 @@ public:
         return texture;
     }
 
-    std::shared_ptr<const Texture> getTexture(const std::vector<std::string>& filepaths, const std::string name, GLenum type = GL_TEXTURE_2D_ARRAY) {
+    std::shared_ptr<const Texture> getTexture(const std::string& name, GLenum type = GL_TEXTURE_2D) {
+        return getTexture(name, name, type);
+    }
+
+    std::shared_ptr<const Texture> getProceduralTexture(const std::string& name, GLenum type = GL_TEXTURE_2D) {
+        auto it = textures_.find(name);
+        if (it != textures_.end()) {
+            return it->second;
+        }
+
+        textures_.emplace(name, std::make_shared<Texture>(type, "", name, alloc_gpu_));
+        return textures_.at(name);
+    }
+
+    std::shared_ptr<const Texture> getTexture(const std::string name, const std::vector<std::string>& filepaths, GLenum type = GL_TEXTURE_2D_ARRAY) {
         // TODO: Implement texture array loading
         return nullptr;
     }

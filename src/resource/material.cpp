@@ -54,7 +54,7 @@ bool Material::loadMaterial(const aiMaterial* material, const std::filesystem::p
             }
             
             const std::string name = (directory / kAssimpTextureTypeStr[i]).string();
-            auto texture = texture_manager->getTexture(full_paths, name);
+            auto texture = texture_manager->getTexture(name, full_paths);
             setTexture(kAssimpTextureTypeStr[i], texture);
             if (texture == nullptr) {
                 std::cerr << "Failed to load texture: " << name << std::endl;
