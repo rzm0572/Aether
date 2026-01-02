@@ -222,8 +222,6 @@ struct CollisionVisitor {
         }
 
         if (c2_is_sphere) {
-            std::cout << distSqrPointSegment(P2, P1, Q1) << std::endl;
-            std::cout << P1 << " " << Q1 << " " << P2 << " " << Q2 << std::endl;
             return distSqrPointSegment(P2, P1, Q1) <= dist_sqr;
         }
 

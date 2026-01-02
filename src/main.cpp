@@ -15,7 +15,6 @@
 #include "common/engine.h"
 #include "world/terrain.h"
 #include "entity/plane.h"
-// #include "resource/particles.h"
 #include "system/weapons.h"
 #include "system/explosion.h"
 #include "resource/healthbar.h"
@@ -53,16 +52,6 @@ glm::mat4 makeTransformMatrix(
 
 // 主要参考了 一步步学OpenGL(22) -《OpenGL使用Assimp库导入3d模型》 - Kam92.J的文章 - 知乎 https://zhuanlan.zhihu.com/p/150570465
 // 修改了片段着色器的输入，使其能够接受纯色输入，否则会失去颜色，这是模型常用的做法即纯色模型加上细节贴图
-
-// TODO: 不透明度（Opacity）
-// TODO: 自发光（Emission）
-
-// TODO: 法线贴图（Normal Map）
-// TODO: 材质捕捉（Material Capture）
-
-
-// TODO: 线框调试
-// TODO: 顶点法线
 
 
 int main() {
@@ -105,7 +94,6 @@ int main() {
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)config.scr_width / (float)config.scr_height, config.z_near, config.z_far);
     
     // 创建天空盒
-    // TODO: 使用合适的图片作为天空盒
     Skybox skybox(
         getAssetPath("skybox/skybox1/right.jpg"), 
         getAssetPath("skybox/skybox1/left.jpg"),
@@ -147,16 +135,7 @@ int main() {
 
     // Terrain generation
     fBmGenerator fBm_generator(0.0f, 64.0f, 5, 2, 0.6f, -4, 16, 1);
-    // Terrain terrain_collidor(fBm_generator);
     Terrain_ terrain(fBm_generator, -64, -64, 7);
-
-    // unsigned int terrain_material_index = terrain_collidor.createMaterial(getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
-    // terrain_collidor.createChunks(-8, 7, -8, 7, 4.0f, terrain_material_index);
-
-    // std::cout << terrain.toString() << std::endl;
-    // terrain.outputModelTree();
-    // std::cout << "Model loaded: " << plane_model.toString() << std::endl;
-    // plane_model.outputModelTree();
 
     // Camera settings
     FreeCamera free_camera(
@@ -166,8 +145,6 @@ int main() {
         25.0f, 0.06f
     );
     FreeCameraInputTranslator translator(input);
-
-    // glm::quat base_rotation = glm::angleAxis(glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
     ThirdPersonCamera third_person_camera(plane, 16.0f, 0.0f, 90.0f, 10.0f, 0.06f, glm::vec3(0.5f, 0.0f, 0.0f));
 
@@ -210,8 +187,6 @@ int main() {
 
     float delta_time_sum = 0.0f;
     int frame_count = 0;
-    // Particle_Explosion explosion(100000,5000, 42, getAssetPath("textures/particles/particle_generated.png"));
-    // explosion.start_();
     // Game loop
     while (!window.shouldClose()) {
         Profiler::instance().get_timer("io").start_clock();
@@ -230,9 +205,6 @@ int main() {
 
         // Logical frame
         Profiler::instance().get_timer("logical").start_clock();
-        if (input.getKeyPressedDown(InputKey::RIGHT_BRACKET)) {
-            explosion_system->addExplosion(plane_model, plane, curr_frame, 5.0f);
-        }
 
         // Entity logical update
         plane->update(dt,0,glm::vec3(0.0f));
@@ -251,11 +223,7 @@ int main() {
         weapons_player.submitCollision();
         weapons_enemy.submitCollision();
 
-        // collision_system->debugOutput();
-
         // Collision detection
-        std::vector<DebugLine> render_lines;
-        collision_system->generateDebugLines(render_lines);
         collision_system->update(curr_frame);
 
         // Collision handling
@@ -268,11 +236,9 @@ int main() {
         explosion_system->update(renderer, curr_frame);
 
         // Camera and light update
-        // free_camera.update(translator, curr_frame - last_frame);
         third_person_camera.update(input.getMouseMovement(), dt);
         light.update(dt);
 
-        // glm::mat4 view = free_camera.getViewMatrix();
         glm::mat4 view = third_person_camera.getViewMatrix();
 
         delta_time_sum += dt;
@@ -283,24 +249,19 @@ int main() {
 
         Profiler::instance().get_timer("terrain").start_clock();
         terrain.update(third_person_camera);
-        // terrain.update(free_camera);
         terrain.render(view, projection, light);
         Profiler::instance().get_timer("terrain").end_clock();
 
         // Render frame
-        // TODO: 逻辑帧与渲染帧分离，渲染采用插值算法，提高帧率
         Profiler::instance().get_timer("render").start_clock();
 
         if(!plane->getHealthComponent().isDead()){
-            // ribbon1.addParticles(plane->getTransformComponent().getPosition()+plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
-            // ribbon2.addParticles(plane->getTransformComponent().getPosition()-plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
-            // // ribbon3.addParticles(plane_enemy->getTransformComponent().getPosition()+plane_enemy->physical_component().getRight()*2.0f,plane_enemy->physical_component().getVelocity(), 8, 0.1f);
-            // // ribbon4.addParticles(plane_enemy->getTransformComponent().getPosition()-plane_enemy->physical_component().getRight()*2.0f,plane_enemy->physical_component().getVelocity(), 8, 0.1f);
-            // ribbon1.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
-            // ribbon2.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+            ribbon1.addParticles(plane->getTransformComponent().getPosition()+plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
+            ribbon2.addParticles(plane->getTransformComponent().getPosition()-plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
+            ribbon1.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+            ribbon2.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
         }
-        // ribbon3.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
-        // ribbon4.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+
         // --- weapons update and submit ---
         glm::vec3 camera_pos = third_person_camera.getPosition();
         weapons_player.postProcess(dt, curr_frame, player_transform.getPosition(), enemy_tranform.getPosition(),
@@ -313,7 +274,7 @@ int main() {
         );
         health_bar_plane.draw(plane->getTransformComponent().getPosition() + glm::vec3(0.0f, 2.5f, 0.0f),view,projection,third_person_camera.getPosition(),5.0f,0.25f,plane->getHealthComponent().getHealth());
         health_bar_enemy.draw(plane_enemy->getTransformComponent().getPosition() + glm::vec3(0.0f, 2.5f, 0.0f),view,projection,third_person_camera.getPosition(),5.0f,0.25f,plane_enemy->getHealthComponent().getHealth());
-        renderCollisionBox(render_lines, view, projection);
+
         // --- Submissions ---
         renderer.submit_recursive(plane);
         renderer.submit_recursive(plane_enemy);
@@ -324,11 +285,6 @@ int main() {
         renderer.render(view, projection, light);
         renderer.finishAllRender();
 
-        // 预览模型
-        // model_test.render(model, view, projection, light);
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); // 显示线框
-
-        // explosion.draw(plane->getTransformComponent().getPosition(), view, projection, third_person_camera.getPosition(), 3.0f,3.0f,0.1f);
         // 渲染天空盒（在其他物体之后渲染以优化性能）
         skybox.changeProjection(projection);
         skybox.changeView(view);
@@ -342,8 +298,6 @@ int main() {
 
         last_frame = curr_frame;
         curr_frame = glfwGetTime();
-
-        // window.setWindowShouldClose();
     }
 
     if (config.debug_mode) {
@@ -356,8 +310,3 @@ int main() {
 
     return 0;
 }
-
-// TODO: 有空做个HDL/Bloom 的实现
-// TODO: 有空做个不同魔法飞弹的爆炸效果
-// TODO: 火焰
-// TODO: 至少完成单一飞弹，曲线光线飞弹，火球飞弹 等效果
