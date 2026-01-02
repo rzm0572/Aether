@@ -173,8 +173,8 @@ int main() {
 
     // Light settings
     auto light = Light(
-        &third_person_camera,
-        // &free_camera,
+        // &third_person_camera,
+        &free_camera,
         glm::vec3(0.8f, 0.8f, 0.8f),
         {
             glm::vec3(0.0f, 1.0f, 1.0f),
@@ -254,8 +254,8 @@ int main() {
         // collision_system->debugOutput();
 
         // Collision detection
-        std::vector<DebugLine> render_lines;
-        collision_system->generateDebugLines(render_lines);
+        // std::vector<DebugLine> render_lines;
+        // collision_system->generateDebugLines(render_lines);
         collision_system->update(curr_frame);
 
         // Collision handling
@@ -268,12 +268,12 @@ int main() {
         explosion_system->update(renderer, curr_frame);
 
         // Camera and light update
-        // free_camera.update(translator, curr_frame - last_frame);
-        third_person_camera.update(input.getMouseMovement(), dt);
+        free_camera.update(translator, curr_frame - last_frame);
+        // third_person_camera.update(input.getMouseMovement(), dt);
         light.update(dt);
 
-        // glm::mat4 view = free_camera.getViewMatrix();
-        glm::mat4 view = third_person_camera.getViewMatrix();
+        glm::mat4 view = free_camera.getViewMatrix();
+        // glm::mat4 view = third_person_camera.getViewMatrix();
 
         delta_time_sum += dt;
         frame_count++;
@@ -282,8 +282,8 @@ int main() {
         Profiler::instance().get_timer("logical").end_clock();
 
         Profiler::instance().get_timer("terrain").start_clock();
-        terrain.update(third_person_camera);
-        // terrain.update(free_camera);
+        // terrain.update(third_person_camera);
+        terrain.update(free_camera);
         terrain.render(view, projection, light);
         Profiler::instance().get_timer("terrain").end_clock();
 
@@ -302,7 +302,8 @@ int main() {
         // ribbon3.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
         // ribbon4.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
         // --- weapons update and submit ---
-        glm::vec3 camera_pos = third_person_camera.getPosition();
+        // glm::vec3 camera_pos = third_person_camera.getPosition();
+        glm::vec3 camera_pos = free_camera.getPosition();
         weapons_player.postProcess(dt, curr_frame, player_transform.getPosition(), enemy_tranform.getPosition(),
             player_physical.getUp(), player_physical.getRight(), player_physical.GetForward(), player_physical.getRotation(),
             camera_pos, view, projection, plane->getHealthComponent().isDead()
@@ -311,9 +312,11 @@ int main() {
             enemy_physical.getUp(), enemy_physical.getRight(), enemy_physical.GetForward(), enemy_physical.getRotation(),
             camera_pos, view, projection, plane_enemy->getHealthComponent().isDead()
         );
-        health_bar_plane.draw(plane->getTransformComponent().getPosition() + glm::vec3(0.0f, 2.5f, 0.0f),view,projection,third_person_camera.getPosition(),5.0f,0.25f,plane->getHealthComponent().getHealth());
-        health_bar_enemy.draw(plane_enemy->getTransformComponent().getPosition() + glm::vec3(0.0f, 2.5f, 0.0f),view,projection,third_person_camera.getPosition(),5.0f,0.25f,plane_enemy->getHealthComponent().getHealth());
-        renderCollisionBox(render_lines, view, projection);
+        // health_bar_plane.draw(plane->getTransformComponent().getPosition() + glm::vec3(0.0f, 2.5f, 0.0f),view,projection,third_person_camera.getPosition(),5.0f,0.25f,plane->getHealthComponent().getHealth());
+        // health_bar_enemy.draw(plane_enemy->getTransformComponent().getPosition() + glm::vec3(0.0f, 2.5f, 0.0f),view,projection,third_person_camera.getPosition(),5.0f,0.25f,plane_enemy->getHealthComponent().getHealth());
+
+        // renderCollisionBox(render_lines, view, projection);
+
         // --- Submissions ---
         renderer.submit_recursive(plane);
         renderer.submit_recursive(plane_enemy);
