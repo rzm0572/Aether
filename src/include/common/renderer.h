@@ -200,6 +200,10 @@ public:
         }
     }
 
+    const ShadowMap& getShadowMap() const {
+        return shadow_map_;
+    }
+
 private:
     void beginShadowPass(const Light& light) {
         light_view_matrix_ = light.getLightSpaceMatrix();

@@ -56,10 +56,10 @@ public:
 
 public:
     // Default values
-    unsigned int scr_width = 800;  ///< Width of the screen in pixels
-    unsigned int scr_height = 600; ///< Height of the screen in pixels
+    unsigned int scr_width = 1600;  ///< Width of the screen in pixels
+    unsigned int scr_height = 1200; ///< Height of the screen in pixels
     float z_near = 0.1f;           ///< Near clipping plane distance
-    float z_far = 500.0f;          ///< Far clipping plane distance
+    float z_far = 1000.0f;          ///< Far clipping plane distance
     bool debug_mode = true;        ///< Flag to enable debug mode
     bool alloc_gpu = true;         ///< Flag to enable GPU memory allocation
 };

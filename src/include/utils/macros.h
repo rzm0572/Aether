@@ -24,6 +24,7 @@
 #define INVALID_VAO 0
 #define INVALID_VBO 0
 #define INVALID_EBO 0
+#define INVALID_FBO 0
 
 #define INVALID_MATERIAL 0xFFFFFFFF
 

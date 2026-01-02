@@ -124,3 +124,5 @@ private:
     lru_set_t lru_used_textures_;
 };
 
+template<typename T>
+concept ReplacerType = std::is_base_of_v<Replacer, std::remove_cvref_t<T>>;

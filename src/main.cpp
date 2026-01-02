@@ -19,6 +19,7 @@
 #include "system/weapons.h"
 #include "system/explosion.h"
 #include "resource/healthbar.h"
+#include "world/terrain/terrain_.h"
 
 #include <iostream>
 #include <string>
@@ -118,6 +119,7 @@ int main() {
     assert(shader_manager);
     shader_manager->registerShader("model", getShaderPath("models.vert"), getShaderPath("models.frag"));
     shader_manager->registerShader("depth", getShaderPath("depth.vert"), getShaderPath("depth.frag"));// 深度渲染着色器
+    shader_manager->registerShader("terrain", getShaderPath("terrain.vert"), getShaderPath("terrain.frag"));
 
     Renderer renderer;
 
@@ -144,14 +146,12 @@ int main() {
     Plane *plane_enemy = new Plane(Owner::ENEMY, input, plane_model, initial_position2, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"],glm::mat4(1.0f),PhysicalComponent(getConfigPath("aircrafts/enemy.json")));
 
     // Terrain generation
-    // PerlinGenerator perlin_generator(-10.0f, 10.0f, 16, 1);
-    // Terrain terrain(perlin_generator);
     fBmGenerator fBm_generator(0.0f, 64.0f, 5, 2, 0.6f, -4, 16, 1);
-    Terrain terrain(fBm_generator);
+    // Terrain terrain_collidor(fBm_generator);
+    Terrain_ terrain(fBm_generator, -64, -64, 7);
 
-    unsigned int terrain_material_index = terrain.createMaterial(getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
-    terrain.createChunks(-8, 7, -8, 7, 4.0f, terrain_material_index);
-    GameObject* terrain_obj = GameObject::createFromModel(terrain);
+    // unsigned int terrain_material_index = terrain_collidor.createMaterial(getAssetPath("textures/grass_2k/Poliigon_GrassPatchyGround_4585_BaseColor.jpg"));
+    // terrain_collidor.createChunks(-8, 7, -8, 7, 4.0f, terrain_material_index);
 
     // std::cout << terrain.toString() << std::endl;
     // terrain.outputModelTree();
@@ -198,6 +198,8 @@ int main() {
 
     auto* collision_system = ServiceLocator<CollisionSystem>::get();
     collision_system->setTerrainGenerator(&fBm_generator);
+
+    terrain.setShadowMap(&renderer.getShadowMap(), shader_manager->getShader("depth"));
 
     // 开启深度测试
     glEnable(GL_DEPTH_TEST);
@@ -279,6 +281,12 @@ int main() {
         input.endUpdate();
         Profiler::instance().get_timer("logical").end_clock();
 
+        Profiler::instance().get_timer("terrain").start_clock();
+        terrain.update(third_person_camera);
+        // terrain.update(free_camera);
+        terrain.render(view, projection, light);
+        Profiler::instance().get_timer("terrain").end_clock();
+
         // Render frame
         // TODO: 逻辑帧与渲染帧分离，渲染采用插值算法，提高帧率
         Profiler::instance().get_timer("render").start_clock();
@@ -309,7 +317,6 @@ int main() {
         // --- Submissions ---
         renderer.submit_recursive(plane);
         renderer.submit_recursive(plane_enemy);
-        renderer.submit_recursive(terrain_obj);
         renderer.finishAllSubmissions();                // Sort render queue
         
         // --- Render Pass ---
@@ -335,6 +342,8 @@ int main() {
 
         last_frame = curr_frame;
         curr_frame = glfwGetTime();
+
+        // window.setWindowShouldClose();
     }
 
     if (config.debug_mode) {

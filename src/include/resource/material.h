@@ -48,14 +48,16 @@ private:
         TextureSlot(std::shared_ptr<const Texture> texture, glm::vec4 texture_const): texture(texture), texture_const(texture_const) {}
 
         void apply(const Shader* shader, const std::string& name, int& texture_unit) {
+            shader->setUniform("Texture" + name, texture_unit);
+
             if (texture != nullptr) {
                 texture->Bind(texture_unit + GL_TEXTURE0);
                 shader->setUniform("HasTexture" + name, true);
-                shader->setUniform("Texture" + name, texture_unit);
-                texture_unit++;
             } else {
                 shader->setUniform("HasTexture" + name, false);
             }
+
+            texture_unit++;
 
             std::visit([&](auto&& arg) {
                 // using T = std::decay_t<decltype(arg)>;

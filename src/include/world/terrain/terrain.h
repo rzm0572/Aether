@@ -43,8 +43,26 @@ public:
     virtual float getHeight(ChunkCoord chunk_coord, float x, float z) const = 0;
     virtual Vertex getVertex(ChunkCoord chunk_coord, float x, float z) const = 0;
 
-    virtual void getHeightNormalMap(ChunkCoord chunk_coord, int scale, int stride, std::vector<float>& height_map, std::vector<glm::vec3>& normal_map) {
+    virtual void getHeightNormalMap(ChunkCoord chunk_coord, int scale, int resolution, std::vector<float>& height_map, std::vector<glm::vec3>& normal_map) {
+        int stride = scale * Chunk::X_LENGTH / resolution;
+        int global_x_min = chunk_coord.x * Chunk::X_LENGTH;
+        int global_z_min = chunk_coord.z * Chunk::Z_LENGTH;
 
+        int length = resolution + 1;
+        int map_length = length * length;
+
+        height_map.resize(map_length);
+        normal_map.resize(map_length);
+        height_map.shrink_to_fit();
+        normal_map.shrink_to_fit();
+
+        for (int i = 0; i <= resolution; ++i) {
+            for (int j = 0; j <= resolution; ++j) {
+                Vertex v = getVertex(global_x_min + i * stride, global_z_min + j * stride);
+                height_map[i + j * length] = v.Position.y;
+                normal_map[i + j * length] = v.Normal;
+            }
+        }
     }
 
     float getHeight(float x, float z) const {

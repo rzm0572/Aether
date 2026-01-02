@@ -328,3 +328,94 @@ private:
     unsigned long seed_ { 0 };
     std::vector<PerlinGenerator> perlin_layers_;
 };
+
+
+// class fBmGeneratorGPU {
+// public:
+//     fBmGeneratorGPU(
+//         const Shader* shader,
+//         float y_base = 0.0f,
+//         float y_scale = 64.0f,
+//         int octaves = 6,
+//         int lacunarity = 2,
+//         float persistence = 0.5f,
+//         int fundamental_freq_log = 0,
+//         int perm_period = 16,
+//         unsigned long seed = 0
+//     ) : shader_(shader), octaves_(octaves), lacunarity_(lacunarity), persistence_(persistence), fundamental_freq_log_(fundamental_freq_log), y_base_(y_base), y_scale_(y_scale), perm_period_(perm_period), seed_(seed) {
+//         glGenFramebuffers(1, &FBO_);
+
+//         glGenVertexArrays(1, &VAO_);
+//         glGenBuffers(1, &VBO_);
+//         glBindVertexArray(VAO_);
+//         glBindBuffer(GL_ARRAY_BUFFER, VBO_);
+//         glBufferData(GL_ARRAY_BUFFER, sizeof(kRetangleVertices), kRetangleVertices, GL_STATIC_DRAW);
+
+//         glEnableVertexAttribArray(0);
+//         glEnableVertexAttribArray(1);
+//         glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+//         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+//     }
+
+//     ~fBmGeneratorGPU() {
+//         glDeleteVertexArrays(1, &VAO_);
+//         glDeleteBuffers(1, &VBO_);
+//         glDeleteFramebuffers(1, &FBO_);
+//     }
+
+//     void generateTexture(ChunkCoord chunk_coord, int scale, const Texture& heightMap, const Texture& normalMap, int layer_index, float resolution = 8.0f) {
+//         glBindFramebuffer(GL_FRAMEBUFFER, FBO_);
+
+//         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, heightMap.getID(), 0, layer_index);
+//         glFramebufferTextureLayer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, normalMap.getID(), 0, layer_index);
+
+//         GLenum draw_buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+//         glDrawBuffers(2, draw_buffers);
+
+//         int width = heightMap.getWidth();
+//         int height = heightMap.getHeight();
+
+//         glViewport(0, 0, width, height);
+//         shader_->useShader();
+//         shader_->setUniform("WorldPos", glm::vec2(chunk_coord.x * Chunk::X_LENGTH, chunk_coord.z * Chunk::X_LENGTH));
+//         shader_->setUniform("Scale", scale);
+//         shader_->setUniform("Resolution", resolution);
+//         shader_->setUniform("Octaves", octaves_);
+//         shader_->setUniform("Lacunarity", lacunarity_);
+//         shader_->setUniform("Persistence", persistence_);
+//         shader_->setUniform("FundamentalFreqLog", fundamental_freq_log_);
+//         shader_->setUniform("YBase", y_base_);
+//         shader_->setUniform("YScale", y_scale_);
+//         shader_->setUniform("PermPeriod", perm_period_);
+//         // shader_->setUniform("Seed", seed_);
+
+//         glBindVertexArray(VAO_);
+//         glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+//         glBindVertexArray(INVALID_VAO);
+
+//         glBindFramebuffer(GL_FRAMEBUFFER, INVALID_FBO);
+//     }
+
+// private:
+//     static constexpr float kRetangleVertices[] = {
+//         -1.0f, 1.0f, 0.0f, 1.0f,
+//         -1.0f, -1.0f, 0.0f, 0.0f,
+//         1.0f, 1.0f, 1.0f, 1.0f,
+//         1.0f, -1.0f, 1.0f, 0.0f,
+//     };
+
+//     const Shader* shader_ { nullptr };
+//     GLuint VAO_ { INVALID_VAO };
+//     GLuint VBO_ { INVALID_VBO };
+//     GLuint FBO_ { INVALID_FBO };
+
+//     int octaves_ { 6 };
+//     int lacunarity_ { 2 };
+//     float persistence_ { 0.5f };
+//     int fundamental_freq_log_ { 0 };
+//     float y_base_ { 0.0f };
+//     float y_scale_ { 64.0f };
+//     int perm_period_ { 16 };
+//     unsigned long seed_ { 0 };
+// };
+

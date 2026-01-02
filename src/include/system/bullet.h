@@ -5,7 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 struct CollisionInstance;
-struct TerrainGenerator;
+class TerrainGenerator;
 enum class CollisionLayer;
 
 enum class BulletType {

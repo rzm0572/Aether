@@ -34,6 +34,9 @@ public:
         if (m_alloc_gpu && m_textureID) {
             glDeleteTextures(1, &m_textureID);
         }
+        if (m_mipmapFBO) {
+            glDeleteFramebuffers(1, &m_mipmapFBO);
+        }
     }
 
     Texture(const Texture&) = delete;
@@ -141,12 +144,7 @@ public:
     }
 
     template<typename T>
-    bool Load(const T* data, int width, int height, int channel, int depth = 1) {
-        if (!data) {
-            std::cerr << "Texture data does not exist" << std::endl;
-            return false;
-        }
-
+    bool Load(const T* data, int width, int height, int channel, int depth = 1, bool use_mipmap = true, GLenum expand_mode = GL_REPEAT) {
         if (depth < 1 || (m_type == GL_TEXTURE_2D && depth > 1)) {
             return false;
         }
@@ -187,21 +185,32 @@ public:
         glGenTextures(1, &m_textureID);
         glBindTexture(m_type, m_textureID);
 
-        glTexParameteri(m_type, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(m_type, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(m_type, GL_TEXTURE_WRAP_S, expand_mode);
+        glTexParameteri(m_type, GL_TEXTURE_WRAP_T, expand_mode);
+        if (use_mipmap) {
+            glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        } else {
+            glTexParameteri(m_type, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        }
+
         glTexParameteri(m_type, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        int max_level = static_cast<int>(std::floor(std::log2(std::max(width, height)))) + 1;
+        int max_level = maxMipmapLevel(width, height);
 
         if (data != nullptr) {
             glTexImage3D(m_type, 0, internal_format_, width, height, depth, 0, format_, type_, data);
-            glGenerateMipmap(m_type);
+            if (use_mipmap) {
+                glGenerateMipmap(m_type);
+            }
         } else {
-            for (int i = 0; i < max_level; ++i) {
-                int mip_width = std::max(1, width >> i);
-                int mip_height = std::max(1, height >> i);
-                glTexImage3D(m_type, i, internal_format_, mip_width, mip_height, depth, 0, format_, type_, nullptr);
+            if (use_mipmap) {
+                for (int i = 0; i < max_level; ++i) {
+                    int mip_width = std::max(1, width >> i);
+                    int mip_height = std::max(1, height >> i);
+                    glTexImage3D(m_type, i, internal_format_, mip_width, mip_height, depth, 0, format_, type_, nullptr);
+                }
+            } else {
+                glTexImage3D(m_type, 0, internal_format_, width, height, depth, 0, format_, type_, nullptr);
             }
         }
 
@@ -212,7 +221,7 @@ public:
         m_channels = channel;
         m_depth = depth;
 
-        std::cout << "Loaded texture: " << m_filepath << " (" << m_width << "x" << m_height << ", " << m_channels << " channels)" << std::endl;
+        std::cout << "Loaded texture: " << m_filepath << " (" << m_width << "x" << m_height << ", " << m_channels << " channels, depth: " << m_depth << ")" << std::endl;
         return true;
     }
 
@@ -223,12 +232,14 @@ public:
         }
 
         glBindTexture(m_type, m_textureID);
+
+        // std::cout << "Update texture layer: " << m_filepath << " (" << m_width << "x" << m_height << ", " << m_channels << " channels, layer: " << layer_index << ")" << std::endl;
+
         glTexSubImage3D(m_type, 0, 0, 0, layer_index, m_width, m_height, 1, format_, type_, data);
 
-        // TODO: Generate Mipmaps by fragment shader
-        glGenerateMipmap(m_type);
-
         glBindTexture(m_type, 0);
+
+        return true;
     }
 
     // 获取 OpenGL 纹理 ID（用于调试或高级用途）
@@ -238,11 +249,29 @@ public:
         return m_filepath;
     }
 
+    int getWidth() const {
+        return m_width;
+    }
+
+    int getHeight() const {
+        return m_height;
+    }
+
     const std::string toString() const {
         return "Texture(type: " + std::to_string(m_type) + ", name: " + m_name + ", filepath: " + m_filepath + ", textureID: " + std::to_string(m_textureID) + ", width: " + std::to_string(m_width) + ", height: " + std::to_string(m_height) + ", channels: " + std::to_string(m_channels) + ", m_depth: " + std::to_string(m_depth) + ")";
     }
 
 private:
+    void initMipmapFBO() {
+        if (m_mipmapFBO == 0) {
+            glGenFramebuffers(1, &m_mipmapFBO);
+        }
+    }
+
+    int maxMipmapLevel(int width, int height) const {
+        return static_cast<int>(std::floor(std::log2(std::max(width, height)))) + 1;
+    }
+
     bool m_alloc_gpu;
     GLenum m_type;                        // 纹理类型
     std::string m_name;                   // 纹理名称
@@ -253,6 +282,8 @@ private:
     GLenum internal_format_;
     GLenum format_;
     GLenum type_;
+
+    GLuint m_mipmapFBO { 0 };
 };
 
 // Texture manager class
@@ -314,7 +345,48 @@ public:
     }
 
     std::shared_ptr<const Texture> getTexture(const std::string name, const std::vector<std::string>& filepaths, GLenum type = GL_TEXTURE_2D_ARRAY) {
-        // TODO: Implement texture array loading
+        auto it = textures_.find(name);
+        if (it != textures_.end()) {
+            return it->second;
+        }
+
+        if (!alloc_gpu_) {
+            return nullptr;
+        }
+
+        auto texture = std::make_shared<Texture>(type, filepaths[0], name, alloc_gpu_);
+        stbi_set_flip_vertically_on_load(true);
+
+        int width = 0, height = 0, channels = 0;
+        int depth = static_cast<int>(filepaths.size());
+        unsigned char* data_first = stbi_load(filepaths[0].c_str(), &width, &height, &channels, 0);
+        
+        size_t image_size = width * height * channels;
+        std::vector<unsigned char> data(image_size * depth);
+        std::copy(data_first, data_first + image_size, data.data());
+        stbi_image_free(data_first);
+
+        for (int i = 1; i < depth; ++i) {
+            int width_ = 0, height_ = 0, channels_ = 0;
+            unsigned char* data_ = stbi_load(filepaths[i].c_str(), &width_, &height_, &channels_, 0);
+            if (width_ != width || height_ != height || channels_ != channels) {
+                std::cerr << "Texture array loading failed: " << filepaths[i] << " has different size or channels from " << filepaths[0] << std::endl;
+                stbi_image_free(data_);
+                return nullptr;
+            }
+            
+            std::copy(data_, data_ + image_size, data.data() + i * image_size);
+            stbi_image_free(data_);
+        }
+
+        std::cout << "Loaded texture array: " << name << " (" << width << "x" << height << ", " << channels << " channels, " << depth << " layers)" << std::endl;
+
+        bool success = texture->Load(data.data(), width, height, channels, depth);
+        if (success) {
+            textures_.emplace(name, texture);
+            return texture;
+        }
+
         return nullptr;
     }
 
