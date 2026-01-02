@@ -1,0 +1,11 @@
+Model Information:
+* title:	Sky Flash Missle
+* source:	https://sketchfab.com/3d-models/sky-flash-missle-4a5ca7ad65ad457bbfd95a8915d9c62f
+* author:	Lame3D models (https://sketchfab.com/Lame3dModels)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Sky Flash Missle" (https://sketchfab.com/3d-models/sky-flash-missle-4a5ca7ad65ad457bbfd95a8915d9c62f) by Lame3D models (https://sketchfab.com/Lame3dModels) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

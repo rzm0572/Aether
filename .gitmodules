@@ -10,3 +10,12 @@
 [submodule "repo/glog"]
 	path = repo/glog
 	url = https://github.com/google/glog.git
+[submodule "repo/stb"]
+	path = repo/stb
+	url = https://github.com/nothings/stb.git
+[submodule "repo/assimp"]
+	path = repo/assimp
+	url = https://github.com/assimp/assimp.git
+[submodule "repo/jsoncpp"]
+	path = repo/jsoncpp
+	url = git@github.com:open-source-parsers/jsoncpp.git

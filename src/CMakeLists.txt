@@ -29,12 +29,21 @@ function(add_opengl_executable EXECUTABLE_NAME CUSTOM_SOURCE)
         PRIVATE glad
         PRIVATE glm::glm-header-only
         PRIVATE ${CMAKE_DL_LIBS}
+        PRIVATE ${JSONCPP_LIBRARIES}
+        assimp::assimp
     )
 
     target_include_directories(
         ${EXECUTABLE_NAME}
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
         PRIVATE ${GLAD_DIR}/include
+    )
+    target_include_directories(${EXECUTABLE_NAME} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include          # 本地 include（如果存在）
+        ${CMAKE_CURRENT_SOURCE_DIR}/../include       # 项目根目录下的 include/
+        ${GLAD_DIR}/include                          # GLAD 头文件
+        ${STB_INCLUDE_DIR}                           # STB 头文件
+        ${JSONCPP_INCLUDE_DIRS}
     )
 endfunction()
 
@@ -43,20 +52,27 @@ endfunction()
 
 set(
     AETHER_LIBS
-    lib/shader.cpp
+    component/transform.cpp
+    interaction/camera.cpp
+    resource/shader.cpp
+    resource/material.cpp
+    resource/explosion.cpp
+    system/bullet.cpp
+    system/explosion.cpp
+    entity/collision_config.cpp
+    entity/collision_draw.cpp
+    world/skybox.cpp
 )
 
 # -------------------------------------------------------------------------------
 # Add executables here
 
-add_opengl_executable(test_opengl "test.cpp")
-add_opengl_executable(retangle "${AETHER_LIBS};retangle.cpp")
 add_opengl_executable(main "${AETHER_LIBS};main.cpp")
 
 # -------------------------------------------------------------------------------
 # Install executables here
 
 install(
-    TARGETS test_opengl retangle main
+    TARGETS main
     RUNTIME DESTINATION .
 )

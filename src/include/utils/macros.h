@@ -10,8 +10,23 @@
 #define _TO_STR(a) #a
 #define TO_STR(a) _TO_STR(a)
 
+#define GREEN "\033[32m"
+#define RED "\033[31m"
+#define YELLOW "\033[33m"
+#define BLUE "\033[34m"
+#define MAGENTA "\033[35m"
+#define CYAN "\033[36m"
+#define RESET "\033[0m"
+
 #define OPENGL_VERSION_MAJOR 4
 #define OPENGL_VERSION_MINOR 1
+
+#define INVALID_VAO 0
+#define INVALID_VBO 0
+#define INVALID_EBO 0
+#define INVALID_FBO 0
+
+#define INVALID_MATERIAL 0xFFFFFFFF
 
 inline GLenum glCheckError_(const char* file, int line) {
     GLenum error_code;

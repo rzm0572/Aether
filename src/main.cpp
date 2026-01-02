@@ -1,45 +1,71 @@
+#include "common/game_object.h"
+#include "common/renderer.h"
+#include "entity/collision_config.h"
+#include "resource/shader.h"
+#include "service/service_locator.h"
+#include "system/collision.h"
+#include "utils/config.h"
 #include "utils/macros.h"
 #include "utils/path_handler.h"
-#include "shader.h"
-#include "window.h"
+#include "utils/profiler.h"
+#include "common/window.h"
+#include "world/skybox.h"
+#include "interaction/input.h"
+#include "interaction/camera.h"
+#include "common/engine.h"
+#include "world/terrain.h"
+#include "entity/plane.h"
+#include "system/weapons.h"
+#include "system/explosion.h"
+#include "resource/healthbar.h"
+#include "world/terrain/terrain_.h"
+
 #include <iostream>
-#include <cmath>
+#include <string>
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <stb_image.h>
 
-const int vertexAttribLocation = 0;
+glm::mat4 makeTransformMatrix(
+    float tx, float ty, float tz,   // 平移
+    float rx, float ry, float rz,   // 旋转（弧度，XYZ 顺序）
+    float sx, float sy, float sz    // 缩放
+) {
+    glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(tx, ty, tz));
+    rx = glm::radians(rx);
+    ry = glm::radians(ry);
+    rz = glm::radians(rz);
+    glm::mat4 rot   = glm::rotate(glm::mat4(1.0f), rx, glm::vec3(1, 0, 0))
+                    * glm::rotate(glm::mat4(1.0f), ry, glm::vec3(0, 1, 0))
+                    * glm::rotate(glm::mat4(1.0f), rz, glm::vec3(0, 0, 1));
+    glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(sx, sy, sz));
 
-float vertices2[] = {
-    0.5f, 0.5f, 0.0f,
-    0.5f, -0.5f, 0.0f,
-    -0.5f, -0.5f, 0.0f,
-    -0.5f, 0.5f, 0.0f
-};
-
-unsigned int indices[] = {
-    0, 1, 2,
-    0, 3, 2
-};
-
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
+    // 注意顺序：M = T * R * S
+    return trans * rot * scale;
 }
 
-void processInput(GLFWwindow *window) {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-}
+// 主要参考了 一步步学OpenGL(22) -《OpenGL使用Assimp库导入3d模型》 - Kam92.J的文章 - 知乎 https://zhuanlan.zhihu.com/p/150570465
+// 修改了片段着色器的输入，使其能够接受纯色输入，否则会失去颜色，这是模型常用的做法即纯色模型加上细节贴图
+
 
 int main() {
-    const unsigned int SCR_WIDTH = 800;
-    const unsigned int SCR_HEIGHT = 600;
+    Config config;
+    ServiceLocator<Config>::provide(&config);
 
-    GL::Window window(SCR_WIDTH, SCR_HEIGHT, "Triangle", [](GLFWwindow* window, int width, int height) {
+    if (config.debug_mode) {
+        config.output();
+    }
+
+    // Window initialization
+    Window window(config.scr_width, config.scr_height, "Aether");
+
+    window.setFramebufferSizeCallback([](GLFWwindow* window, int width, int height) {
         glViewport(0, 0, width, height);
     });
 
@@ -50,79 +76,237 @@ int main() {
         return -1;
     }
 
-    GL::ShaderManager shaderManager;
-    shaderManager.registerShader("trans", getShaderPath("trans.vert"), getShaderPath("trans.frag"));
-    const auto& shader = shaderManager.getShader("trans");
+    // Engine initialization
+    // Service initialized and provided to ServiceLocator
+    GameEngine* engine = new GameEngine(config);
 
-    unsigned int VAO, VBO, EBO;
-    // Generate vertex array object and vertex buffer object
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
+    // ExplosionSystem explosion_system;
+    auto* explosion_system = ServiceLocator<ExplosionSystem>::get();
+    explosion_system->init();
 
-    // Bind the vertex array object first
-    glBindVertexArray(VAO);
+    // Input initialization
+    Input input;
 
-    // Bind and set the vertex buffer
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices2), vertices2, GL_STATIC_DRAW);
+    window.setWindowUserPointer(&input);
+    window.setKeyCallback(input.keyCallback);
+    window.setCursorPosCallback(input.mouseCallback);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // Configure vertex attribute
-    glVertexAttribPointer(vertexAttribLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(vertexAttribLocation);
-
-    // Unbind the VBO
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    // unbind the VAO
-    glBindVertexArray(0);
-
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-    glm::mat4 view = glm::mat4(1.0f);
-    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -5.0f));
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)config.scr_width / (float)config.scr_height, config.z_near, config.z_far);
     
-    while (!window.shouldClose()) {
-        processInput(window.getWindow());
+    // 创建天空盒
+    Skybox skybox(
+        getAssetPath("skybox/skybox1/right.jpg"), 
+        getAssetPath("skybox/skybox1/left.jpg"),
+        getAssetPath("skybox/skybox1/top.jpg"),   
+        getAssetPath("skybox/skybox1/bottom.jpg"),
+        getAssetPath("skybox/skybox1/front.jpg"), 
+        getAssetPath("skybox/skybox1/back.jpg")
+    );
 
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+    auto shader_manager = ServiceLocator<ShaderManager>::get();
+    assert(shader_manager);
+    shader_manager->registerShader("model", getShaderPath("models.vert"), getShaderPath("models.frag"));
+    shader_manager->registerShader("depth", getShaderPath("depth.vert"), getShaderPath("depth.frag"));// 深度渲染着色器
+    shader_manager->registerShader("terrain", getShaderPath("terrain.vert"), getShaderPath("terrain.frag"));
 
-        shader.useShader();
+    Renderer renderer;
 
-        float timeValue = glfwGetTime()/10.f;
-        float greenValue = (std::sin(timeValue) / 2.0f) + 0.5f;
+    auto& collision_configs = CollisionConfigRegistry::getInstance();
+    collision_configs.initialize();
+    // collision_configs.output();
 
-        // glm::mat4 trans = glm::mat4(1.0f);
-        // trans = glm::rotate(trans, (float)timeValue, glm::vec3(0.0f, 0.0f, 1.0f));
-
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -0.05f));
-
-        shader.setUniform("ourColor", 0.0f, greenValue, 0.0f, 1.0f);
-
-        // shader.setUniform("transform", trans);
-
-        shader.setUniform("model", model);
-        shader.setUniform("view", view);
-        shader.setUniform("projection", projection);
-
-        glBindVertexArray(VAO);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-
-        // glDrawArrays(GL_TRIANGLES, 0, 3);   // glDrawArrays will read data from the currently bound VAO
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
-
-        window.swapBuffers();
-        glfwPollEvents();
+    // Load models
+    Model plane_model;
+    if (!plane_model.loadModel(getAssetPath("models/j10_obj/j10.obj"))) {
+        std::cerr << "Failed to load model!" << std::endl;
+        return -1;
     }
 
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
+    // GameObject* plane = GameObject::createFromModel(plane_model);
+    glm::vec3 initial_position = glm::vec3(0.0f, 300.0f, 0.0f);
+    glm::quat initial_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f); 
+    glm::vec3 velocity = glm::vec3(70.0f, 0.0f, 0.0f);
+    glm::vec3 angular_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+
+    glm::vec3 initial_position2 = glm::vec3(200.0f,300.0f, 0.0f);
+
+    Plane* plane = new Plane(Owner::PLAYER, input, plane_model, initial_position, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"],glm::mat4(1.0f),PhysicalComponent(getConfigPath("aircrafts/player.json")));
+    Plane *plane_enemy = new Plane(Owner::ENEMY, input, plane_model, initial_position2, initial_rotation, velocity, angular_velocity, collision_configs.registry["j-10"],glm::mat4(1.0f),PhysicalComponent(getConfigPath("aircrafts/enemy.json")));
+
+    // Terrain generation
+    fBmGenerator fBm_generator(0.0f, 64.0f, 5, 2, 0.6f, -4, 16, 1);
+    Terrain_ terrain(fBm_generator, -64, -64, 7);
+
+    // Camera settings
+    FreeCamera free_camera(
+        glm::vec3(0.0f, 10.0f, 3.0f),
+        glm::vec3(0.0f, 1.0f, 0.0f),
+        0.0f, 0.0f,
+        25.0f, 0.06f
+    );
+    FreeCameraInputTranslator translator(input);
+
+    ThirdPersonCamera third_person_camera(plane, 16.0f, 0.0f, 90.0f, 10.0f, 0.06f, glm::vec3(0.5f, 0.0f, 0.0f));
+
+    // Light settings
+    auto light = Light(
+        &third_person_camera,
+        // &free_camera,
+        glm::vec3(0.8f, 0.8f, 0.8f),
+        {
+            glm::vec3(0.0f, 1.0f, 1.0f),
+            glm::vec3(2.5f, 2.5f, 2.5f),   
+        },
+        input
+    );
+
+    Weapons weapons_player(0, Owner::PLAYER, input,renderer);//玩家武器系统
+    Weapons weapons_enemy(1, Owner::ENEMY, input,renderer);//敌人武器系统
+    Particle_Ribbon ribbon1  = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
+    ribbon1.start_();
+    Particle_Ribbon ribbon2 = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
+    ribbon2.start_();
+    // Particle_Ribbon ribbon3 = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
+    // ribbon3.start_();
+    // Particle_Ribbon ribbon4 = Particle_Ribbon(2000, getAssetPath("textures/particles/particle_generated.png"));
+    // ribbon4.start_();
+    HealthBar health_bar_plane;
+    HealthBar health_bar_enemy;
+
+    auto* collision_system = ServiceLocator<CollisionSystem>::get();
+    collision_system->setTerrainGenerator(&fBm_generator);
+
+    terrain.setShadowMap(&renderer.getShadowMap(), shader_manager->getShader("depth"));
+
+    // 开启深度测试
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+
+    float last_frame = 0.0f;
+    float curr_frame = 0.0f;
+
+    float delta_time_sum = 0.0f;
+    int frame_count = 0;
+    // Game loop
+    while (!window.shouldClose()) {
+        Profiler::instance().get_timer("io").start_clock();
+        input.pollEvents();
+        Profiler::instance().get_timer("io").end_clock();
+
+        if (input.getKeyPressed(InputKey::ESC)) {
+            window.setWindowShouldClose();
+        }
+
+        // glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT); 
+
+        float dt = curr_frame - last_frame;
+
+        // Logical frame
+        Profiler::instance().get_timer("logical").start_clock();
+
+        // Entity logical update
+        plane->update(dt,0,glm::vec3(0.0f));
+        plane_enemy->update(dt,1,glm::vec3(0.0f));
+        collision_system->submit(plane);
+        collision_system->submit(plane_enemy);
+
+        auto& player_transform = plane->getTransformComponent();
+        auto& player_physical = plane->physical_component();
+        auto& enemy_tranform = plane_enemy->getTransformComponent();
+        auto& enemy_physical = plane_enemy->physical_component();
+
+        weapons_player.use(dt, curr_frame, player_transform.getPosition(),player_physical.getVelocity(),player_physical.getUp(),player_physical.getRight(),player_physical.GetForward(),player_physical.getRotation(),enemy_tranform.getPosition(),plane->getHealthComponent().isDead());
+        weapons_enemy.use(dt, curr_frame, enemy_tranform.getPosition(),enemy_physical.getVelocity(),enemy_physical.getUp(),enemy_physical.getRight(),enemy_physical.GetForward(),enemy_physical.getRotation(),player_transform.getPosition(),plane_enemy->getHealthComponent().isDead());
+        
+        weapons_player.submitCollision();
+        weapons_enemy.submitCollision();
+
+        // Collision detection
+        collision_system->update(curr_frame);
+
+        // Collision handling
+        plane->handleCollision();
+        plane_enemy->handleCollision();
+        weapons_player.handleCollision();
+        weapons_enemy.handleCollision();
+
+        // Explosion handling
+        explosion_system->update(renderer, curr_frame);
+
+        // Camera and light update
+        third_person_camera.update(input.getMouseMovement(), dt);
+        light.update(dt);
+
+        glm::mat4 view = third_person_camera.getViewMatrix();
+
+        delta_time_sum += dt;
+        frame_count++;
+
+        input.endUpdate();
+        Profiler::instance().get_timer("logical").end_clock();
+
+        Profiler::instance().get_timer("terrain").start_clock();
+        terrain.update(third_person_camera);
+        terrain.render(view, projection, light);
+        Profiler::instance().get_timer("terrain").end_clock();
+
+        // Render frame
+        Profiler::instance().get_timer("render").start_clock();
+
+        if(!plane->getHealthComponent().isDead()){
+            ribbon1.addParticles(plane->getTransformComponent().getPosition()+plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
+            ribbon2.addParticles(plane->getTransformComponent().getPosition()-plane->physical_component().getRight()*3.5f + plane->physical_component().GetForward() * 2.0f - plane->physical_component().getUp()*0.5f,plane->physical_component().getVelocity(), 6, 0.2f);
+            ribbon1.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+            ribbon2.draw(view, projection, third_person_camera.getPosition(),40.0f,0.05f,0.3f,0.1f);
+        }
+
+        // --- weapons update and submit ---
+        glm::vec3 camera_pos = third_person_camera.getPosition();
+        weapons_player.postProcess(dt, curr_frame, player_transform.getPosition(), enemy_tranform.getPosition(),
+            player_physical.getUp(), player_physical.getRight(), player_physical.GetForward(), player_physical.getRotation(),
+            camera_pos, view, projection, plane->getHealthComponent().isDead()
+        );
+        weapons_enemy.postProcess(dt, curr_frame, enemy_tranform.getPosition(), player_transform.getPosition(),
+            enemy_physical.getUp(), enemy_physical.getRight(), enemy_physical.GetForward(), enemy_physical.getRotation(),
+            camera_pos, view, projection, plane_enemy->getHealthComponent().isDead()
+        );
+        health_bar_plane.draw(plane->getTransformComponent().getPosition() + glm::vec3(0.0f, 2.5f, 0.0f),view,projection,third_person_camera.getPosition(),5.0f,0.25f,plane->getHealthComponent().getHealth());
+        health_bar_enemy.draw(plane_enemy->getTransformComponent().getPosition() + glm::vec3(0.0f, 2.5f, 0.0f),view,projection,third_person_camera.getPosition(),5.0f,0.25f,plane_enemy->getHealthComponent().getHealth());
+
+        // --- Submissions ---
+        renderer.submit_recursive(plane);
+        renderer.submit_recursive(plane_enemy);
+        renderer.finishAllSubmissions();                // Sort render queue
+        
+        // --- Render Pass ---
+        renderer.renderShadowMap(light, window);     // Shadow map creation
+        renderer.render(view, projection, light);
+        renderer.finishAllRender();
+
+        // 渲染天空盒（在其他物体之后渲染以优化性能）
+        skybox.changeProjection(projection);
+        skybox.changeView(view);
+        skybox.Render(light.getSkyTint());
+
+        Profiler::instance().get_timer("render").end_clock();
+
+        Profiler::instance().get_timer("swap").start_clock();
+        window.swapBuffers();
+        Profiler::instance().get_timer("swap").end_clock();
+
+        last_frame = curr_frame;
+        curr_frame = glfwGetTime();
+    }
+
+    if (config.debug_mode) {
+        std::cout << "Average frame time: " CYAN << delta_time_sum / frame_count << " s" RESET << std::endl;
+        std::cout << "Average FPS: " CYAN << 1.0f / (delta_time_sum / frame_count) << RESET << std::endl;
+        Profiler::instance().report();
+    }
+
+    delete engine;
 
     return 0;
 }

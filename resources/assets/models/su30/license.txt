@@ -1,0 +1,11 @@
+Model Information:
+* title:	Su-30 MKI
+* source:	https://sketchfab.com/3d-models/su-30-mki-d320a578ff8e44eba8fd3f111d1d1dba
+* author:	3D Crafty (https://sketchfab.com/3DCrafty)
+
+Model License:
+* license type:	CC-BY-NC-ND-4.0 (http://creativecommons.org/licenses/by-nc-nd/4.0/)
+* requirements:	Author must be credited. No commercial use. Modified versions can not be distributed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Su-30 MKI" (https://sketchfab.com/3d-models/su-30-mki-d320a578ff8e44eba8fd3f111d1d1dba) by 3D Crafty (https://sketchfab.com/3DCrafty) licensed under CC-BY-NC-ND-4.0 (http://creativecommons.org/licenses/by-nc-nd/4.0/)

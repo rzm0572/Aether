@@ -26,6 +26,13 @@ You can install AETHER by the following steps:
     git clone https://github.com/rzm0572/ZJU-CG-fa25-AETHER.git
     cd ZJU-CG-fa25-AETHER
     git submodule update --init --recursive
+
+    # build assimp
+    cd assimp
+    mkdir build
+    cd build
+    cmake .. -DCMAKE_BUILD_TYPE=Release
+    make
     ```
 
 2. run CMake to generate project files:

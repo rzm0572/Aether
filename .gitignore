@@ -3,5 +3,4 @@ build/
 bin/
 .vscode/
 .cache/
-repo/
 .gitignore
