@@ -2,15 +2,21 @@
 
 **AETHER** is an OpenGL-implemented 3D air combat game, developping as a project for ZJU course "Computer Graphics" (fall 2025).
 
-This project is cross-platform and plan to support Windows, MacOS and Linux.
+This project is cross-platform and plan to support Windows and MacOS.
 
 ## Installation
+
+### Prebuilt Binaries
+
+Prebuilt binaries for Windows and MacOS are available in the [Releases](https://github.com/rzm0572/ZJU-CG-fa25-AETHER/releases) page.
+
+### From Source
 
 Make sure you have installed the following dependencies:
 
 - git
 - CMake
-- C++ compiler (e.g. g++, clang++, MSVC, mingw, etc.)
+- C++ compiler (e.g. g++, clang++, LLVM-MinGW, MinGW, MSVC, etc.)
 - OpenGL
 
 For MacOS users, you need extra dependencies:
@@ -42,6 +48,8 @@ You can install AETHER by the following steps:
     ```powershell
     cmake -B build -S . -G "MinGW Makefiles"
     ```
+
+    **Note:** It is recommended to use [llvm-mingw](https://github.com/mstorsjo/llvm-mingw) to compile the project on Windows.
 
     For MacOS / Linux:
 
