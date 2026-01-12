@@ -50,7 +50,7 @@ glm::mat4 makeTransformMatrix(
     return trans * rot * scale;
 }
 
-// 主要参考了 一步步学OpenGL(22) -《OpenGL使用Assimp库导入3d模型》 - Kam92.J的文章 - 知乎 https://zhuanlan.zhihu.com/p/150570465
+// 主要参考了 一步步学 OpenGL(22) -《OpenGL 使用 Assimp 库导入 3d 模型》 - Kam92.J 的文章 - 知乎 https://zhuanlan.zhihu.com/p/150570465
 // 修改了片段着色器的输入，使其能够接受纯色输入，否则会失去颜色，这是模型常用的做法即纯色模型加上细节贴图
 
 

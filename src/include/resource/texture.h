@@ -13,6 +13,9 @@
 #include <iostream>
 #include <unordered_map>
 
+template<typename T>
+concept TextureDataType = std::is_same_v<T, unsigned char> || std::is_same_v<T, float> || std::is_same_v<T, glm::vec3>;
+
 // Texture class
 class Texture {
     friend class TextureManager;
@@ -143,7 +146,7 @@ public:
         glBindTexture(m_type, m_textureID);
     }
 
-    template<typename T>
+    template<TextureDataType T>
     bool Load(const T* data, int width, int height, int channel, int depth = 1, bool use_mipmap = true, GLenum expand_mode = GL_REPEAT) {
         if (depth < 1 || (m_type == GL_TEXTURE_2D && depth > 1)) {
             return false;
@@ -178,8 +181,6 @@ public:
             } else if (channel == 4) {
                 internal_format_ = GL_RGBA32F;
             }
-        } else {
-            static_assert(false, "Unsupported texture data type");
         }
 
         glGenTextures(1, &m_textureID);

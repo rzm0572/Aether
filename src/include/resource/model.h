@@ -157,7 +157,8 @@ public:
 
             return success;
         } else if (extension == ".obj") {
-            return importObjModel(filepath);
+            std::filesystem::path path(filepath);
+            return importObjModel(path);
         }
 
         return false;
@@ -226,7 +227,7 @@ public:
     void exportModelAsObj(const std::string& filepath) {
         std::filesystem::path obj_path(filepath);
 
-        std::string mtl_filepath = obj_path.replace_extension(".mtl").string();
+        std::string mtl_filepath = obj_path.replace_extension(".mtl").filename().string();
         exportMaterialAsMtl(mtl_filepath);
 
         std::ofstream obj(filepath);
@@ -507,7 +508,7 @@ private:
         }
     }
 
-    bool importObjModel(const std::string& filepath) {
+    bool importObjModel(const std::filesystem::path& filepath) {
         bool success = importObjModelGeometry(filepath);
         if (!success) {
             return false;
@@ -518,9 +519,12 @@ private:
         return importObjModelTree(filepath);
     }
 
-    bool importObjModelGeometry(const std::string& filepath) {
+    bool importObjModelGeometry(const std::filesystem::path& filepath) {
         std::filesystem::path obj_path(filepath);
         std::filesystem::path base_dir_path = obj_path.parent_path();
+
+        // std::cout << obj_path << std::endl;
+        // std::cout << base_dir_path << std::endl;
 
         std::ifstream obj(filepath);
         if (!obj.is_open()) {
@@ -632,7 +636,7 @@ private:
         }
 
         std::filesystem::path mtl_path(filepath);
-        std::ifstream mtl(filepath);
+        std::ifstream mtl(mtl_path);
         if (!mtl.is_open()) {
             std::cerr << "[import] Error opening file for reading: " << filepath << std::endl;
             return;
@@ -706,7 +710,7 @@ private:
 
     }
 
-    bool importObjModelTree(const std::string& filepath) {
+    bool importObjModelTree(const std::filesystem::path& filepath) {
         std::ifstream obj(filepath);
         if (!obj.is_open()) {
             std::cerr << "[import] Error opening file for reading: " << filepath << std::endl;

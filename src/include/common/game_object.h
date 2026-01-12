@@ -6,6 +6,9 @@
 
 using UUID_t = unsigned long long;
 
+template<typename T>
+concept GameObjectDerivedType = std::is_base_of_v<GameObject, std::remove_cvref_t<T>>;
+
 /**
  * @brief GameObject class
  * 
@@ -114,13 +117,8 @@ public:
      * @param model The model to create GameObjects from
      * @return GameObjectDerived* Pointer to the root wrapper GameObject
      */
-    template<typename GameObjectDerived = GameObject>
+    template<GameObjectDerivedType GameObjectDerived = GameObject>
     static GameObjectDerived* createFromModel(const Model& model) {
-        // Check that GameObjectDerived is derived from GameObject
-        if constexpr (!std::is_base_of_v<GameObject, GameObjectDerived>) {
-            static_assert(false, "GameObjectDerived must be derived from GameObject");
-        }
-
         GameObjectDerived* wrapper = new GameObjectDerived();
         wrapper->transform_.setParent(nullptr, wrapper);
         wrapper->render_.renderable_ = false;
@@ -128,13 +126,8 @@ public:
         return wrapper;
     }
 
-    template<typename GameObjectDerived = GameObject>
+    template<GameObjectDerivedType GameObjectDerived = GameObject>
     static void createFromModel(GameObjectDerived* wrapper, const Model& model, glm::mat4 bias_transform = glm::mat4(1.0f)) {
-        // Check that GameObjectDerived is derived from GameObject
-        if constexpr (!std::is_base_of_v<GameObject, GameObjectDerived>) {
-            static_assert(false, "GameObjectDerived must be derived from GameObject");
-        }
-
         auto* go = createFromModelTree(model.root_node_, model, nullptr);
         auto& transform = go->getTransformComponent();
         transform.setParent(wrapper, go);
