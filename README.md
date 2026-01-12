@@ -28,7 +28,7 @@ You can install AETHER by the following steps:
     git submodule update --init --recursive
 
     # build assimp
-    cd assimp
+    cd repo/assimp
     mkdir build
     cd build
     cmake .. -DCMAKE_BUILD_TYPE=Release
