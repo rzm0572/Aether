@@ -10,7 +10,7 @@ Make sure you have installed the following dependencies:
 
 - git
 - CMake
-- C++ compiler (e.g. g++, clang++)
+- C++ compiler (e.g. g++, clang++, MSVC, mingw, etc.)
 - OpenGL
 
 For MacOS users, you need extra dependencies:

@@ -67,12 +67,12 @@ set(
 # -------------------------------------------------------------------------------
 # Add executables here
 
-add_opengl_executable(main "${AETHER_LIBS};main.cpp")
+add_opengl_executable(aether "${AETHER_LIBS};main.cpp")
 
 # -------------------------------------------------------------------------------
 # Install executables here
 
 install(
-    TARGETS main
+    TARGETS aether
     RUNTIME DESTINATION .
 )

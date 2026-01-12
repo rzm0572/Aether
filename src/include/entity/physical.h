@@ -119,18 +119,6 @@ public:
                         result_raw |= (1 << (size_t)PhysicalInput::PITCH_DOWN);
                     }
                 } 
-                // std::cout<<"y vel: "<<forward.y<<std::endl;
-                // std::cout<<"Veclocity: "<<velocity<<std::endl;
-                // else {
-                //     // 高度已达标，尝试回平
-                //     if (forward.y > pitch_deadzone) {
-                //         // 当前抬头需低头回平
-                //         result_raw |= (1 << (size_t)PhysicalInput::PITCH_DOWN);
-                //     } else if (forward.y < -pitch_deadzone) {
-                //         // 当前低头需抬头回平
-                //         result_raw |= (1 << (size_t)PhysicalInput::PITCH_UP);
-                //     }
-                // }
 
                 // === 偏航角控制 先对准目标XZ 位置，再对准目标高度机头 ===
                 if (xz_distance > 1e-3f) {

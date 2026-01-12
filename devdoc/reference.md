@@ -16,16 +16,17 @@
    - [如何使用assimp读取文件的材质 - 我在升华的文章 - 知乎](https://zhuanlan.zhihu.com/p/489803630)
    - [assimp - 如何使用 gltf 格式通过 Assimp 加载粗糙度/金属贴图？](https://stackoverflow.org.cn/questions/54116869)
    - [assimp PBR material support](https://github.com/assimp/assimp/blob/80b0b897edfc8d97a3071033b95dcd6b799e403b/include/assimp/material.h#L972)
-   3. 实现真实的光照和材质
+
+4. 实现真实的光照和材质
    - [LearnOpenGL 光照](https://learnopengl-cn.github.io/07%20PBR/02%20Lighting/)
    - [PBR渲染: Cook-Torrance的实现与补充](https://www.blurredcode.com/2021/05/dec701b2/)
    - [PBR：基于物理的着色](https://huailiang.github.io/blog/2018/pbr/)
    - [基于物理的实时渲染 -- PBR](https://blog.csdn.net/gghhb12/article/details/136985256)
    - [Gamma校正](https://learnopengl-cn.github.io/05%20Advanced%20Lighting/02%20Gamma%20Correction/)
-   4. 实现环境光
+   1. 实现环境光
    - [LearnOpenGL 基础光照](https://learnopengl-cn.github.io/02%20Lighting/02%20Basic%20Lighting/)
    - [一步步学OpenGL(17) -《环境光》 - Kam92.J的文章 - 知乎](https://zhuanlan.zhihu.com/p/148988756)
-   5. 实现实时阴影
+   2. 实现实时阴影
    - [实时阴影技术——阴影贴图 - tkstar的文章 - 知乎](https://zhuanlan.zhihu.com/p/353392356)
    - [阴影的PCF采样优化算法 - zilch的文章 - 知乎](https://zhuanlan.zhihu.com/p/369761748)
    - [阴影技术(1)——朴素Shadowmap,PCF,PCSS](https://chillstepp.github.io/2024/07/19/%E9%98%B4%E5%BD%B1%E6%8A%80%E6%9C%AF(1)%E2%80%94%E2%80%94%E6%9C%B4%E7%B4%A0Shadowmap%EF%BC%8CPCF,PCSS/)
@@ -35,11 +36,17 @@
    - [一步步学OpenGL(23) -《阴影贴图1》 - Kam92.J的文章 - 知乎](https://zhuanlan.zhihu.com/p/150570547)
    - [一步步学OpenGL(24) -《阴影贴图2》 - Kam92.J的文章 - 知乎](https://zhuanlan.zhihu.com/p/150570621)
 
-4. 地形生成参考
+5. 地形生成参考
+   1. 地形生成
    - [Understanding Perlin Noise](https://adrianb.io/2014/08/09/perlinnoise.html)
    - [Perlin Noise: A Procedural Generation Algorithm](https://rtouti.github.io/graphics/perlin-noise-algorithm)
+   2. 地形渲染
+   - [Continuous Distance-Dependent Level of Detail for Rendering Heightmaps (CDLOD)](https://aggrobird.com/files/cdlod_latest.pdf)
+   - [fstrugar/CDLOD - GitHub](https://github.com/fstrugar/CDLOD)
+   - [Continuous Distance-Dependent Level of Detail for Rendering Heightmaps (CDLOD) - 生鱼片的文章 - 知乎](https://zhuanlan.zhihu.com/p/536751271)
+   - [lfj200411/HDRPVirtualTexture: Implementing Adaptive Virtual Texture in HDRP - GitHub](https://github.com/lfj200411/HDRPVirtualTexture)
 
-5. 粒子效果
+6. 粒子效果
    1. 基础粒子效果
     - [LearnOpenGL 粒子效果](https://learnopengl-cn.github.io/06%20In%20Practice/2D-Game/06%20Particles/)
     - [笔记 OpenGL-粒子特效](https://www.bilibili.com/opus/643329300082196501)
@@ -57,7 +64,6 @@
     - [android opengl 实现粒子效果](https://blog.51cto.com/u_16099181/13241069?)
     - 
 
-
-6. 从 json 读取
+6. JSON 配置文件读取
    - [jsoncpp开源库的配置与使用](https://zhuanlan.zhihu.com/p/614401930)
    - [C++ 之 C++ 操作 json 文件（C++读写json文件）及jsoncpp配置详解](https://blog.csdn.net/shuiyixin/article/details/89330529)

@@ -115,8 +115,8 @@ public:
 
     void generateDebugLines(std::vector<DebugLine>& render_lines) {
         for (const auto& instance : instances_) {
-            // 根据碰撞层级设置颜色，方便区分敌我
-            glm::vec3 color(1.0f); // 默认白色
+            // 根据碰撞层级设置颜色
+            glm::vec3 color(1.0f);                   // 默认白色
             if (instance.layer == CollisionLayer::LAYER_PLAYER) {
                 color = glm::vec3(0.0f, 1.0f, 0.0f); // 玩家绿色
             } else if (instance.layer == CollisionLayer::LAYER_ENEMY) {
@@ -132,9 +132,6 @@ public:
             for (const auto& shape : instance.cc->getShapes()) {
                 std::visit(visitor, shape);
             }
-            
-            // 可选：同时也画出 AABB 方便调试 Broadphase
-            // drawAABB(instance.aabb, render_lines);
         }
     }
 

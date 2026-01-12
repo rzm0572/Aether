@@ -103,7 +103,7 @@ public:
         nodes_.resize(num_nodes);
         build_quad_tree(center_x_, center_z_, 0, index);
 
-        std::cout << "[terrain] index = " << index << ", num_nodes = " << num_nodes << std::endl;
+        // std::cout << "[terrain] index = " << index << ", num_nodes = " << num_nodes << std::endl;
         assert(index == num_nodes);
     }
 
@@ -131,7 +131,7 @@ public:
             return;
         }
 
-        std::cout << "index: " << index << ", node_pos: (" << nodes_[index].world_x << ", " << nodes_[index].world_z << "), scale: " << nodes_[index].scale << std::endl;
+        // std::cout << "index: " << index << ", node_pos: (" << nodes_[index].world_x << ", " << nodes_[index].world_z << "), scale: " << nodes_[index].scale << std::endl;
 
         Node& node = nodes_[index];
         if (node.scale == 1) {
@@ -140,13 +140,13 @@ public:
             return;
         }
 
-        glm::vec2 center = glm::vec2(node.world_x, node.world_z) + glm::vec2(node.scale) / 2.0f;
+        // glm::vec2 center = glm::vec2(node.world_x, node.world_z) + glm::vec2(node.scale) / 2.0f;
         float dist_sqr = getDistSqrToCenter(node, camera_x, camera_z);
 
-        std::cout << "center: " << center.x << ", " << center.y << std::endl;
-        std::cout << "dist^2: " << getDistSqrToCenter(node, camera_x, camera_z) << std::endl;
-        std::cout << "split: " << (dist_sqr < node.scale * node.scale * kSplitThreshold * kSplitThreshold) << std::endl;
-        std::cout << std::endl;
+        // std::cout << "center: " << center.x << ", " << center.y << std::endl;
+        // std::cout << "dist^2: " << getDistSqrToCenter(node, camera_x, camera_z) << std::endl;
+        // std::cout << "split: " << (dist_sqr < node.scale * node.scale * kSplitThreshold * kSplitThreshold) << std::endl;
+        // std::cout << std::endl;
 
         if (dist_sqr < node.scale * node.scale * kSplitThreshold * kSplitThreshold) {
             int first_child = index + 1;
@@ -427,7 +427,7 @@ private:
         int index_stride = base_resolution_ / resolution;
         std::vector<GLuint> indices(3 * (2 * resolution + 8) * resolution);
 
-        std::cout << "plain size: " << resolution * resolution << std::endl;
+        // std::cout << "plain size: " << resolution * resolution << std::endl;
 
         int length = base_resolution_ + 1;
         int cur = 0;
@@ -447,11 +447,11 @@ private:
                 indices[cur++] = right_down;
                 indices[cur++] = right_up;
                 indices[cur++] = left_up;
-                std::cout << left_down << ", " << right_down << ", " << left_up << ", " << right_up << std::endl;
+                // std::cout << left_down << ", " << right_down << ", " << left_up << ", " << right_up << std::endl;
             }
         }
 
-        std::cout << "skirt_map size: " << skirt_map_.size() << std::endl;
+        // std::cout << "skirt_map size: " << skirt_map_.size() << std::endl;
 
         int skirt_size = skirt_map_.size();
         for (size_t i = 0; i < skirt_map_.size(); i += index_stride) {
@@ -460,7 +460,7 @@ private:
             int left_up = skirt_map_[i];
             int right_up = skirt_map_[(i + index_stride) % skirt_size];
 
-            std::cout << left_down << ", " << right_down << ", " << left_up << ", " << right_up << std::endl;
+            // std::cout << left_down << ", " << right_down << ", " << left_up << ", " << right_up << std::endl;
 
             indices[cur++] = left_down;
             indices[cur++] = right_down;

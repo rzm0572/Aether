@@ -134,7 +134,7 @@ public:
         std::cout << "Loaded texture: " << m_filepath << " (" << m_width << "x" << m_height << ", " << m_channels << " channels)" << std::endl;
         return true;
     }
-    // 绑定纹理到指定纹理单元（如 GL_TEXTURE0）
+    // 绑定纹理到指定纹理单元
     void Bind(GLenum textureUnit = GL_TEXTURE0) const {
         if (!m_alloc_gpu) {
             return;
