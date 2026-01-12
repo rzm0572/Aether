@@ -8,7 +8,7 @@ This project is cross-platform and plan to support Windows and MacOS.
 
 ### Prebuilt Binaries
 
-Prebuilt binaries for Windows and MacOS are available in the [Releases](https://github.com/rzm0572/ZJU-CG-fa25-AETHER/releases) page.
+Prebuilt binaries for Windows and MacOS are available in the [Releases](https://github.com/rzm0572/Aether/releases) page.
 
 ### From Source
 
@@ -29,8 +29,8 @@ You can install AETHER by the following steps:
 1. Clone the repository and pull submodules:
 
     ```bash
-    git clone https://github.com/rzm0572/ZJU-CG-fa25-AETHER.git
-    cd ZJU-CG-fa25-AETHER
+    git clone https://github.com/rzm0572/Aether.git
+    cd Aether
     git submodule update --init --recursive
 
     # build assimp
