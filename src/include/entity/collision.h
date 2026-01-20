@@ -4,7 +4,7 @@
 #include "common/shape.h"
 #include "entity/collision_config.h"
 #include "glm/fwd.hpp"
-#include "world/terrain/terrain.h"
+#include "world/terrain/generator.h"
 #include <glm/glm.hpp>
 #include <glm/gtx/intersect.hpp>
 #include <vector>

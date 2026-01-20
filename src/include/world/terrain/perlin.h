@@ -1,6 +1,6 @@
 #pragma once
 
-#include "terrain.h"
+#include "generator.h"
 #include <chrono>
 #include <random>
 

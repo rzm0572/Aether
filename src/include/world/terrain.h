@@ -1,5 +1,5 @@
 #pragma once
 
-#include "terrain/terrain.h"
+#include "terrain/generator.h"
 #include "terrain/perlin.h"
 #include "terrain/plain.h"

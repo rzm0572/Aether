@@ -1,6 +1,6 @@
 #pragma once
 
-#include "terrain.h"
+#include "generator.h"
 
 class PlainGenerator : public TerrainGenerator {
 public:

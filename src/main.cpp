@@ -18,7 +18,7 @@
 #include "system/weapons.h"
 #include "system/explosion.h"
 #include "resource/healthbar.h"
-#include "world/terrain/terrain_.h"
+#include "world/terrain/terrain.h"
 
 #include <iostream>
 #include <string>
